@@ -187,7 +187,8 @@ internal fun DeviceConnectedView(
                     when (serviceManager.profile) {
                         Profile.HTS -> HTSScreen()
                         Profile.CHANNEL_SOUNDING -> ChannelSoundingScreen(
-                            isNotificationPermissionGranted
+                            deviceId = state.deviceData.peripheral.address,
+                            isNotificationPermissionGranted = isNotificationPermissionGranted
                         )
 
                         Profile.BPS -> BPSScreen()

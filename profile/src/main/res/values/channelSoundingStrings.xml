@@ -43,7 +43,7 @@
     <string name="cs_missing_permissions">Missing permissions.</string>
     <string name="cs_ranging_not_available">Ranging service not available.</string>
     <string name="cs_security_not_available">Channel Sounding with required security level is not supported. </string>
-    <string name="cs_error_unknown">Oops! \nThat session disappeared faster than your last Tinder match. Try reconnecting…</string>
+    <string name="cs_error_unknown">Oops! \nSession disappeared. Try reconnecting…</string>
     <string name="cs_local_request">Session terminated by local request.</string>
     <string name="cs_remote_request">Session terminated by remote peer.</string>
     <string name="cs_peer_terminated">Peer terminated the session.</string>

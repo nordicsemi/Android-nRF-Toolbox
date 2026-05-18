@@ -57,19 +57,27 @@ import no.nordicsemi.android.ui.view.TextWithAnimatedDots
 import no.nordicsemi.android.ui.view.internal.LoadingView
 
 @Composable
-internal fun ChannelSoundingScreen(isNotificationPermissionGranted: Boolean?) {
+internal fun ChannelSoundingScreen(
+    deviceId: String,
+    isNotificationPermissionGranted: Boolean?,
+) {
     // Channel Sounding is available from Android 16 (API 36) onward, while better accuracy and
     // performance are provided from Android 16 (API 36, minor version 1) and later.
     if (Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1 && isNotificationPermissionGranted != null) {
         RequestRangingPermission {
             val channelSoundingViewModel = hiltViewModel<ChannelSoundingViewModel>()
-            val channelSoundingState by channelSoundingViewModel.channelSoundingState.collectAsStateWithLifecycle()
-            val onClickEvent: (event: ChannelSoundingEvent) -> Unit =
-                { channelSoundingViewModel.onEvent(it) }
+            val channelSoundingMapState by channelSoundingViewModel.channelSoundingState.collectAsStateWithLifecycle()
+            val channelSoundingState =
+                channelSoundingMapState[deviceId] ?: ChannelSoundingServiceData()
+
+            val onClickEvent: (event: ChannelSoundingEvent) -> Unit = {
+                channelSoundingViewModel.onEvent(it)
+            }
+
             ChannelSoundingView(channelSoundingState, onClickEvent)
         }
     } else if (Build.VERSION.SDK_INT_FULL == Build.VERSION_CODES_FULL.BAKLAVA && isNotificationPermissionGranted != null) {
-        // It supports the Channel Sounding but we are intentionally not enabling it because of the accuracy and performance issues.
+        // It supports the Channel Sounding, but we are intentionally not enabling it because of the accuracy and performance issues.
         ChannelSoundingNotEnabledView()
     } else {
         ChannelSoundingNotSupportedView()

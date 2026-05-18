@@ -46,81 +46,59 @@ internal class ChannelSoundingManager @Inject constructor(
     private val rangingManager: RangingManager? =
         context.getSystemService(RangingManager::class.java)
     private val _dataMap = mutableMapOf<String, MutableStateFlow<ChannelSoundingServiceData>>()
-    private var device: String = ""
-    private lateinit var rangingCapabilityCallback: RangingManager.RangingCapabilitiesCallback
-    private val _previousRangingDataList = MutableStateFlow<List<Float>>(emptyList())
-    private var rangingSession: RangingSession? = null
+    private val _activeSessions = mutableMapOf<String, RangingSession>()
+    private val _capabilityCallbacks =
+        mutableMapOf<String, RangingManager.RangingCapabilitiesCallback>()
+    private val _previousRangingData = mutableMapOf<String, MutableList<Float>>()
 
-    private val rangingSessionCallback = @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-    object : RangingSession.Callback {
-        override fun onClosed(reason: Int) {
-            updateRangingData(
-                device,
-                RangingSessionAction.OnError(RangingSessionFailedReason.getReason(reason))
-            )
-            // Unregister the callback to avoid memory leaks
-            rangingManager?.unregisterCapabilitiesCallback(rangingCapabilityCallback)
-            // Cleanup previous data
-            _previousRangingDataList.value = emptyList()
-        }
-
-        override fun onOpenFailed(reason: Int) {
-            updateRangingData(
-                device,
-                RangingSessionAction.OnError(RangingSessionFailedReason.getReason(reason))
-            )
-            // Unregister the callback to avoid memory leaks
-            rangingManager?.unregisterCapabilitiesCallback(rangingCapabilityCallback)
-            // Cleanup previous data
-            _previousRangingDataList.value = emptyList()
-        }
-
-        override fun onOpened() {
-            updateRangingData(
-                device,
-                RangingSessionAction.OnStart
-            )
-        }
-
-        override fun onResults(
-            peer: RangingDevice,
-            data: RangingData
-        ) {
-            val updatedList = _previousRangingDataList.value.toMutableList()
-            data.distance?.measurement?.let {
-                updatedList.add(it.toFloat())
-            }
-            _previousRangingDataList.value = updatedList
-            updateRangingData(
-                device,
-                RangingSessionAction.OnResult(
-                    data = data.toCsRangingData(),
-                    previousData = _previousRangingDataList.value
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    private fun createRangingSessionCallback(deviceAddress: String) =
+        object : RangingSession.Callback {
+            override fun onClosed(reason: Int) {
+                updateRangingData(
+                    deviceAddress,
+                    RangingSessionAction.OnError(RangingSessionFailedReason.getReason(reason))
                 )
-            )
-        }
+                cleanUpDeviceSession(deviceAddress)
+            }
 
-        override fun onStarted(
-            peer: RangingDevice,
-            technology: Int
-        ) {
-            updateRangingData(device, RangingSessionAction.OnStart)
-            // Cleanup previous data
-            _previousRangingDataList.value = emptyList()
-        }
+            override fun onOpenFailed(reason: Int) {
+                updateRangingData(
+                    deviceAddress,
+                    RangingSessionAction.OnError(RangingSessionFailedReason.getReason(reason))
+                )
+                cleanUpDeviceSession(deviceAddress)
+            }
 
-        override fun onStopped(
-            peer: RangingDevice,
-            technology: Int
-        ) {
-            updateRangingData(
-                device,
-                RangingSessionAction.OnClosed
-            )
-            // Cleanup previous data
-            _previousRangingDataList.value = emptyList()
+            override fun onOpened() {
+                updateRangingData(deviceAddress, RangingSessionAction.OnStart)
+            }
+
+            override fun onResults(peer: RangingDevice, data: RangingData) {
+                val history = _previousRangingData.getOrPut(deviceAddress) { mutableListOf() }
+                data.distance?.measurement?.let {
+                    history.add(it.toFloat())
+                }
+
+                updateRangingData(
+                    deviceAddress,
+                    RangingSessionAction.OnResult(
+                        data = data.toCsRangingData(),
+                        previousData = history.toList()
+                    )
+                )
+            }
+
+            override fun onStarted(peer: RangingDevice, technology: Int) {
+                updateRangingData(deviceAddress, RangingSessionAction.OnStart)
+                _previousRangingData[deviceAddress]?.clear()
+            }
+
+            override fun onStopped(peer: RangingDevice, technology: Int) {
+                updateRangingData(deviceAddress, RangingSessionAction.OnClosed)
+                _previousRangingData[deviceAddress]?.clear()
+            }
         }
-    }
 
     /**
      * Returns a [Flow] of [ChannelSoundingServiceData] for the given device ID.
@@ -144,7 +122,6 @@ internal class ChannelSoundingManager @Inject constructor(
         device: String,
         updateRate: UpdateRate = UpdateRate.NORMAL
     ) {
-        this.device = device
         if (rangingManager == null) {
             updateRangingData(
                 device,
@@ -152,9 +129,9 @@ internal class ChannelSoundingManager @Inject constructor(
             )
             return
         }
-        // If session is already active then continue the session, otherwise create a new one
-        if (rangingSession != null) {
-            Timber.w("Ranging session already active.")
+        // If session is already active for the device then continue the session, otherwise create a new one.
+        if (_activeSessions.containsKey(device)) {
+            Timber.w("Ranging session already active for device: $device")
             return
         }
         val setRangingUpdateRate = when (updateRate) {
@@ -199,25 +176,23 @@ internal class ChannelSoundingManager @Inject constructor(
             .setSessionConfig(sessionConfig)
             .build()
 
-        rangingCapabilityCallback = RangingManager.RangingCapabilitiesCallback { capabilities ->
+        val rangingCapabilityCallback = RangingManager.RangingCapabilitiesCallback { capabilities ->
             if (capabilities.csCapabilities != null) {
                 if (capabilities.csCapabilities!!.supportedSecurityLevels.contains(1)) {
-                    // Channel Sounding supported
-                    // Check if Ranging Permission is granted before starting the session
                     if (hasRangingPermissions(context)) {
-                        rangingSession = rangingManager.createRangingSession(
+
+                        val session = rangingManager.createRangingSession(
                             context.mainExecutor,
-                            rangingSessionCallback
+                            createRangingSessionCallback(device) // Dynamic device callback
                         )
-                        rangingSession?.let {
+
+                        session?.let {
                             try {
+                                _activeSessions[device] = it
                                 it.addDeviceToRangingSession(rawRangingDeviceConfig)
                             } catch (e: Exception) {
                                 Timber.e("Failed to add device to ranging session: ${e.message}")
-                                updateRangingData(
-                                    device,
-                                    RangingSessionAction.OnClosed
-                                )
+                                updateRangingData(device, RangingSessionAction.OnClosed)
                             } finally {
                                 it.start(rangingPreference)
                             }
@@ -231,9 +206,7 @@ internal class ChannelSoundingManager @Inject constructor(
                     } else {
                         updateRangingData(
                             device,
-                            RangingSessionAction.OnError(
-                                SessionClosedReason.MISSING_PERMISSION
-                            )
+                            RangingSessionAction.OnError(SessionClosedReason.MISSING_PERMISSION)
                         )
                         return@RangingCapabilitiesCallback
                     }
@@ -251,13 +224,10 @@ internal class ChannelSoundingManager @Inject constructor(
                 )
                 closeSession(device)
             }
-
         }
 
-        rangingManager.registerCapabilitiesCallback(
-            context.mainExecutor,
-            rangingCapabilityCallback
-        )
+        _capabilityCallbacks[device] = rangingCapabilityCallback
+        rangingManager.registerCapabilitiesCallback(context.mainExecutor, rangingCapabilityCallback)
     }
 
     /**
@@ -274,10 +244,10 @@ internal class ChannelSoundingManager @Inject constructor(
         deviceAddress: String,
         onClosed: (suspend () -> Unit)? = null
     ) {
-        val session = rangingSession ?: return
+        val session = _activeSessions[deviceAddress] ?: return
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                onClosed ?.let {
+                onClosed?.let {
                     updateRangingData(deviceAddress, RangingSessionAction.OnRestarting)
                 }
                 session.stop()
@@ -285,20 +255,31 @@ internal class ChannelSoundingManager @Inject constructor(
                 delay(1000) // Give the system time to propagate onStopped
                 withContext(Dispatchers.Main) {
                     session.close()
-                    rangingSession = null
-                    rangingManager?.unregisterCapabilitiesCallback(rangingCapabilityCallback)
+                    cleanUpDeviceSession(deviceAddress)
                     delay(1500)
                     onClosed?.let { it() } ?: run {
                         clear(deviceAddress)
                     }
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Error closing ranging session")
+                Timber.e(e, "Error closing ranging session for $deviceAddress")
                 updateRangingData(
-                    device,
+                    deviceAddress,
                     RangingSessionAction.OnError(SessionClosedReason.UNKNOWN)
                 )
             }
+        }
+    }
+
+    /**
+     * Shared helper to cleanly tear down session maps for a specific device.
+     */
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    private fun cleanUpDeviceSession(deviceAddress: String) {
+        _activeSessions.remove(deviceAddress)
+        _previousRangingData.remove(deviceAddress)
+        _capabilityCallbacks.remove(deviceAddress)?.let { callback ->
+            rangingManager?.unregisterCapabilitiesCallback(callback)
         }
     }
 
@@ -353,4 +334,3 @@ internal class ChannelSoundingManager @Inject constructor(
         _dataMap[address]?.update { it.copy(interval = interval) }
 
 }
-

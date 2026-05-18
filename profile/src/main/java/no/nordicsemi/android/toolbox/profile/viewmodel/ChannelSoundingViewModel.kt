@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
@@ -37,10 +38,14 @@ internal class ChannelSoundingViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val channelSoundingManager: ChannelSoundingManager,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    private val _channelSoundingServiceState = MutableStateFlow(ChannelSoundingServiceData())
-    val channelSoundingState = _channelSoundingServiceState.asStateFlow()
+    private val _channelSoundingServiceState =
+        MutableStateFlow<Map<String, ChannelSoundingServiceData>>(emptyMap())
+
+    val channelSoundingState =
+        _channelSoundingServiceState.asStateFlow()
 
     private val address = parameterOf(ProfileDestinationId)
+    private val collectionJobs = mutableMapOf<String, Job>()
 
     init {
         observeChannelSoundingProfile()
@@ -50,7 +55,6 @@ internal class ChannelSoundingViewModel @Inject constructor(
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.CHANNEL_SOUNDING].
      */
     private fun observeChannelSoundingProfile() = viewModelScope.launch {
-        // update state or emit to UI
         deviceRepository.profileHandlerFlow
             .onEach { mapOfPeripheralProfiles ->
                 mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
@@ -71,19 +75,41 @@ internal class ChannelSoundingViewModel @Inject constructor(
     }
 
     /**
+     * Ensures we listen to the data updates for a specific device exactly once.
+     */
+    private fun observeDeviceData(deviceAddress: String) {
+        if (collectionJobs.containsKey(deviceAddress)) return // Already observing this device
+
+        collectionJobs[deviceAddress] = channelSoundingManager.getData(deviceAddress)
+            .onEach { incomingData ->
+                val currentMap = _channelSoundingServiceState.value
+                val existingData = currentMap[deviceAddress] ?: ChannelSoundingServiceData()
+                val updatedData = existingData.copy(
+                    profile = incomingData.profile,
+                    updateRate = incomingData.updateRate,
+                    rangingSessionAction = incomingData.rangingSessionAction,
+                )
+                _channelSoundingServiceState.value = currentMap + (deviceAddress to updatedData)
+            }
+            .launchIn(viewModelScope)
+    }
+
+    /**
      * Starts the Channel Sounding service and observes channel sounding profile data changes.
      */
-    private fun startChannelSounding(address: String, rate: UpdateRate = UpdateRate.NORMAL) {
-        channelSoundingManager.getData(address).onEach {
-            _channelSoundingServiceState.value = _channelSoundingServiceState.value.copy(
-                profile = it.profile,
-                updateRate = it.updateRate,
-                rangingSessionAction = it.rangingSessionAction,
-            )
-        }.launchIn(viewModelScope)
+    private fun startChannelSounding(deviceAddress: String, rate: UpdateRate = UpdateRate.NORMAL) {
+        observeDeviceData(deviceAddress)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             try {
-                channelSoundingManager.startRangingMeasurement(address, rate)
+                val currentDeviceData = _channelSoundingServiceState.value[deviceAddress]
+                if (currentDeviceData != null && currentDeviceData.updateRate != rate) {
+                    channelSoundingManager.closeSession(deviceAddress) {
+                        channelSoundingManager.startRangingMeasurement(deviceAddress, rate)
+                    }
+                } else {
+                    channelSoundingManager.startRangingMeasurement(deviceAddress, rate)
+                }
             } catch (e: Exception) {
                 Timber.e("${e.message}")
             }
@@ -96,55 +122,50 @@ internal class ChannelSoundingViewModel @Inject constructor(
      * Handles events related to the Channel Sounding profile.
      */
     fun onEvent(event: ChannelSoundingEvent) {
+        val targetAddress = address
+
         when (event) {
             is ChannelSoundingEvent.RangingUpdateRate -> {
-                // Stop the current session and start a new one with the updated rate
+                channelSoundingManager.updateRangingRate(targetAddress, event.frequency)
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
                     try {
-                        viewModelScope.launch {
-                            if (_channelSoundingServiceState.value.updateRate != event.frequency) {
-                                channelSoundingManager.closeSession(address) {
-                                    channelSoundingManager.startRangingMeasurement(
-                                        address,
-                                        event.frequency
-                                    )
-                                }
+                        val currentDeviceData = _channelSoundingServiceState.value[targetAddress]
+                        if (currentDeviceData?.updateRate != event.frequency) {
+                            channelSoundingManager.closeSession(targetAddress) {
+                                channelSoundingManager.startRangingMeasurement(
+                                    targetAddress,
+                                    event.frequency
+                                )
                             }
                         }
-
                     } catch (e: Exception) {
                         Timber.e("Error closing session: ${e.message}")
                     }
                 }
-                // Update the update rate in the state
-                channelSoundingManager.updateRangingRate(address, event.frequency)
-
             }
 
             is ChannelSoundingEvent.UpdateInterval -> {
-                channelSoundingManager.updateIntervalRate(address, event.interval)
+                channelSoundingManager.updateIntervalRate(targetAddress, event.interval)
             }
 
             ChannelSoundingEvent.RestartRangingSession -> {
                 // Restart the ranging session with the current update rate
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
                     try {
-                        viewModelScope.launch {
-                            channelSoundingManager.closeSession(address) {
-                                channelSoundingManager.startRangingMeasurement(
-                                    address,
-                                    _channelSoundingServiceState.value.updateRate
-                                )
-                            }
+                        channelSoundingManager.closeSession(targetAddress) {
+                            val deviceData = _channelSoundingServiceState.value[targetAddress]
+                            val targetRate = deviceData?.updateRate ?: UpdateRate.NORMAL
+                            channelSoundingManager.startRangingMeasurement(
+                                targetAddress,
+                                targetRate
+                            )
                         }
-
                     } catch (e: Exception) {
                         Timber.e("Error closing session: ${e.message}")
                     }
                 }
-
             }
         }
     }
-
 }
