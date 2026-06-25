@@ -11,7 +11,7 @@ import no.nordicsemi.kotlin.data.FloatFormat
 import no.nordicsemi.kotlin.data.IntFormat
 import no.nordicsemi.kotlin.data.getFloat
 import no.nordicsemi.kotlin.data.getInt
-import java.nio.ByteOrder
+import no.nordicsemi.kotlin.data.ByteOrder
 
 object GlucoseMeasurementContextParser {
 

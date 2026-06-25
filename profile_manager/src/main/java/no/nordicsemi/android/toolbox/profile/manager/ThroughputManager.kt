@@ -74,7 +74,7 @@ internal class ThroughputManager : ServiceManager {
                 data = byteArrayOf(0x3D),
                 writeType = WriteType.WITHOUT_RESPONSE
             )
-            array.chunked(maxWriteValueLength).map {
+            array.chunked(maxWriteValueLength).forEach {
                 writeCharacteristicProperty.write(
                     data = it,
                     writeType = WriteType.WITHOUT_RESPONSE

@@ -6,7 +6,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.nio.ByteOrder
+import no.nordicsemi.kotlin.data.ByteOrder
 
 class CGMFeatureParserTest {
 

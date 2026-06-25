@@ -150,6 +150,7 @@ internal class CGMManager : ServiceManager {
         }
     }
 
+    @IgnorableReturnValue
     private fun onAccessControlPointDataReceived(
         deviceId: String,
         data: RecordAccessControlPointData,

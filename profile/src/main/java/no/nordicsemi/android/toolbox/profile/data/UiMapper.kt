@@ -9,6 +9,7 @@ fun Reason.displayMessage(): String =
         Reason.Success -> "Device disconnected successfully."
         Reason.TerminateLocalHost -> "Device disconnected by the local host."
         Reason.TerminatePeerUser -> "Device disconnected by the peer user."
+        Reason.RequiredServiceNotFound -> "Required service not found." // This should not happen in nRF Toolbox, not service is required.
         is Reason.Timeout -> "Connection attempt timed out with ${this.duration}."
         is Reason.Unknown -> "Oops...! Connection went on a coffee break."
         Reason.UnsupportedAddress -> "Device disconnected due to unsupported address."

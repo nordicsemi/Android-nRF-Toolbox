@@ -1,5 +1,8 @@
 plugins {
-    alias(libs.plugins.nordic.feature)
+    // https://github.com/nordicsemi/Nordic-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidLibraryConventionPlugin.kt
+    alias(libs.plugins.nordic.android.library)
+    // https://github.com/nordicsemi/Nordic-Gradle-Plugins/blob/main/plugins/src/main/kotlin/KotlinConventionPlugin.kt
+    alias(libs.plugins.nordic.kotlin)
 }
 
 android {
@@ -8,7 +11,8 @@ android {
 
 dependencies {
     implementation(nordic.kotlin.data)
-    implementation(nordic.blek.client.core.android)
+    api(nordic.blek.client.core.android)
+    api(libs.androidx.annotation)
 
     // Unit test dependencies
     testImplementation(libs.junit4)

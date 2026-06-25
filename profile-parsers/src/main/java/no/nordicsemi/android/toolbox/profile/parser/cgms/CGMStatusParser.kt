@@ -5,7 +5,7 @@ import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMStatusEnvelope
 import no.nordicsemi.android.toolbox.profile.parser.common.CRC16
 import no.nordicsemi.kotlin.data.IntFormat
 import no.nordicsemi.kotlin.data.getInt
-import java.nio.ByteOrder
+import no.nordicsemi.kotlin.data.ByteOrder
 
 object CGMStatusParser {
 

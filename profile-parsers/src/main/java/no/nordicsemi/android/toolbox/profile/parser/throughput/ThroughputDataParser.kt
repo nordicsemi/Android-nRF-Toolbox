@@ -2,7 +2,7 @@ package no.nordicsemi.android.toolbox.profile.parser.throughput
 
 import no.nordicsemi.kotlin.data.IntFormat
 import no.nordicsemi.kotlin.data.getInt
-import java.nio.ByteOrder
+import no.nordicsemi.kotlin.data.ByteOrder
 
 object ThroughputDataParser {
 

@@ -49,8 +49,6 @@ internal class DFUManager : ServiceManager {
                     deviceId,
                     DFUsAvailable.MDS_SERVICE
                 )
-
-                else -> null
             }
         } catch (_: Exception) {
             DFURepository.clear(deviceId)

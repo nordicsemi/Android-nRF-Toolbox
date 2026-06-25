@@ -5,7 +5,7 @@ import no.nordicsemi.android.toolbox.profile.parser.directionFinder.PeripheralBl
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.QualityIndicator
 import no.nordicsemi.kotlin.data.IntFormat
 import no.nordicsemi.kotlin.data.getInt
-import java.nio.ByteOrder
+import no.nordicsemi.kotlin.data.ByteOrder
 import kotlin.experimental.and
 
 class DistanceMeasurementDataParser {

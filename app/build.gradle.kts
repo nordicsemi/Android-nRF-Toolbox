@@ -28,15 +28,19 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 plugins {
-    alias(libs.plugins.nordic.application.compose)
-    alias(libs.plugins.nordic.hilt)
+    // https://github.com/nordicsemi/Nordic-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidApplicationConventionPlugin.kt
+    alias(libs.plugins.nordic.android.application)
+    // https://github.com/nordicsemi/Nordic-Gradle-Plugins/blob/main/plugins/src/main/kotlin/HiltComposeConventionPlugin.kt
+    alias(libs.plugins.nordic.feature.hilt.compose)
     alias(libs.plugins.kotlin.parcelize)
 }
-
 if (getGradle().startParameter.taskRequests.toString().contains("Release")) {
-    apply(plugin = "com.google.gms.google-services")
-    apply(plugin = "com.google.firebase.crashlytics")
+    plugins {
+        alias(libs.plugins.google.services)
+        alias(libs.plugins.firebase.crashlytics)
+    }
 }
 
 android {
@@ -60,13 +64,17 @@ dependencies {
     implementation(nordic.core)
     implementation(nordic.scanner.ble)
     implementation(nordic.blek.client.android)
+    implementation(nordic.kotlin.log.timber)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.runtime)
-    implementation(libs.androidx.hilt.navigation.compose)
 
-    // Timber & SLF4J
-    implementation (libs.slf4j.timber)
+    // Temporary fix:
+    // After updating Kotlin to 2.4.0 there's no Hilt (Dagger) version yet updated.
+    // Build fails with error:
+    // [Hilt] Provided Metadata instance has version 2.4.0, while maximum supported version is 2.3.0.
+    //        To support newer versions, update the kotlin-metadata-jvm library.
+    ksp(libs.kotlin.metadata.jvm)
 }

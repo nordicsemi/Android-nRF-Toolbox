@@ -12,8 +12,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -23,6 +24,7 @@ import no.nordicsemi.android.service.R
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManager
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManagerFactory
 import no.nordicsemi.kotlin.ble.client.RemoteService
+import no.nordicsemi.kotlin.ble.client.RemoteServices
 import no.nordicsemi.kotlin.ble.client.android.CentralManager
 import no.nordicsemi.kotlin.ble.client.android.CentralManager.ConnectionOptions
 import no.nordicsemi.kotlin.ble.client.android.Peripheral
@@ -50,10 +52,6 @@ internal class ProfileService : NotificationService() {
     override fun onBind(intent: Intent): IBinder {
         super.onBind(intent)
         return binder
-    }
-
-    override fun onCreate() {
-        super.onCreate()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -146,7 +144,8 @@ internal class ProfileService : NotificationService() {
     ) {
         peripheral
             .services()
-            .filterNotNull()
+            .filterIsInstance<RemoteServices.Discovered>()
+            .map { it.services }
             .onEach { service ->
                 var foundMatchingService = false
                 for (removeService in service) {

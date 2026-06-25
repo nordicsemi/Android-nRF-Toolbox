@@ -5,7 +5,7 @@ import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMFeaturesEnvelop
 import no.nordicsemi.android.toolbox.profile.parser.common.CRC16
 import no.nordicsemi.kotlin.data.IntFormat
 import no.nordicsemi.kotlin.data.getInt
-import java.nio.ByteOrder
+import no.nordicsemi.kotlin.data.ByteOrder
 
 object CGMFeatureParser {
 

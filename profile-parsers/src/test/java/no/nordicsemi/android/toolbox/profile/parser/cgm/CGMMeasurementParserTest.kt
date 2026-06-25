@@ -4,7 +4,7 @@ import no.nordicsemi.android.toolbox.profile.parser.cgms.CGMMeasurementParser
 import no.nordicsemi.android.toolbox.profile.parser.common.CRC16
 import org.junit.Assert.*
 import org.junit.Test
-import java.nio.ByteOrder
+import no.nordicsemi.kotlin.data.ByteOrder
 
 class CGMMeasurementParserTest {
 

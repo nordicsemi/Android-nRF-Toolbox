@@ -46,8 +46,8 @@ internal class ProfileViewModel @Inject constructor(
     val address: String = parameterOf(ProfileDestinationId)
     var peripheral: Peripheral? = null
     private var serviceApi: ServiceApi? = null
-    private val logger: nRFLoggerTree =
-        nRFLoggerTree(context, address, context.getString(R.string.app_name))
+    private val logger: nRFLoggerTree = nRFLoggerTree(context, address, context.getString(R.string.app_name))
+        .apply { setLoggingTagsEnabled(false) }
 
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()

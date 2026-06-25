@@ -33,7 +33,7 @@ package no.nordicsemi.android.toolbox.profile.parser.date
 
 import no.nordicsemi.kotlin.data.IntFormat
 import no.nordicsemi.kotlin.data.getInt
-import java.nio.ByteOrder
+import no.nordicsemi.kotlin.data.ByteOrder
 import java.util.Calendar
 
 internal object DateTimeParser {

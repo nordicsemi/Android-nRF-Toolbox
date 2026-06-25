@@ -7,7 +7,7 @@ import no.nordicsemi.android.toolbox.profile.parser.racp.RACPOpCode
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPResponseCode
 import no.nordicsemi.kotlin.data.IntFormat
 import no.nordicsemi.kotlin.data.getInt
-import java.nio.ByteOrder
+import no.nordicsemi.kotlin.data.ByteOrder
 
 object RecordAccessControlPointParser {
     private const val OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE = 5

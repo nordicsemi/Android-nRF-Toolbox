@@ -4,7 +4,7 @@ import no.nordicsemi.android.toolbox.profile.parser.gls.data.ConcentrationUnit
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.GlucoseStatus
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.RecordType
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.SampleLocation
-import java.nio.ByteOrder
+import no.nordicsemi.kotlin.data.ByteOrder
 import java.util.Calendar
 import kotlin.test.Test
 import kotlin.test.assertEquals
