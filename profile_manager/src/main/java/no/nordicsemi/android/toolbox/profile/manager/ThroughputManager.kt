@@ -13,11 +13,10 @@ import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.WriteType
 import no.nordicsemi.kotlin.ble.core.util.chunked
 import timber.log.Timber
-import java.util.UUID
+import kotlin.uuid.Uuid
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.toKotlinUuid
 
-private val THROUGHPUT_CHAR_UUID = UUID.fromString("00001524-0000-1000-8000-00805F9B34FB")
+private val THROUGHPUT_CHAR_UUID = Uuid.parse("00001524-0000-1000-8000-00805F9B34FB")
 
 internal class ThroughputManager : ServiceManager {
     override val profile: Profile
@@ -31,7 +30,7 @@ internal class ThroughputManager : ServiceManager {
     ) {
         try {
             remoteService.characteristics
-                .firstOrNull { it.uuid == THROUGHPUT_CHAR_UUID.toKotlinUuid() }
+                .firstOrNull { it.uuid == THROUGHPUT_CHAR_UUID }
                 ?.also { writeCharacteristicProperty = it }
         } finally {
             ThroughputRepository.clearData(deviceId)

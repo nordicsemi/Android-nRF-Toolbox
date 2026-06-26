@@ -6,18 +6,16 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import no.nordicsemi.android.toolbox.profile.parser.battery.BatteryLevelParser
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.manager.repository.BatteryRepository
+import no.nordicsemi.android.toolbox.profile.parser.battery.BatteryLevelParser
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.CharacteristicProperty
 import timber.log.Timber
-import java.util.UUID
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.toKotlinUuid
+import kotlin.uuid.Uuid
 
-private val BATTERY_LEVEL_CHARACTERISTIC_UUID: UUID =
-    UUID.fromString("00002A19-0000-1000-8000-00805f9b34fb")
+private val BATTERY_LEVEL_CHARACTERISTIC_UUID: Uuid = Uuid.parse("00002A19-0000-1000-8000-00805f9b34fb")
 
 internal class BatteryManager : ServiceManager {
     override val profile: Profile = Profile.BATTERY
@@ -29,7 +27,7 @@ internal class BatteryManager : ServiceManager {
         scope: CoroutineScope
     ) {
         val batteryChar = remoteService.characteristics
-            .firstOrNull { it.uuid == BATTERY_LEVEL_CHARACTERISTIC_UUID.toKotlinUuid() }
+            .firstOrNull { it.uuid == BATTERY_LEVEL_CHARACTERISTIC_UUID }
 
         batteryChar?.let { characteristic ->
             // If the characteristic supports READ, read the initial value
@@ -48,9 +46,7 @@ internal class BatteryManager : ServiceManager {
                 }
             }
             // Check if the characteristic supports NOTIFY or INDICATE property
-            if (characteristic.properties.contains(CharacteristicProperty.NOTIFY)
-                || characteristic.properties.contains(CharacteristicProperty.INDICATE)
-            ) {
+            if (characteristic.isSubscribable()) {
                 // Start subscription for battery level updates
                 characteristic.subscribe()
                     .mapNotNull { BatteryLevelParser.parse(it) }

@@ -7,7 +7,11 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import no.nordicsemi.android.toolbox.lib.utils.Profile
+import no.nordicsemi.android.toolbox.lib.utils.logAndReport
+import no.nordicsemi.android.toolbox.lib.utils.tryOrLog
+import no.nordicsemi.android.toolbox.profile.data.CGMRecordWithSequenceNumber
+import no.nordicsemi.android.toolbox.profile.manager.repository.CGMRepository
 import no.nordicsemi.android.toolbox.profile.parser.cgms.CGMFeatureParser
 import no.nordicsemi.android.toolbox.profile.parser.cgms.CGMMeasurementParser
 import no.nordicsemi.android.toolbox.profile.parser.cgms.CGMSpecificOpsControlPointParser
@@ -24,26 +28,20 @@ import no.nordicsemi.android.toolbox.profile.parser.gls.data.RequestStatus
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.ResponseData
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPOpCode
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPResponseCode
-import no.nordicsemi.android.toolbox.profile.manager.repository.CGMRepository
-import no.nordicsemi.android.toolbox.lib.utils.Profile
-import no.nordicsemi.android.toolbox.lib.utils.logAndReport
-import no.nordicsemi.android.toolbox.lib.utils.tryOrLog
-import no.nordicsemi.android.toolbox.profile.data.CGMRecordWithSequenceNumber
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.CharacteristicProperty
 import no.nordicsemi.kotlin.ble.core.WriteType
 import timber.log.Timber
-import java.util.UUID
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.toKotlinUuid
+import kotlin.uuid.Uuid
 
-private val CGM_STATUS_UUID = UUID.fromString("00002AA9-0000-1000-8000-00805f9b34fb")
-private val CGM_FEATURE_UUID = UUID.fromString("00002AA8-0000-1000-8000-00805f9b34fb")
-private val CGM_MEASUREMENT_UUID = UUID.fromString("00002AA7-0000-1000-8000-00805f9b34fb")
-private val CGM_OPS_CONTROL_POINT_UUID = UUID.fromString("00002AAC-0000-1000-8000-00805f9b34fb")
+private val CGM_STATUS_UUID = Uuid.parse("00002AA9-0000-1000-8000-00805f9b34fb")
+private val CGM_FEATURE_UUID = Uuid.parse("00002AA8-0000-1000-8000-00805f9b34fb")
+private val CGM_MEASUREMENT_UUID = Uuid.parse("00002AA7-0000-1000-8000-00805f9b34fb")
+private val CGM_OPS_CONTROL_POINT_UUID = Uuid.parse("00002AAC-0000-1000-8000-00805f9b34fb")
 
-private val RACP_UUID = UUID.fromString("00002A52-0000-1000-8000-00805f9b34fb")
+private val RACP_UUID = Uuid.parse("00002A52-0000-1000-8000-00805f9b34fb")
 
 internal class CGMManager : ServiceManager {
     override val profile: Profile
@@ -55,118 +53,117 @@ internal class CGMManager : ServiceManager {
         remoteService: RemoteService,
         scope: CoroutineScope
     ) {
-        withContext(scope.coroutineContext) {
-            // 1. Subscribe to CGM Measurement first
-            remoteService.characteristics
-                .firstOrNull { it.uuid == CGM_MEASUREMENT_UUID.toKotlinUuid() }
-                ?.subscribe()
-                ?.mapNotNull { CGMMeasurementParser.parse(it) }
-                ?.onEach { cgmRecords ->
-                    if (sessionStartTime == 0L && !recordAccessRequestInProgress) {
-                        val timeOffset = cgmRecords.minOf { it.timeOffset }
-                        sessionStartTime = System.currentTimeMillis() - timeOffset * 60000L
-                    }
-
-                    cgmRecords.map {
-                        val timestamp = sessionStartTime + it.timeOffset * 60000L
-                        CGMRecordWithSequenceNumber(it.timeOffset, it, timestamp)
-                    }.apply {
-                        CGMRepository.onMeasurementDataReceived(deviceId, this)
-                    }
-                }
-                ?.onCompletion { CGMRepository.clear(deviceId) }
-                ?.catch { it.logAndReport() }
-                ?.launchIn(scope)
-
-            // 2. Subscribe to RACP and store reference
-            remoteService.characteristics
-                .firstOrNull { it.uuid == RACP_UUID.toKotlinUuid() }
-                ?.let { racpCharacteristic ->
-                    recordAccessControlPointCharacteristic = racpCharacteristic
-                    racpCharacteristic.subscribe()
-                        .mapNotNull { RecordAccessControlPointParser.parse(it) }
-                        .onEach { onAccessControlPointDataReceived(deviceId, it, scope) }
-                        .catch { it.logAndReport() }
-                        .launchIn(scope)
+        // 1. Subscribe to CGM Measurement first
+        remoteService.characteristics
+            .firstOrNull { it.uuid == CGM_MEASUREMENT_UUID }
+            ?.subscribe()
+            ?.mapNotNull { CGMMeasurementParser.parse(it) }
+            ?.onEach { cgmRecords ->
+                if (sessionStartTime == 0L && !recordAccessRequestInProgress) {
+                    val timeOffset = cgmRecords.minOf { it.timeOffset }
+                    sessionStartTime = System.currentTimeMillis() - timeOffset * 60000L
                 }
 
-            // 3. Read CGM Feature
-            remoteService.characteristics
-                .firstOrNull { it.uuid == CGM_FEATURE_UUID.toKotlinUuid() }
-                ?.takeIf { it.properties.contains(CharacteristicProperty.READ) }
-                ?.read()
-                ?.let { CGMFeatureParser.parse(it) }
-                ?.let { secured = it.features.e2eCrcSupported }
-
-            // 4. Read CGM Status
-            remoteService.characteristics
-                .firstOrNull { it.uuid == CGM_STATUS_UUID.toKotlinUuid() }
-                ?.takeIf { it.properties.contains(CharacteristicProperty.READ) }
-                ?.read()
-                ?.let { CGMStatusParser.parse(it) }
-                ?.let {
-                    if (!it.status.sessionStopped) {
-                        sessionStartTime = System.currentTimeMillis() - it.timeOffset * 60000L
-                    }
+                cgmRecords.map {
+                    val timestamp = sessionStartTime + it.timeOffset * 60000L
+                    CGMRecordWithSequenceNumber(it.timeOffset, it, timestamp)
+                }.apply {
+                    CGMRepository.onMeasurementDataReceived(deviceId, this)
                 }
+            }
+            ?.onCompletion { CGMRepository.clear(deviceId) }
+            ?.catch { it.logAndReport() }
+            ?.launchIn(scope)
 
-            // 5. Subscribe to Ops Control Point
-            remoteService.characteristics
-                .firstOrNull { it.uuid == CGM_OPS_CONTROL_POINT_UUID.toKotlinUuid() }
-                ?.let { cgmOpsControlPointCharacteristic ->
-                    opsControlPointCharacteristic = cgmOpsControlPointCharacteristic
-                    cgmOpsControlPointCharacteristic.subscribe()
-                        .mapNotNull { CGMSpecificOpsControlPointParser.parse(it) }
-                        .onEach {
-                            if (it.isOperationCompleted) {
-                                sessionStartTime =
-                                    if (it.requestCode == CGMOpCode.CGM_OP_CODE_START_SESSION)
-                                        System.currentTimeMillis() else 0
-                            } else if (
-                                it.requestCode == CGMOpCode.CGM_OP_CODE_START_SESSION &&
-                                it.errorCode == CGMErrorCode.CGM_ERROR_PROCEDURE_NOT_COMPLETED
-                            ) {
-                                sessionStartTime = 0
-                            } else if (it.requestCode == CGMOpCode.CGM_OP_CODE_STOP_SESSION) {
-                                sessionStartTime = 0
-                            }
+        // 2. Subscribe to RACP and store reference
+        remoteService.characteristics
+            .firstOrNull { it.uuid == RACP_UUID }
+            ?.let { racpCharacteristic ->
+                recordAccessControlPointCharacteristic = racpCharacteristic
+                racpCharacteristic.subscribe()
+                    .mapNotNull { RecordAccessControlPointParser.parse(it) }
+                    .onEach { onAccessControlPointDataReceived(deviceId, it, scope) }
+                    .catch { it.logAndReport() }
+                    .launchIn(scope)
+            }
+
+        // 3. Read CGM Feature
+        remoteService.characteristics
+            .firstOrNull { it.uuid == CGM_FEATURE_UUID }
+            ?.takeIf { it.properties.contains(CharacteristicProperty.READ) }
+            ?.read()
+            ?.let { CGMFeatureParser.parse(it) }
+            ?.let { secured = it.features.e2eCrcSupported }
+
+        // 4. Read CGM Status
+        remoteService.characteristics
+            .firstOrNull { it.uuid == CGM_STATUS_UUID }
+            ?.takeIf { it.properties.contains(CharacteristicProperty.READ) }
+            ?.read()
+            ?.let { CGMStatusParser.parse(it) }
+            ?.let {
+                if (!it.status.sessionStopped) {
+                    sessionStartTime = System.currentTimeMillis() - it.timeOffset * 60000L
+                }
+            }
+
+        // 5. Subscribe to Ops Control Point
+        remoteService.characteristics
+            .firstOrNull { it.uuid == CGM_OPS_CONTROL_POINT_UUID }
+            ?.let { cgmOpsControlPointCharacteristic ->
+                opsControlPointCharacteristic = cgmOpsControlPointCharacteristic
+                cgmOpsControlPointCharacteristic.subscribe()
+                    .mapNotNull { CGMSpecificOpsControlPointParser.parse(it) }
+                    .onEach {
+                        if (it.isOperationCompleted) {
+                            sessionStartTime =
+                                if (it.requestCode == CGMOpCode.CGM_OP_CODE_START_SESSION)
+                                    System.currentTimeMillis() else 0
+                        } else if (
+                            it.requestCode == CGMOpCode.CGM_OP_CODE_START_SESSION &&
+                            it.errorCode == CGMErrorCode.CGM_ERROR_PROCEDURE_NOT_COMPLETED
+                        ) {
+                            sessionStartTime = 0
+                        } else if (it.requestCode == CGMOpCode.CGM_OP_CODE_STOP_SESSION) {
+                            sessionStartTime = 0
                         }
-                        .onCompletion { CGMRepository.clear(deviceId) }
-                        .catch { it.logAndReport() }
-                        .launchIn(scope)
-                }
+                    }
+                    .onCompletion { CGMRepository.clear(deviceId) }
+                    .catch { it.logAndReport() }
+                    .launchIn(scope)
+            }
 
-            // 6. Write to Ops Control if needed
-            if (sessionStartTime == 0L) {
-                try {
-                    opsControlPointCharacteristic.write(
-                        CGMSpecificOpsControlPointDataParser.startSession(secured),
-                        WriteType.WITH_RESPONSE
-                    )
-                } catch (e: Exception) {
-                    Timber.e("Error while starting session: ${e.message}")
-                }
+        // 6. Write to Ops Control if needed
+        if (sessionStartTime == 0L) {
+            try {
+                opsControlPointCharacteristic.write(
+                    CGMSpecificOpsControlPointDataParser.startSession(secured),
+                    WriteType.WITH_RESPONSE
+                )
+            } catch (e: Exception) {
+                Timber.e("Error while starting session: ${e.message}")
             }
         }
     }
 
-    @IgnorableReturnValue
     private fun onAccessControlPointDataReceived(
         deviceId: String,
         data: RecordAccessControlPointData,
         scope: CoroutineScope
-    ) = scope.launch {
-        when (data) {
-            is NumberOfRecordsData -> onNumberOfRecordsReceived(deviceId, data.numberOfRecords)
+    ) {
+        scope.launch {
+            when (data) {
+                is NumberOfRecordsData -> onNumberOfRecordsReceived(deviceId, data.numberOfRecords)
 
-            is ResponseData -> when (data.responseCode) {
-                RACPResponseCode.RACP_RESPONSE_SUCCESS ->
-                    onRecordAccessOperationCompleted(deviceId, data.requestCode)
+                is ResponseData -> when (data.responseCode) {
+                    RACPResponseCode.RACP_RESPONSE_SUCCESS ->
+                        onRecordAccessOperationCompleted(deviceId, data.requestCode)
 
-                RACPResponseCode.RACP_ERROR_NO_RECORDS_FOUND ->
-                    onRecordAccessOperationCompletedWithNoRecordsFound(deviceId)
+                    RACPResponseCode.RACP_ERROR_NO_RECORDS_FOUND ->
+                        onRecordAccessOperationCompletedWithNoRecordsFound(deviceId)
 
-                else -> onRecordAccessOperationError(deviceId, data.responseCode)
+                    else -> onRecordAccessOperationError(deviceId, data.responseCode)
+                }
             }
         }
     }

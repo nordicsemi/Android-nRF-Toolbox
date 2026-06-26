@@ -6,21 +6,17 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.withContext
-import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSDataParser
-import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSFeatureDataParser
-import no.nordicsemi.android.toolbox.profile.manager.repository.RSCSRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.lib.utils.logAndReport
+import no.nordicsemi.android.toolbox.profile.manager.repository.RSCSRepository
+import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSDataParser
+import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSFeatureDataParser
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import java.util.UUID
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.toKotlinUuid
+import kotlin.uuid.Uuid
 
-private val RSC_MEASUREMENT_CHARACTERISTIC_UUID =
-    UUID.fromString("00002A53-0000-1000-8000-00805F9B34FB")
-private val RSC_FEATURE_CHARACTERISTIC_UUID =
-    UUID.fromString("00002A54-0000-1000-8000-00805F9B34FB")
+private val RSC_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A53-0000-1000-8000-00805F9B34FB")
+private val RSC_FEATURE_CHARACTERISTIC_UUID = Uuid.parse("00002A54-0000-1000-8000-00805F9B34FB")
 
 internal class RSCSManager : ServiceManager {
     override val profile: Profile
@@ -32,24 +28,23 @@ internal class RSCSManager : ServiceManager {
         remoteService: RemoteService,
         scope: CoroutineScope
     ) {
-        withContext(scope.coroutineContext) {
-            remoteService.characteristics
-                .firstOrNull { it.uuid == RSC_MEASUREMENT_CHARACTERISTIC_UUID.toKotlinUuid() }
-                ?.subscribe()
-                ?.mapNotNull { RSCSDataParser.parse(it) }
-                ?.onEach { RSCSRepository.onRSCSDataChanged(deviceId, it) }
-                ?.catch { it.logAndReport() }
-                ?.onCompletion { RSCSRepository.clear(deviceId) }
-                ?.launchIn(scope)
+        remoteService.characteristics
+            .firstOrNull { it.uuid == RSC_MEASUREMENT_CHARACTERISTIC_UUID }
+            ?.subscribe()
+            ?.mapNotNull { RSCSDataParser.parse(it) }
+            ?.onEach { RSCSRepository.onRSCSDataChanged(deviceId, it) }
+            ?.catch { it.logAndReport() }
+            ?.onCompletion { RSCSRepository.clear(deviceId) }
+            ?.launchIn(scope)
 
-            remoteService.characteristics
-                .firstOrNull { it.uuid == RSC_FEATURE_CHARACTERISTIC_UUID.toKotlinUuid() }
-                ?.read()
-                ?.let {
-                    RSCSFeatureDataParser.parse(it)
-                }?.also {
-                    RSCSRepository.updateRSCSFeatureData(deviceId, it)
-                }
-        }
+        remoteService.characteristics
+            .firstOrNull { it.uuid == RSC_FEATURE_CHARACTERISTIC_UUID }
+            ?.read()
+            ?.let {
+                RSCSFeatureDataParser.parse(it)
+            }
+            ?.also {
+                RSCSRepository.updateRSCSFeatureData(deviceId, it)
+            }
     }
 }

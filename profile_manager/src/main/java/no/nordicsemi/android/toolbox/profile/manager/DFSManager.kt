@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.withContext
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.lib.utils.logAndReport
 import no.nordicsemi.android.toolbox.profile.manager.repository.DFSRepository
@@ -27,16 +26,11 @@ import timber.log.Timber
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-private val DISTANCE_MEASUREMENT_CHARACTERISTIC_UUID =
-    Uuid.parse("21490001-494a-4573-98af-f126af76f490")
-private val AZIMUTH_MEASUREMENT_CHARACTERISTIC_UUID =
-    Uuid.parse("21490002-494a-4573-98af-f126af76f490")
-private val ELEVATION_MEASUREMENT_CHARACTERISTIC_UUID =
-    Uuid.parse("21490003-494a-4573-98af-f126af76f490")
-private val DDF_FEATURE_CHARACTERISTIC_UUID =
-    Uuid.parse("21490004-494a-4573-98af-f126af76f490")
-private val CONTROL_POINT_CHARACTERISTIC_UUID =
-    Uuid.parse("21490005-494a-4573-98af-f126af76f490")
+private val DISTANCE_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("21490001-494a-4573-98af-f126af76f490")
+private val AZIMUTH_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("21490002-494a-4573-98af-f126af76f490")
+private val ELEVATION_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("21490003-494a-4573-98af-f126af76f490")
+private val DDF_FEATURE_CHARACTERISTIC_UUID = Uuid.parse("21490004-494a-4573-98af-f126af76f490")
+private val CONTROL_POINT_CHARACTERISTIC_UUID = Uuid.parse("21490005-494a-4573-98af-f126af76f490")
 
 internal class DFSManager : ServiceManager {
     override val profile: Profile
@@ -48,57 +42,55 @@ internal class DFSManager : ServiceManager {
         remoteService: RemoteService,
         scope: CoroutineScope
     ) {
-        withContext(scope.coroutineContext) {
-            remoteService.characteristics
-                .firstOrNull { it.uuid == AZIMUTH_MEASUREMENT_CHARACTERISTIC_UUID }
-                ?.subscribe()
-                ?.mapNotNull { AzimuthalMeasurementDataParser().parse(it) }
-                ?.onEach { DFSRepository.addNewAzimuth(deviceId, it) }
-                ?.catch { it.logAndReport() }
-                ?.onCompletion { DFSRepository.clear(deviceId) }
-                ?.launchIn(scope)
+        remoteService.characteristics
+            .firstOrNull { it.uuid == AZIMUTH_MEASUREMENT_CHARACTERISTIC_UUID }
+            ?.subscribe()
+            ?.mapNotNull { AzimuthalMeasurementDataParser().parse(it) }
+            ?.onEach { DFSRepository.addNewAzimuth(deviceId, it) }
+            ?.catch { it.logAndReport() }
+            ?.onCompletion { DFSRepository.clear(deviceId) }
+            ?.launchIn(scope)
 
-            remoteService.characteristics
-                .firstOrNull { it.uuid == DISTANCE_MEASUREMENT_CHARACTERISTIC_UUID }
-                ?.subscribe()
-                ?.mapNotNull { DistanceMeasurementDataParser().parse(it) }
-                ?.onEach { DFSRepository.addNewDistance(deviceId, it) }
-                ?.catch { it.logAndReport() }
-                ?.onCompletion { DFSRepository.clear(deviceId) }
-                ?.launchIn(scope)
+        remoteService.characteristics
+            .firstOrNull { it.uuid == DISTANCE_MEASUREMENT_CHARACTERISTIC_UUID }
+            ?.subscribe()
+            ?.mapNotNull { DistanceMeasurementDataParser().parse(it) }
+            ?.onEach { DFSRepository.addNewDistance(deviceId, it) }
+            ?.catch { it.logAndReport() }
+            ?.onCompletion { DFSRepository.clear(deviceId) }
+            ?.launchIn(scope)
 
-            remoteService.characteristics
-                .firstOrNull { it.uuid == ELEVATION_MEASUREMENT_CHARACTERISTIC_UUID }
-                ?.subscribe()
-                ?.mapNotNull { ElevationMeasurementDataParser().parse(it) }
-                ?.onEach { DFSRepository.addNewElevation(deviceId, it) }
-                ?.catch { it.logAndReport() }
-                ?.onCompletion { DFSRepository.clear(deviceId) }
-                ?.launchIn(scope)
+        remoteService.characteristics
+            .firstOrNull { it.uuid == ELEVATION_MEASUREMENT_CHARACTERISTIC_UUID }
+            ?.subscribe()
+            ?.mapNotNull { ElevationMeasurementDataParser().parse(it) }
+            ?.onEach { DFSRepository.addNewElevation(deviceId, it) }
+            ?.catch { it.logAndReport() }
+            ?.onCompletion { DFSRepository.clear(deviceId) }
+            ?.launchIn(scope)
 
-            val ddfFeatureCharacteristics = remoteService.characteristics
-                .firstOrNull { it.uuid == DDF_FEATURE_CHARACTERISTIC_UUID }
-                ?.apply { ddfFeatureCharacteristic = this }
-            val isReadPropertyAvailable = ddfFeatureCharacteristics
-                ?.properties?.contains(CharacteristicProperty.READ)
-            if (isReadPropertyAvailable == true) {
-                ddfFeatureCharacteristics.read()
-                    .let { DDFDataParser().parse(it) }
-                    ?.apply { DFSRepository.setAvailableDistanceModes(deviceId, this) }
-            } else {
-                Timber.e("Characteristic Property READ is not available for $ddfFeatureCharacteristics")
-            }
-
-            remoteService.characteristics
-                .firstOrNull { it.uuid == CONTROL_POINT_CHARACTERISTIC_UUID }
-                ?.apply { controlPointCharacteristic = this }
-                ?.subscribe()
-                ?.mapNotNull { ControlPointDataParser().parse(it) }
-                ?.onEach { DFSRepository.onControlPointDataReceived(deviceId, it, scope) }
-                ?.catch { it.logAndReport() }
-                ?.onCompletion { DFSRepository.clear(deviceId) }
-                ?.launchIn(scope)
+        val ddfFeatureCharacteristics = remoteService.characteristics
+            .firstOrNull { it.uuid == DDF_FEATURE_CHARACTERISTIC_UUID }
+            ?.apply { ddfFeatureCharacteristic = this }
+        val isReadPropertyAvailable = ddfFeatureCharacteristics
+            ?.properties?.contains(CharacteristicProperty.READ)
+        if (isReadPropertyAvailable == true) {
+            ddfFeatureCharacteristics.read()
+                .let { DDFDataParser().parse(it) }
+                ?.apply { DFSRepository.setAvailableDistanceModes(deviceId, this) }
+        } else {
+            Timber.e("Characteristic Property READ is not available for $ddfFeatureCharacteristics")
         }
+
+        remoteService.characteristics
+            .firstOrNull { it.uuid == CONTROL_POINT_CHARACTERISTIC_UUID }
+            ?.apply { controlPointCharacteristic = this }
+            ?.subscribe()
+            ?.mapNotNull { ControlPointDataParser().parse(it) }
+            ?.onEach { DFSRepository.onControlPointDataReceived(deviceId, it, scope) }
+            ?.catch { it.logAndReport() }
+            ?.onCompletion { DFSRepository.clear(deviceId) }
+            ?.launchIn(scope)
     }
 
     companion object {

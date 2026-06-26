@@ -149,8 +149,7 @@ internal class ProfileService : NotificationService() {
             .onEach { service ->
                 var foundMatchingService = false
                 for (removeService in service) {
-                    ServiceManagerFactory
-                        .createServiceManager(removeService.uuid)
+                    ServiceManagerFactory.createServiceManager(removeService.uuid)
                         ?.also { manager ->
                             foundMatchingService = true
                             _devices.update { currentMap ->
@@ -172,7 +171,8 @@ internal class ProfileService : NotificationService() {
                 } else {
                     _isMissingServices.update { it + (peripheral.address to true) }
                 }
-            }.launchIn(scope)
+            }
+            .launchIn(scope)
 
     }
 

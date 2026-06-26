@@ -7,7 +7,11 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import no.nordicsemi.android.toolbox.lib.utils.Profile
+import no.nordicsemi.android.toolbox.lib.utils.logAndReport
+import no.nordicsemi.android.toolbox.lib.utils.tryOrLog
+import no.nordicsemi.android.toolbox.profile.manager.repository.GLSRepository
+import no.nordicsemi.android.toolbox.profile.manager.repository.GLSRepository.updateNewRequestStatus
 import no.nordicsemi.android.toolbox.profile.parser.common.WorkingMode
 import no.nordicsemi.android.toolbox.profile.parser.gls.GlucoseMeasurementContextParser
 import no.nordicsemi.android.toolbox.profile.parser.gls.GlucoseMeasurementParser
@@ -19,24 +23,16 @@ import no.nordicsemi.android.toolbox.profile.parser.gls.data.RequestStatus
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.ResponseData
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPOpCode
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPResponseCode
-import no.nordicsemi.android.toolbox.profile.manager.repository.GLSRepository
-import no.nordicsemi.android.toolbox.profile.manager.repository.GLSRepository.updateNewRequestStatus
-import no.nordicsemi.android.toolbox.lib.utils.Profile
-import no.nordicsemi.android.toolbox.lib.utils.logAndReport
-import no.nordicsemi.android.toolbox.lib.utils.tryOrLog
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.WriteType
-import java.util.UUID
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.toKotlinUuid
+import kotlin.uuid.Uuid
 
-private val GLUCOSE_MEASUREMENT_CHARACTERISTIC =
-    UUID.fromString("00002A18-0000-1000-8000-00805f9b34fb")
-private val GLUCOSE_MEASUREMENT_CONTEXT_CHARACTERISTIC =
-    UUID.fromString("00002A34-0000-1000-8000-00805f9b34fb")
-private val GLUCOSE_FEATURE_CHARACTERISTIC = UUID.fromString("00002A51-0000-1000-8000-00805f9b34fb")
-private val RACP_CHARACTERISTIC = UUID.fromString("00002A52-0000-1000-8000-00805f9b34fb")
+private val GLUCOSE_MEASUREMENT_CHARACTERISTIC = Uuid.parse("00002A18-0000-1000-8000-00805f9b34fb")
+private val GLUCOSE_MEASUREMENT_CONTEXT_CHARACTERISTIC = Uuid.parse("00002A34-0000-1000-8000-00805f9b34fb")
+private val GLUCOSE_FEATURE_CHARACTERISTIC = Uuid.parse("00002A51-0000-1000-8000-00805f9b34fb")
+private val RACP_CHARACTERISTIC = Uuid.parse("00002A52-0000-1000-8000-00805f9b34fb")
 
 internal class GLSManager : ServiceManager {
     override val profile: Profile = Profile.GLS
@@ -47,54 +43,54 @@ internal class GLSManager : ServiceManager {
         remoteService: RemoteService,
         scope: CoroutineScope
     ) {
-        withContext(scope.coroutineContext) {
-            remoteService.characteristics
-                .firstOrNull { it.uuid == GLUCOSE_MEASUREMENT_CHARACTERISTIC.toKotlinUuid() }
-                ?.subscribe()
-                ?.mapNotNull { GlucoseMeasurementParser.parse(it) }
-                ?.onEach { GLSRepository.updateNewRecord(deviceId, it) }
-                ?.onCompletion { GLSRepository.clear(deviceId) }
-                ?.catch { it.logAndReport() }
-                ?.launchIn(scope)
+        remoteService.characteristics
+            .firstOrNull { it.uuid == GLUCOSE_MEASUREMENT_CHARACTERISTIC }
+            ?.subscribe()
+            ?.mapNotNull { GlucoseMeasurementParser.parse(it) }
+            ?.onEach { GLSRepository.updateNewRecord(deviceId, it) }
+            ?.onCompletion { GLSRepository.clear(deviceId) }
+            ?.catch { it.logAndReport() }
+            ?.launchIn(scope)
 
-            remoteService.characteristics
-                .firstOrNull { it.uuid == GLUCOSE_MEASUREMENT_CONTEXT_CHARACTERISTIC.toKotlinUuid() }
-                ?.subscribe()
-                ?.mapNotNull { GlucoseMeasurementContextParser.parse(it) }
-                ?.onEach { GLSRepository.updateWithNewContext(deviceId, it) }
-                ?.onCompletion { GLSRepository.clear(deviceId) }
-                ?.catch { it.logAndReport() }
-                ?.launchIn(scope)
+        remoteService.characteristics
+            .firstOrNull { it.uuid == GLUCOSE_MEASUREMENT_CONTEXT_CHARACTERISTIC }
+            ?.subscribe()
+            ?.mapNotNull { GlucoseMeasurementContextParser.parse(it) }
+            ?.onEach { GLSRepository.updateWithNewContext(deviceId, it) }
+            ?.onCompletion { GLSRepository.clear(deviceId) }
+            ?.catch { it.logAndReport() }
+            ?.launchIn(scope)
 
-            remoteService.characteristics
-                .firstOrNull { it.uuid == RACP_CHARACTERISTIC.toKotlinUuid() }
-                ?.apply { recordAccessControlPointCharacteristic = this }
-                ?.subscribe()
-                ?.mapNotNull { RecordAccessControlPointParser.parse(it) }
-                ?.onEach { onAccessControlPointDataReceived(deviceId, it, scope) }
-                ?.catch { it.logAndReport() }
-                ?.launchIn(scope)
-        }
+        remoteService.characteristics
+            .firstOrNull { it.uuid == RACP_CHARACTERISTIC }
+            ?.apply { recordAccessControlPointCharacteristic = this }
+            ?.subscribe()
+            ?.mapNotNull { RecordAccessControlPointParser.parse(it) }
+            ?.onEach { onAccessControlPointDataReceived(deviceId, it, scope) }
+            ?.catch { it.logAndReport() }
+            ?.launchIn(scope)
     }
 
     private fun onAccessControlPointDataReceived(
         deviceId: String,
         data: RecordAccessControlPointData,
         scope: CoroutineScope
-    ) = scope.launch {
-        when (data) {
-            is NumberOfRecordsData -> onNumberOfRecordsReceived(deviceId, data.numberOfRecords)
+    ) {
+        scope.launch {
+            when (data) {
+                is NumberOfRecordsData -> onNumberOfRecordsReceived(deviceId, data.numberOfRecords)
 
-            is ResponseData -> when (data.responseCode) {
-                RACPResponseCode.RACP_RESPONSE_SUCCESS -> onRecordAccessOperationCompleted(
-                    deviceId,
-                    data.requestCode
-                )
+                is ResponseData -> when (data.responseCode) {
+                    RACPResponseCode.RACP_RESPONSE_SUCCESS -> onRecordAccessOperationCompleted(
+                        deviceId,
+                        data.requestCode
+                    )
 
-                RACPResponseCode.RACP_ERROR_OP_CODE_NOT_SUPPORTED ->
-                    onRecordAccessOperationCompletedWithNoRecordsFound(deviceId)
+                    RACPResponseCode.RACP_ERROR_OP_CODE_NOT_SUPPORTED ->
+                        onRecordAccessOperationCompletedWithNoRecordsFound(deviceId)
 
-                else -> onRecordAccessOperationError(deviceId, data.responseCode)
+                    else -> onRecordAccessOperationError(deviceId, data.responseCode)
+                }
             }
         }
     }
@@ -173,12 +169,9 @@ internal class GLSManager : ServiceManager {
         ) {
             try {
                 block()
-
             } catch (e: Exception) {
-                e.printStackTrace()
                 updateNewRequestStatus(deviceId, RequestStatus.FAILED)
             }
         }
-
     }
 }

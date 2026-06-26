@@ -7,7 +7,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -54,24 +53,23 @@ internal class ChannelSoundingViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.CHANNEL_SOUNDING].
      */
-    private fun observeChannelSoundingProfile() = viewModelScope.launch {
+    private fun observeChannelSoundingProfile() {
         deviceRepository.profileHandlerFlow
             .onEach { mapOfPeripheralProfiles ->
                 mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
                     if (peripheral.address == address) {
                         profiles.filter { it.profile == Profile.CHANNEL_SOUNDING }
                             .forEach { _ ->
-                                launch {
-                                    peripheral.bondState
-                                        .filter { it == BondState.BONDED }
-                                        .first()
+                                viewModelScope.launch {
+                                    peripheral.bondState.first { it == BondState.BONDED }
                                     // Wait until the device is bonded before starting channel sounding
                                     startChannelSounding(peripheral.address)
                                 }
                             }
                     }
                 }
-            }.launchIn(this)
+            }
+            .launchIn(viewModelScope)
     }
 
     /**

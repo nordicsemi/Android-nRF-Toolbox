@@ -64,52 +64,54 @@ internal class ProfileViewModel @Inject constructor(
             peripheral = it.getPeripheral(address)
         }
 
-    private fun observeConnectedDevices() = viewModelScope.launch {
-        // Combine flows from the service to create a single UI state.
-        val api = getServiceApi()
+    private fun observeConnectedDevices() {
+        viewModelScope.launch {
+            // Combine flows from the service to create a single UI state.
+            val api = getServiceApi()
 
-        // Combine flows from the service to create a single UI state.
-        combine(
-            api.devices,
-            api.isMissingServices,
-            api.disconnectionEvent
-        ) { devices, missingServicesMap, disconnection ->
-            deviceRepository.updateConnectedDevices(devices)
-            val deviceData = devices[address]
-            val isMissingServices = missingServicesMap[address] ?: false
-            // Determine the UI state based on the service's state
-            if (deviceData != null) {
-                // Update connected device info in the repository
-                deviceRepository.updateProfilePeripheralPair(
-                    deviceData.peripheral,
-                    deviceData.services
-                )
-                deviceData.services.forEach {
-                    deviceRepository.updateAnalytics(
-                        address,
-                        it.profile
+            // Combine flows from the service to create a single UI state.
+            combine(
+                api.devices,
+                api.isMissingServices,
+                api.disconnectionEvent
+            ) { devices, missingServicesMap, disconnection ->
+                deviceRepository.updateConnectedDevices(devices)
+                val deviceData = devices[address]
+                val isMissingServices = missingServicesMap[address] ?: false
+                // Determine the UI state based on the service's state
+                if (deviceData != null) {
+                    // Update connected device info in the repository
+                    deviceRepository.updateProfilePeripheralPair(
+                        deviceData.peripheral,
+                        deviceData.services
                     )
+                    deviceData.services.forEach {
+                        deviceRepository.updateAnalytics(
+                            address,
+                            it.profile
+                        )
+                    }
+                    val currentMaxVal =
+                        (_uiState.value as? ProfileUiState.Connected)?.maxValueLength
+                    ProfileUiState.Connected(deviceData, isMissingServices, currentMaxVal)
+                } else {
+                    // If the device is not in the map, it's disconnected.
+                    // Check if there's a specific disconnection event for this device.
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                        channelSoundingManager.get()?.closeSession(address)
+                    }
+                    val reason =
+                        if (disconnection?.address == address) disconnection.reason else null
+                    deviceRepository.removeLoggedProfile(address)
+                    // Close channel sounding session if active
+                    ProfileUiState.Disconnected(reason)
                 }
-                val currentMaxVal =
-                    (_uiState.value as? ProfileUiState.Connected)?.maxValueLength
-                ProfileUiState.Connected(deviceData, isMissingServices, currentMaxVal)
-            } else {
-                // If the device is not in the map, it's disconnected.
-                // Check if there's a specific disconnection event for this device.
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                    channelSoundingManager.get()?.closeSession(address)
-                }
-                val reason =
-                    if (disconnection?.address == address) disconnection.reason else null
-                deviceRepository.removeLoggedProfile(address)
-                // Close channel sounding session if active
-                ProfileUiState.Disconnected(reason)
+            }.catch { e ->
+                Timber.e(e, "Error observing profile state")
+                // You could emit a generic error state here if needed
+            }.collect { state ->
+                _uiState.value = state
             }
-        }.catch { e ->
-            Timber.e(e, "Error observing profile state")
-            // You could emit a generic error state here if needed
-        }.collect { state ->
-            _uiState.value = state
         }
     }
 
@@ -117,12 +119,14 @@ internal class ProfileViewModel @Inject constructor(
      * Connect to the peripheral with the given address. Before connecting, the service must be bound.
      * The service will be started if not already running.
      */
-    private fun connectToPeripheral() = viewModelScope.launch {
-        // Connect to the peripheral
-        getServiceApi().let {
-            if (it.getPeripheral(address) == null) peripheral = it.getPeripheral(address)
-            if (peripheral?.isConnected != true) {
-                profileServiceManager.connectToPeripheral(address)
+    private fun connectToPeripheral() {
+        viewModelScope.launch {
+            // Connect to the peripheral
+            getServiceApi().let {
+                if (it.getPeripheral(address) == null) peripheral = it.getPeripheral(address)
+                if (peripheral?.isConnected != true) {
+                    profileServiceManager.connectToPeripheral(address)
+                }
             }
         }
     }
@@ -165,10 +169,12 @@ internal class ProfileViewModel @Inject constructor(
         }
     }
 
-    private fun requestMaxWriteValue() = viewModelScope.launch {
-        val mtu = serviceApi?.getMaxWriteValue(address)
-        _uiState.update {
-            (it as? ProfileUiState.Connected)?.copy(maxValueLength = mtu) ?: it
+    private fun requestMaxWriteValue() {
+        viewModelScope.launch {
+            val mtu = serviceApi?.getMaxWriteValue(address)
+            _uiState.update {
+                (it as? ProfileUiState.Connected)?.copy(maxValueLength = mtu) ?: it
+            }
         }
     }
 
@@ -181,6 +187,5 @@ internal class ProfileViewModel @Inject constructor(
         Timber.uproot(logger)
         profileServiceManager.unbindService()
         serviceApi = null
-        super.onCleared()
     }
 }

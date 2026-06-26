@@ -37,6 +37,7 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
 
 @Singleton
 internal class ChannelSoundingManager @Inject constructor(
@@ -104,9 +105,8 @@ internal class ChannelSoundingManager @Inject constructor(
      * Returns a [Flow] of [ChannelSoundingServiceData] for the given device ID.
      * If no data exists for the device, a new [MutableStateFlow] with default [ChannelSoundingServiceData] is created.
      */
-    fun getData(deviceId: String): Flow<ChannelSoundingServiceData> {
-        return _dataMap.getOrPut(deviceId) { MutableStateFlow(ChannelSoundingServiceData()) }
-    }
+    fun getData(deviceId: String): Flow<ChannelSoundingServiceData> =
+        _dataMap.getOrPut(deviceId) { MutableStateFlow(ChannelSoundingServiceData()) }
 
     /**
      * Adds a device to the ranging session and starts the session if not already active.
@@ -252,11 +252,11 @@ internal class ChannelSoundingManager @Inject constructor(
                 }
                 session.stop()
                 // Wait for onStopped() or onClosed() before closing
-                delay(1000) // Give the system time to propagate onStopped
+                delay(1.seconds) // Give the system time to propagate onStopped
                 withContext(Dispatchers.Main) {
                     session.close()
                     cleanUpDeviceSession(deviceAddress)
-                    delay(1500)
+                    delay(1.5.seconds)
                     onClosed?.let { it() } ?: run {
                         clear(deviceAddress)
                     }
@@ -304,7 +304,9 @@ internal class ChannelSoundingManager @Inject constructor(
      *
      * @param deviceId The ID of the device whose data should be cleared.
      */
-    fun clear(deviceId: String) = _dataMap.remove(deviceId)
+    fun clear(deviceId: String) {
+        _dataMap.remove(deviceId)
+    }
 
     /**
      * Updates the ranging session action for the specified device.
@@ -312,8 +314,9 @@ internal class ChannelSoundingManager @Inject constructor(
      * @param deviceId The ID of the device to update.
      * @param rangingData The new ranging session action to set.
      */
-    fun updateRangingData(deviceId: String, rangingData: RangingSessionAction) =
+    fun updateRangingData(deviceId: String, rangingData: RangingSessionAction) {
         _dataMap[deviceId]?.update { it.copy(rangingSessionAction = rangingData) }
+    }
 
     /**
      * Updates the ranging update rate for the specified device.
@@ -321,8 +324,9 @@ internal class ChannelSoundingManager @Inject constructor(
      * @param address The ID of the device to update.
      * @param frequency The new update rate to set.
      */
-    fun updateRangingRate(address: String, frequency: UpdateRate) =
+    fun updateRangingRate(address: String, frequency: UpdateRate) {
         _dataMap[address]?.update { it.copy(updateRate = frequency) }
+    }
 
     /**
      * Updates the interval rate for the specified device.
@@ -330,7 +334,8 @@ internal class ChannelSoundingManager @Inject constructor(
      * @param address The ID of the device to update.
      * @param interval The new interval rate to set.
      */
-    fun updateIntervalRate(address: String, interval: Int) =
+    fun updateIntervalRate(address: String, interval: Int) {
         _dataMap[address]?.update { it.copy(interval = interval) }
+    }
 
 }

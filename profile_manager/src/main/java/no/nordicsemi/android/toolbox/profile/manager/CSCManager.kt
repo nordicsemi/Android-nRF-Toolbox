@@ -6,16 +6,14 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import no.nordicsemi.android.toolbox.profile.parser.csc.CSCDataParser
-import no.nordicsemi.android.toolbox.profile.manager.repository.CSCRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
+import no.nordicsemi.android.toolbox.profile.manager.repository.CSCRepository
+import no.nordicsemi.android.toolbox.profile.parser.csc.CSCDataParser
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import java.util.UUID
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.toKotlinUuid
+import kotlin.uuid.Uuid
 
-private val CSC_MEASUREMENT_CHARACTERISTIC_UUID =
-    UUID.fromString("00002A5B-0000-1000-8000-00805f9b34fb")
+private val CSC_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A5B-0000-1000-8000-00805f9b34fb")
 
 internal class CSCManager : ServiceManager {
     override val profile: Profile
@@ -28,7 +26,7 @@ internal class CSCManager : ServiceManager {
         scope: CoroutineScope
     ) {
         remoteService.characteristics
-            .firstOrNull { it.uuid == CSC_MEASUREMENT_CHARACTERISTIC_UUID.toKotlinUuid() }
+            .firstOrNull { it.uuid == CSC_MEASUREMENT_CHARACTERISTIC_UUID }
             ?.subscribe()
             ?.mapNotNull {
                 CSCDataParser.parse(it, CSCRepository.getData(deviceId).value.data.wheelSize)

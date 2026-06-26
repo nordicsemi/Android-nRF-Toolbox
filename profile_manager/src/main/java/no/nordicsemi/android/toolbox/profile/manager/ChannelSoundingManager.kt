@@ -4,16 +4,15 @@ import kotlinx.coroutines.CoroutineScope
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
-import java.util.UUID
+import kotlin.uuid.Uuid
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.toKotlinUuid
 
-private val RAS_FEATURES = UUID.fromString("00002C14-0000-1000-8000-00805F9B34FB")
-private val REALTIME_RANGING_DATA = UUID.fromString("00002C15-0000-1000-8000-00805F9B34FB")
-private val RAS_ON_DEMAND_RD = UUID.fromString("00002C16-0000-1000-8000-00805F9B34FB")
-private val RAS_CP = UUID.fromString("00002C17-0000-1000-8000-00805F9B34FB")
-private val RAS_RD_READY = UUID.fromString("00002C18-0000-1000-8000-00805F9B34FB")
-private val RAS_RD_OVERWRITTEN = UUID.fromString("00002C19-0000-1000-8000-00805F9B34FB")
+private val RAS_FEATURES = Uuid.parse("00002C14-0000-1000-8000-00805F9B34FB")
+private val REALTIME_RANGING_DATA = Uuid.parse("00002C15-0000-1000-8000-00805F9B34FB")
+private val RAS_ON_DEMAND_RD = Uuid.parse("00002C16-0000-1000-8000-00805F9B34FB")
+private val RAS_CP = Uuid.parse("00002C17-0000-1000-8000-00805F9B34FB")
+private val RAS_RD_READY = Uuid.parse("00002C18-0000-1000-8000-00805F9B34FB")
+private val RAS_RD_OVERWRITTEN = Uuid.parse("00002C19-0000-1000-8000-00805F9B34FB")
 
 internal class ChannelSoundingManager : ServiceManager {
     override val profile: Profile
@@ -25,15 +24,12 @@ internal class ChannelSoundingManager : ServiceManager {
         remoteService: RemoteService,
         scope: CoroutineScope
     ) {
-        remoteService.characteristics.firstOrNull {
-            it.uuid == RAS_FEATURES.toKotlinUuid()
-        }
+        remoteService.characteristics.firstOrNull { it.uuid == RAS_FEATURES }
             ?.read()
             ?.let {
                 val rasFeature = RasFeatureParser.parse(it)
                 Timber.tag("ChannelSoundingManager").d("Ranging Feature: $rasFeature")
             }
-
     }
 
     data class RasFeature(
