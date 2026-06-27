@@ -11,12 +11,18 @@ import no.nordicsemi.android.toolbox.profile.manager.CGMManager
 
 object CGMRepository {
     private val _dataMap = mutableMapOf<String, MutableStateFlow<CGMServiceData>>()
+    private val _managers = mutableMapOf<String, CGMManager>()
+
+    internal fun registerManager(deviceId: String, manager: CGMManager) {
+        _managers[deviceId] = manager
+    }
 
     fun getData(deviceId: String): StateFlow<CGMServiceData> =
         _dataMap.getOrPut(deviceId) { MutableStateFlow(CGMServiceData()) }
 
     fun clear(deviceId: String) {
         _dataMap.remove(deviceId)
+        _managers.remove(deviceId)
     }
 
     fun onMeasurementDataReceived(deviceId: String, data: List<CGMRecordWithSequenceNumber>) {
@@ -35,7 +41,7 @@ object CGMRepository {
         clearState(deviceId)
         updateNewRequestStatus(deviceId, RequestStatus.PENDING)
         _dataMap[deviceId]?.update { it.copy(workingMode = workingMode) }
-        CGMManager.requestRecord(deviceId, workingMode)
+        _managers[deviceId]?.requestRecord(workingMode)
     }
 
 }

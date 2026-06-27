@@ -6,11 +6,14 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
+import no.nordicsemi.android.toolbox.lib.utils.spec.BPS_SERVICE_UUID
+import no.nordicsemi.android.toolbox.profile.manager.repository.BPSRepository
 import no.nordicsemi.android.toolbox.profile.parser.bps.BloodPressureFeatureParser
 import no.nordicsemi.android.toolbox.profile.parser.bps.BloodPressureMeasurementParser
 import no.nordicsemi.android.toolbox.profile.parser.bps.IntermediateCuffPressureParser
-import no.nordicsemi.android.toolbox.profile.manager.repository.BPSRepository
-import no.nordicsemi.android.toolbox.lib.utils.Profile
+import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
 import kotlin.uuid.Uuid
@@ -19,39 +22,49 @@ private val BPM_CHARACTERISTIC_UUID = Uuid.parse("00002A35-0000-1000-8000-00805f
 private val ICP_CHARACTERISTIC_UUID = Uuid.parse("00002A36-0000-1000-8000-00805f9b34fb")
 private val BPF_CHARACTERISTIC_UUID = Uuid.parse("00002A49-0000-1000-8000-00805f9b34fb")
 
-internal class BPSManager : ServiceManager {
-    override val profile: Profile = Profile.BPS
+internal class BPSManager(
+    deviceId: String,
+    onReady: (ServiceManager) -> Unit,
+) : ServiceManager(BPS_SERVICE_UUID, deviceId, "BPS", onReady) {
+    override val profile: ServiceType = ServiceType.BPS
 
-    override suspend fun observeServiceInteractions(
-        deviceId: String,
-        remoteService: RemoteService,
-        scope: CoroutineScope
-    ) {
-        remoteService.characteristics.firstOrNull { it.uuid == BPM_CHARACTERISTIC_UUID }
-            ?.subscribe()
-            ?.mapNotNull { BloodPressureMeasurementParser.parse(it) }
-            ?.onEach { BPSRepository.updateBPSData(deviceId, it) }
-            ?.onCompletion { BPSRepository.clear(deviceId) }
-            ?.catch { e ->
-                Timber.e(e)
-            }
-            ?.launchIn(scope)
+    private lateinit var bpmCharacteristic: RemoteCharacteristic
+    private var icpCharacteristic: RemoteCharacteristic? = null
+    private var bpfCharacteristic: RemoteCharacteristic? = null
 
-        remoteService.characteristics.firstOrNull { it.uuid == ICP_CHARACTERISTIC_UUID }
-            ?.subscribe()
+    override fun prepare(service: RemoteService) {
+        bpmCharacteristic = service.characteristics.first { it.uuid == BPM_CHARACTERISTIC_UUID }
+        require(bpmCharacteristic.isSubscribable()) { "Blood Pressure measurement characteristic must have NOTIFY or INDICATE" }
+        icpCharacteristic = service.characteristics.firstOrNull { it.uuid == ICP_CHARACTERISTIC_UUID }
+        bpfCharacteristic = service.characteristics.firstOrNull { it.uuid == BPF_CHARACTERISTIC_UUID }
+    }
+
+    override suspend fun CoroutineScope.initialize() {
+        bpmCharacteristic.subscribe()
+            .mapNotNull { BloodPressureMeasurementParser.parse(it) }
+            .onEach { BPSRepository.updateBPSData(deviceId, it) }
+            .onCompletion { BPSRepository.clear(deviceId) }
+            .catch { e -> Timber.e(e) }
+            .launchIn(this)
+
+        icpCharacteristic?.subscribe()
             ?.mapNotNull { IntermediateCuffPressureParser.parse(it) }
             ?.onEach { BPSRepository.updateICPData(deviceId, it) }
             ?.onCompletion { BPSRepository.clear(deviceId) }
-            ?.catch { e ->
-                Timber.e(e)
-            }
-            ?.launchIn(scope)
+            ?.catch { e -> Timber.e(e) }
+            ?.launchIn(this)
 
-        remoteService.characteristics.firstOrNull { it.uuid == BPF_CHARACTERISTIC_UUID }
-            ?.read()
-            ?.let { BloodPressureFeatureParser.parse(it) }
-            ?.also { featureData ->
-                BPSRepository.updateBPSFeatureData(deviceId, featureData)
+        bpfCharacteristic?.let { char ->
+            launch {
+                try {
+                    BloodPressureFeatureParser.parse(char.read())
+                        ?.also { BPSRepository.updateBPSFeatureData(deviceId, it) }
+                } catch (e: Exception) {
+                    Timber.e("Error reading blood pressure feature: ${e.message}")
+                }
             }
+        }
+
+        onReady(this@BPSManager)
     }
 }

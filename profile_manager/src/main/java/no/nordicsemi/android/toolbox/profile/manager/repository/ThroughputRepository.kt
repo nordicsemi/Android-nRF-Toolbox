@@ -11,6 +11,11 @@ import no.nordicsemi.android.toolbox.profile.manager.ThroughputManager
 
 object ThroughputRepository {
     private val _dataMap = mutableMapOf<String, MutableStateFlow<ThroughputServiceData>>()
+    private val _managers = mutableMapOf<String, ThroughputManager>()
+
+    internal fun registerManager(deviceId: String, manager: ThroughputManager) {
+        _managers[deviceId] = manager
+    }
 
     fun getData(deviceId: String): StateFlow<ThroughputServiceData> =
         _dataMap.getOrPut(deviceId) { MutableStateFlow(ThroughputServiceData()) }
@@ -26,8 +31,7 @@ object ThroughputRepository {
         writeDataType: ThroughputInputType,
     ) {
         val maxWriteValueLength = _dataMap[deviceId]?.value?.maxWriteValueLength ?: 20
-        ThroughputManager.writeRequest(
-            deviceId = deviceId,
+        _managers[deviceId]?.writeRequest(
             maxWriteValueLength = maxWriteValueLength,
             inputType = writeDataType,
         )
@@ -43,6 +47,7 @@ object ThroughputRepository {
 
     fun clearData(deviceId: String) {
         _dataMap.remove(deviceId)
+        _managers.remove(deviceId)
     }
 
 }

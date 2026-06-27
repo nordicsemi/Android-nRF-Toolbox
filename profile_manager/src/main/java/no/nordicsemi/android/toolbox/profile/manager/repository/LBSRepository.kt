@@ -8,6 +8,11 @@ import no.nordicsemi.android.toolbox.profile.manager.LBSManager
 
 data object LBSRepository {
     private val _dataMap = mutableMapOf<String, MutableStateFlow<LBSServiceData>>()
+    private val _managers = mutableMapOf<String, LBSManager>()
+
+    internal fun registerManager(deviceId: String, manager: LBSManager) {
+        _managers[deviceId] = manager
+    }
 
     /**
      * Returns a [MutableStateFlow] that holds the [LBSServiceData] for the given device ID.
@@ -42,10 +47,10 @@ data object LBSRepository {
      */
     fun clear(deviceId: String) {
         _dataMap.remove(deviceId)
+        _managers.remove(deviceId)
     }
 
     suspend fun writeToBlinkyLED(address: String, ledState: Boolean) {
-        // Update the LED state for the given device address
-        LBSManager.writeToBlinkyLED(deviceId = address, ledState)
+        _managers[address]?.writeLED(ledState)
     }
 }

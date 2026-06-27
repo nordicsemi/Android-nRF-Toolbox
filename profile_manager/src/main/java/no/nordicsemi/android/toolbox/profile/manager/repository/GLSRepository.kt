@@ -12,6 +12,11 @@ import no.nordicsemi.android.toolbox.profile.manager.GLSManager
 
 object GLSRepository {
     private val _dataMap = mutableMapOf<String, MutableStateFlow<GLSServiceData>>()
+    private val _managers = mutableMapOf<String, GLSManager>()
+
+    internal fun registerManager(deviceId: String, manager: GLSManager) {
+        _managers[deviceId] = manager
+    }
 
     fun getData(deviceId: String): StateFlow<GLSServiceData> = _dataMap.getOrPut(deviceId) {
         MutableStateFlow(GLSServiceData())
@@ -47,7 +52,7 @@ object GLSRepository {
         clearState(deviceId)
         updateNewRequestStatus(deviceId, RequestStatus.PENDING)
         _dataMap[deviceId]?.update { it.copy(workingMode = workingMode) }
-        GLSManager.requestRecord(deviceId, workingMode)
+        _managers[deviceId]?.requestRecord(workingMode)
     }
 
     fun updateNewRequestStatus(deviceId: String, requestStatus: RequestStatus) {
@@ -65,6 +70,7 @@ object GLSRepository {
 
     fun clear(deviceId: String) {
         _dataMap.remove(deviceId)
+        _managers.remove(deviceId)
     }
 
 }

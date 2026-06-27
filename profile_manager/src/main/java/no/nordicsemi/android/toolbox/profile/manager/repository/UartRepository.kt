@@ -14,6 +14,11 @@ import no.nordicsemi.android.toolbox.profile.manager.UARTManager
 
 object UartRepository {
     private val _dataMap = mutableMapOf<String, MutableStateFlow<UARTServiceData>>()
+    private val _managers = mutableMapOf<String, UARTManager>()
+
+    internal fun registerManager(deviceId: String, manager: UARTManager) {
+        _managers[deviceId] = manager
+    }
 
     fun getData(deviceId: String): Flow<UARTServiceData> {
         return _dataMap.getOrPut(deviceId) { MutableStateFlow(UARTServiceData()) }
@@ -42,29 +47,23 @@ object UartRepository {
     }
 
     suspend fun sendText(deviceId: String, text: String, newLineChar: MacroEol) {
-        if (_dataMap.containsKey(deviceId)) {
-            UARTManager.sendText(
-                deviceId,
-                text.parseWithNewLineChar(newLineChar),
-                getMaxWriteLength(deviceId)
-            )
-        }
+        _managers[deviceId]?.sendText(
+            text.parseWithNewLineChar(newLineChar),
+            getMaxWriteLength(deviceId),
+        )
     }
 
     suspend fun runMacro(deviceId: String, macro: UARTMacro) {
         if (macro.command == null) return
-        // Send the command to the device and update the command message.
-        if (_dataMap.containsKey(deviceId)) {
-            UARTManager.sendText(
-                deviceId,
-                macro.command!!.parseWithNewLineChar(macro.newLineChar),
-                getMaxWriteLength(deviceId),
-            )
-        }
+        _managers[deviceId]?.sendText(
+            macro.command!!.parseWithNewLineChar(macro.newLineChar),
+            getMaxWriteLength(deviceId),
+        )
     }
 
     fun clear(deviceId: String) {
         _dataMap.remove(deviceId)
+        _managers.remove(deviceId)
     }
 
     fun clearOutputItems(deviceId: String) {

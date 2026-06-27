@@ -26,6 +26,11 @@ import no.nordicsemi.android.toolbox.profile.parser.gls.data.RequestStatus
 
 object DFSRepository {
     private val _dataMap = mutableMapOf<String, MutableStateFlow<DFSServiceData>>()
+    private val _managers = mutableMapOf<String, DFSManager>()
+
+    internal fun registerManager(deviceId: String, manager: DFSManager) {
+        _managers[deviceId] = manager
+    }
 
     fun getData(deviceId: String): StateFlow<DFSServiceData> = _dataMap.getOrPut(deviceId) {
         MutableStateFlow(DFSServiceData())
@@ -59,6 +64,7 @@ object DFSRepository {
 
     fun clear(deviceId: String) {
         _dataMap.remove(deviceId)
+        _managers.remove(deviceId)
     }
 
     private fun addDistance(
@@ -109,7 +115,7 @@ object DFSRepository {
 
     suspend fun enableDistanceMode(deviceId: String, distanceMode: ControlPointMode) {
         _dataMap[deviceId]?.update { it.copy(requestStatus = RequestStatus.PENDING) }
-        DFSManager.enableDistanceMode(deviceId, distanceMode)
+        _managers[deviceId]?.enableDistanceMode(distanceMode)
     }
 
     fun setAvailableDistanceModes(deviceId: String, ddfData: DDFData) {
@@ -162,7 +168,7 @@ object DFSRepository {
 
     suspend fun checkCurrentDistanceMode(deviceId: String) {
         updateNewRequestStatus(deviceId, RequestStatus.PENDING)
-        DFSManager.checkForCurrentDistanceMode(deviceId)
+        _managers[deviceId]?.checkForCurrentDistanceMode()
     }
 
     fun updateDistanceRange(deviceId: String, range: IntRange) {
@@ -170,7 +176,7 @@ object DFSRepository {
     }
 
     suspend fun checkAvailableFeatures(deviceId: String) {
-        DFSManager.checkAvailableFeatures(deviceId)
+        _managers[deviceId]?.checkAvailableFeatures()
     }
 
 }

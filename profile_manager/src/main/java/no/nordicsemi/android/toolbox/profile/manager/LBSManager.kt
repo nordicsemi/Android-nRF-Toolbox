@@ -6,7 +6,9 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import no.nordicsemi.android.toolbox.lib.utils.Profile
+import kotlinx.coroutines.launch
+import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
+import no.nordicsemi.android.toolbox.lib.utils.spec.LBS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.LBSRepository
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
@@ -17,80 +19,55 @@ import kotlin.uuid.Uuid
 private val BLINKY_BUTTON_CHARACTERISTIC_UUID = Uuid.parse("00001524-1212-EFDE-1523-785FEABCD123")
 private val BLINKY_LED_CHARACTERISTIC_UUID = Uuid.parse("00001525-1212-EFDE-1523-785FEABCD123")
 
-internal class LBSManager : ServiceManager {
-    override val profile: Profile
-        get() = Profile.LBS
+internal class LBSManager(
+    deviceId: String,
+    onReady: (ServiceManager) -> Unit,
+) : ServiceManager(LBS_SERVICE_UUID, deviceId, "LBS", onReady) {
+    override val profile: ServiceType = ServiceType.LBS
 
-    override suspend fun observeServiceInteractions(
-        deviceId: String,
-        remoteService: RemoteService,
-        scope: CoroutineScope
-    ) {
-        // Ensure the characteristic is initialized before writing
-        ledWriteCharacteristics = remoteService.characteristics.firstOrNull {
-            it.uuid == BLINKY_LED_CHARACTERISTIC_UUID
-        } ?: throw IllegalStateException("LED characteristic not found")
+    private lateinit var ledCharacteristic: RemoteCharacteristic
+    private lateinit var buttonCharacteristic: RemoteCharacteristic
 
-        val blinkyCharacteristics = remoteService.characteristics.firstOrNull {
-            it.uuid == BLINKY_BUTTON_CHARACTERISTIC_UUID
-        }
-
-        // Subscribe to the button state changes.
-        blinkyCharacteristics?.subscribe()
-            ?.map { ButtonStateParser.parse(it) }
-            ?.onEach { LBSRepository.updateButtonState(deviceId, it) }
-            ?.catch {
-                Timber.e("Error observing button state: ${it.message}")
-            }
-            ?.onCompletion {
-                LBSRepository.clear(deviceId)
-            }
-            ?.launchIn(scope)
-
-        // Read the initial state of the button
-        try {
-            blinkyCharacteristics?.read()
-                ?.let { ButtonStateParser.parse(it) }
-                ?.let { LBSRepository.updateButtonState(deviceId, it) }
-        } catch (e: Exception) {
-            Timber.e("Error reading button state: ${e.message}")
-        }
+    override fun prepare(service: RemoteService) {
+        ledCharacteristic = service.characteristics.first { it.uuid == BLINKY_LED_CHARACTERISTIC_UUID }
+        buttonCharacteristic = service.characteristics.first { it.uuid == BLINKY_BUTTON_CHARACTERISTIC_UUID }
+        require(ledCharacteristic.isWritable()) { "LED characteristic must be writable" }
+        require(buttonCharacteristic.isSubscribable()) { "Button characteristic must have NOTIFY or INDICATE" }
     }
 
-    companion object {
-        private lateinit var ledWriteCharacteristics: RemoteCharacteristic
+    override suspend fun CoroutineScope.initialize() {
+        buttonCharacteristic.subscribe()
+            .map { ButtonStateParser.parse(it) }
+            .onEach { LBSRepository.updateButtonState(deviceId, it) }
+            .catch { Timber.e("Error observing button state: ${it.message}") }
+            .onCompletion { LBSRepository.clear(deviceId) }
+            .launchIn(this)
 
-        /**
-         * Writes the LED state to the Blinky LED characteristic.
-         *
-         * @param deviceId The ID of the device to which the LED state should be written.
-         * @param ledState The desired state of the LED (true for ON, false for OFF).
-         */
-        suspend fun writeToBlinkyLED(
-            deviceId: String,
-            ledState: Boolean
-        ) {
-            val data = byteArrayOf((0x01.takeIf { ledState } ?: 0x00).toByte())
-
+        launch {
             try {
-                if (::ledWriteCharacteristics.isInitialized) {
-                    ledWriteCharacteristics.write(data, WriteType.WITHOUT_RESPONSE)
-                }
+                val state = ButtonStateParser.parse(buttonCharacteristic.read())
+                LBSRepository.updateButtonState(deviceId, state)
             } catch (e: Exception) {
-                Timber.e("Error writing to Blinky LED characteristic: ${e.message}")
-            } finally {
-                LBSRepository.updateLedState(deviceId, ledState)
+                Timber.e("Error reading initial button state: ${e.message}")
             }
+        }
+
+        LBSRepository.registerManager(deviceId, this@LBSManager)
+        onReady(this@LBSManager)
+    }
+
+    suspend fun writeLED(ledState: Boolean) {
+        val data = byteArrayOf((if (ledState) 0x01 else 0x00).toByte())
+        try {
+            ledCharacteristic.write(data, WriteType.WITHOUT_RESPONSE)
+        } catch (e: Exception) {
+            Timber.e("Error writing to LED characteristic: ${e.message}")
+        } finally {
+            LBSRepository.updateLedState(deviceId, ledState)
         }
     }
 }
 
 object ButtonStateParser {
-    fun parse(data: ByteArray): Boolean {
-        return if (data.isNotEmpty()) {
-            data[0].toInt() == 0x01
-        } else {
-            false
-        }
-    }
+    fun parse(data: ByteArray): Boolean = data.isNotEmpty() && data[0].toInt() == 0x01
 }

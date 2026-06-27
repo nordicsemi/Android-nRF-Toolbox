@@ -7,7 +7,6 @@ import android.os.IBinder
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +22,6 @@ import no.nordicsemi.android.service.NotificationService
 import no.nordicsemi.android.service.R
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManager
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManagerFactory
-import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.client.RemoteServices
 import no.nordicsemi.kotlin.ble.client.android.CentralManager
 import no.nordicsemi.kotlin.ble.client.android.CentralManager.ConnectionOptions
@@ -71,10 +69,9 @@ internal class ProfileService : NotificationService() {
      * Initiates a connection to the peripheral with the given address.
      */
     private fun connect(address: String) {
-        // Return if already managed to avoid multiple connection jobs.
         if (managedConnections.containsKey(address)) return
 
-        initLogger(address) // Initialize logger for the new device.
+        initLogger(address)
 
         val peripheral = centralManager.getPeripheralById(address) ?: run {
             Timber.w("Peripheral with address $address not found.")
@@ -82,13 +79,40 @@ internal class ProfileService : NotificationService() {
         }
 
         val job = lifecycleScope.launch {
+            // Called when a profile's initialize() completes — add manager to _devices.services.
+            val onReady: (ServiceManager) -> Unit = { manager ->
+                _devices.update { currentMap ->
+                    val existingData = currentMap[address] ?: return@update currentMap
+                    currentMap + (address to existingData.copy(
+                        services = existingData.services + manager
+                    ))
+                }
+            }
+
+            // Register all known profiles before connecting. Each activates when its service
+            // is discovered; prepare() validates characteristics, initialize() sets up streams.
+            ServiceManagerFactory.createAllManagers(address, onReady)
+                .forEach { peripheral.profile(this, it, required = false) }
+
+            // Track whether any known service was found after discovery.
+            peripheral.services()
+                .filterIsInstance<RemoteServices.Discovered>()
+                .map { it.services }
+                .onEach { services ->
+                    if (services.any { ServiceManagerFactory.isKnownService(it.uuid) }) {
+                        _isMissingServices.update { it - address }
+                    } else {
+                        _isMissingServices.update { it + (address to true) }
+                    }
+                }
+                .launchIn(this)
+
             try {
                 centralManager.connect(peripheral, options = ConnectionOptions.Direct())
             } catch (e: Exception) {
                 Timber.e(e, "Failed to connect to $address")
             }
 
-            // Observe connection state changes.
             observeConnectionState(peripheral)
         }
 
@@ -98,7 +122,6 @@ internal class ProfileService : NotificationService() {
     /**
      * Observes the connection state of the given peripheral and updates the service state accordingly.
      */
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun CoroutineScope.observeConnectionState(peripheral: Peripheral) {
         peripheral.state
             .onEach { state ->
@@ -108,15 +131,6 @@ internal class ProfileService : NotificationService() {
                 }
 
                 when (state) {
-                    ConnectionState.Connected -> {
-                        try {
-                            discoverAndObserveServices(peripheral, this)
-                        } catch (e: Exception) {
-                            Timber.e(e, "Service discovery failed for ${peripheral.address}")
-                        }
-
-                    }
-
                     is ConnectionState.Disconnected -> {
                         val reason = state.reason ?: ConnectionState.Disconnected.Reason.Success
                         _disconnectionEvent.value =
@@ -125,74 +139,16 @@ internal class ProfileService : NotificationService() {
                         handleDisconnection(peripheral.address)
                     }
 
-                    else -> {
-                        // Handle connecting/disconnecting states if needed
-                    }
+                    else -> {}
                 }
             }
             .launchIn(this)
     }
 
     /**
-     * Discovers services on the peripheral and sets up observation for each recognized service.
-     */
-    private fun discoverAndObserveServices(
-        peripheral: Peripheral,
-        scope: CoroutineScope
-    ) {
-        peripheral
-            .services()
-            .filterIsInstance<RemoteServices.Discovered>()
-            .map { it.services }
-            .onEach { service ->
-                var foundMatchingService = false
-                for (removeService in service) {
-                    ServiceManagerFactory.createServiceManager(removeService.uuid)
-                        ?.also { manager ->
-                            foundMatchingService = true
-                            _devices.update { currentMap ->
-                                val existingData = currentMap[peripheral.address]
-                                if (existingData == null) {
-                                    currentMap
-                                } else {
-                                    currentMap + (peripheral.address to existingData.copy(
-                                        services = existingData.services.plus(manager)
-                                    ))
-                                }
-                            }
-                            // Launch observation for each service.
-                            observeService(peripheral, removeService, manager)
-                        }
-                }
-                if (foundMatchingService) {
-                    _isMissingServices.update { it - peripheral.address }
-                } else {
-                    _isMissingServices.update { it + (peripheral.address to true) }
-                }
-            }
-            .launchIn(scope)
-
-    }
-
-    /**
-     * Observes interactions for a specific service on the peripheral.
-     */
-    @SuppressLint("TimberExceptionLogging")
-    private suspend fun observeService(
-        peripheral: Peripheral,
-        service: RemoteService,
-        manager: ServiceManager
-    ) {
-        try {
-            manager.observeServiceInteractions(peripheral.address, service, lifecycleScope)
-        } catch (e: Exception) {
-            Timber.e(e.message)
-        }
-    }
-
-    /**
      * Disconnects from the peripheral with the given address.
      */
+    @SuppressLint("TimberExceptionLogging")
     private fun disconnect(address: String) {
         centralManager.getPeripheralById(address)?.let { peripheral ->
             lifecycleScope.launch {
@@ -259,7 +215,7 @@ internal class ProfileService : NotificationService() {
             if (!peripheral.isConnected) return null
 
             return try {
-                peripheral.requestHighestValueLength() // Request highest possible MTU
+                peripheral.requestHighestValueLength()
                 peripheral.maximumWriteValueLength(writeType)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to configure MTU for $address")
@@ -277,8 +233,6 @@ internal class ProfileService : NotificationService() {
      */
     private suspend fun Peripheral.ensureBonded() {
         if (this.bondState.value == BondState.BONDED) return
-        // Create bond and wait until bonded.
         createBond()
     }
-
 }
