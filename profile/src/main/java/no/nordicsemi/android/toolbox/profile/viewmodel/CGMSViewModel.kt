@@ -44,33 +44,39 @@ internal class CGMSViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.CGM].
      */
-    private fun observeCGMSProfile() = viewModelScope.launch {
-        // update state or emit to UI
-        deviceRepository.profileHandlerFlow
-            .onEach { mapOfPeripheralProfiles ->
-                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                    if (peripheral.address == address) {
-                        profiles.filter { it.profile == Profile.CGM }
-                            .forEach { _ ->
-                                startCGMSService(peripheral.address)
-                            }
+    private fun observeCGMSProfile() {
+        viewModelScope.launch {
+            // update state or emit to UI
+            deviceRepository.profileHandlerFlow
+                .onEach { mapOfPeripheralProfiles ->
+                    mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
+                        if (peripheral.address == address) {
+                            profiles.filter { it.profile == Profile.CGM }
+                                .forEach { _ ->
+                                    startCGMSService(peripheral.address)
+                                }
+                        }
                     }
                 }
-            }.launchIn(this)
+                .launchIn(this)
+        }
     }
 
     /**
      * Starts the CGMS service and observes CGMS profile data changes.
      */
-    private fun startCGMSService(address: String) =
-        CGMRepository.getData(address).onEach {
-            _cgmsServiceState.value = _cgmsServiceState.value.copy(
-                profile = it.profile,
-                records = it.records,
-                requestStatus = it.requestStatus,
-                workingMode = it.workingMode,
-            )
-        }.launchIn(viewModelScope)
+    private fun startCGMSService(address: String) {
+        CGMRepository.getData(address)
+            .onEach {
+                _cgmsServiceState.value = _cgmsServiceState.value.copy(
+                    profile = it.profile,
+                    records = it.records,
+                    requestStatus = it.requestStatus,
+                    workingMode = it.workingMode,
+                )
+            }
+            .launchIn(viewModelScope)
+    }
 
     /**
      * Handles events related to the CGMS profile.

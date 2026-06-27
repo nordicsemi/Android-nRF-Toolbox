@@ -39,7 +39,7 @@ internal class RSCSViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.RSCS].
      */
-    private fun observeRSCSProfile() =
+    private fun observeRSCSProfile() {
         deviceRepository.profileHandlerFlow
             .onEach { mapOfPeripheralProfiles ->
                 mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
@@ -50,20 +50,25 @@ internal class RSCSViewModel @Inject constructor(
                             }
                     }
                 }
-            }.launchIn(viewModelScope)
+            }
+            .launchIn(viewModelScope)
+    }
 
     /**
      * Starts the RSCS service and observes running speed, cadence, and other data changes.
      */
-    private fun startRSCSService(address: String) =
-        RSCSRepository.getData(address).onEach {
-            _rscsState.value = _rscsState.value.copy(
-                profile = it.profile,
-                data = it.data,
-                unit = it.unit,
-                feature = it.feature,
-            )
-        }.launchIn(viewModelScope)
+    private fun startRSCSService(address: String) {
+        RSCSRepository.getData(address)
+            .onEach {
+                _rscsState.value = _rscsState.value.copy(
+                    profile = it.profile,
+                    data = it.data,
+                    unit = it.unit,
+                    feature = it.feature,
+                )
+            }
+            .launchIn(viewModelScope)
+    }
 
     /**
      * Handles events related to the RSCS profile.

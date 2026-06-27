@@ -6,9 +6,7 @@ enum class AlarmLevel(internal val value: Byte) {
     HIGH(0x02);
 
     companion object {
-        internal fun create(value: Int): AlarmLevel {
-            return entries.firstOrNull { it.value.toInt() == value }
-                ?: throw IllegalArgumentException("Cannot find AlarmLevel for provided value: $value")
-        }
+        internal fun create(value: Int): AlarmLevel = entries.firstOrNull { it.value.toInt() == value }
+            ?: throw IllegalArgumentException("Cannot find AlarmLevel for provided value: $value")
     }
 }

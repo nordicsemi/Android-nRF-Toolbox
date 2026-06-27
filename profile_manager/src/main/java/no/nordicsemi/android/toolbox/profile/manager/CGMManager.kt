@@ -243,7 +243,6 @@ internal class CGMManager : ServiceManager {
                     WriteType.WITH_RESPONSE
                 )
             }
-
         }
 
         private suspend fun writeOrSetStatusFailed(
@@ -252,7 +251,6 @@ internal class CGMManager : ServiceManager {
         ) {
             try {
                 block()
-
             } catch (e: Exception) {
                 e.printStackTrace()
                 CGMRepository.updateNewRequestStatus(deviceId, RequestStatus.FAILED)

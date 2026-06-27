@@ -3,6 +3,7 @@ package no.nordicsemi.android.toolbox.profile.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -36,18 +37,21 @@ internal class DFUViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.DFU].
      */
-    private fun observeDFUProfile() = viewModelScope.launch {
-        deviceRepository.profileHandlerFlow
-            .onEach { mapOfPeripheralProfiles ->
-                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                    if (peripheral.address == address) {
-                        profiles.filter { it.profile == Profile.DFU }
-                            .forEach { _ ->
-                                startDFUService(peripheral.address)
-                            }
+    private fun observeDFUProfile() {
+        viewModelScope.launch {
+            deviceRepository.profileHandlerFlow
+                .onEach { mapOfPeripheralProfiles ->
+                    mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
+                        if (peripheral.address == address) {
+                            profiles.filter { it.profile == Profile.DFU }
+                                .forEach { _ ->
+                                    startDFUService(peripheral.address)
+                                }
+                        }
                     }
                 }
-            }.launchIn(this)
+                .launchIn(this)
+        }
     }
 
     /**
@@ -55,12 +59,15 @@ internal class DFUViewModel @Inject constructor(
      *
      * @param address The address of the peripheral device.
      */
-    private fun startDFUService(address: String) = DFURepository.getData(address)
-        .onEach { dFUServiceData ->
-            _dfuServiceState.value = _dfuServiceState.value.copy(
-                profile = dFUServiceData.profile,
-                dfuAppName = dFUServiceData.dfuAppName
-            )
-        }.launchIn(viewModelScope)
+    private fun startDFUService(address: String) {
+        DFURepository.getData(address)
+            .onEach { dFUServiceData ->
+                _dfuServiceState.value = _dfuServiceState.value.copy(
+                    profile = dFUServiceData.profile,
+                    dfuAppName = dFUServiceData.dfuAppName
+                )
+            }
+            .launchIn(viewModelScope)
+    }
 
 }

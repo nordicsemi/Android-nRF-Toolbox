@@ -35,32 +35,37 @@ internal class BPSViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.BPS].
      */
-    private fun observeBPSProfile() = viewModelScope.launch {
-        // update state or emit to UI
-        deviceRepository.profileHandlerFlow
-            .onEach { mapOfPeripheralProfiles ->
-                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                    if (peripheral.address == address) {
-                        profiles.filter { it.profile == Profile.BPS }
-                            .forEach { _ ->
-                                startBPSService(peripheral.address)
-                            }
+    private fun observeBPSProfile() {
+        viewModelScope.launch {
+            // update state or emit to UI
+            deviceRepository.profileHandlerFlow
+                .onEach { mapOfPeripheralProfiles ->
+                    mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
+                        if (peripheral.address == address) {
+                            profiles.filter { it.profile == Profile.BPS }
+                                .forEach { _ ->
+                                    startBPSService(peripheral.address)
+                                }
+                        }
                     }
                 }
-            }.launchIn(this)
+                .launchIn(this)
+        }
     }
 
     /**
      * Starts the BPS service for the given address and updates the state with the received data.
      */
-    private fun startBPSService(address: String) =
-        BPSRepository.getData(address).onEach {
-            _bpsServiceState.value = _bpsServiceState.value.copy(
-                profile = it.profile,
-                bloodPressureMeasurement = it.bloodPressureMeasurement,
-                intermediateCuffPressure = it.intermediateCuffPressure,
-                bloodPressureFeature = it.bloodPressureFeature,
-            )
-        }.launchIn(viewModelScope)
-
+    private fun startBPSService(address: String) {
+        BPSRepository.getData(address)
+            .onEach {
+                _bpsServiceState.value = _bpsServiceState.value.copy(
+                    profile = it.profile,
+                    bloodPressureMeasurement = it.bloodPressureMeasurement,
+                    intermediateCuffPressure = it.intermediateCuffPressure,
+                    bloodPressureFeature = it.bloodPressureFeature,
+                )
+            }
+            .launchIn(viewModelScope)
+    }
 }

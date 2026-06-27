@@ -8,9 +8,7 @@ enum class Tester(internal val value: Int) {
     NOT_AVAILABLE(15);
 
     companion object {
-        fun create(value: Int): Tester {
-            return entries.firstOrNull { it.value == value }
-                ?: throw IllegalArgumentException("Cannot create Tester for value $value")
-        }
+        fun create(value: Int): Tester = entries.firstOrNull { it.value == value }
+            ?: throw IllegalArgumentException("Cannot create Tester for value $value")
     }
 }

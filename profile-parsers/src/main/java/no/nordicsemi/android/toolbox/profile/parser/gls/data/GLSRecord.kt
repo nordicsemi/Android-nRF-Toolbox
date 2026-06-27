@@ -26,10 +26,8 @@ enum class RecordType(val id: Int) {
     CONTROL_SOLUTION(10);
 
     companion object {
-        fun create(value: Int): RecordType {
-            return entries.firstOrNull { it.id == value }
-                ?: throw IllegalArgumentException("Cannot find element for provided value.")
-        }
+        fun create(value: Int): RecordType = entries.firstOrNull { it.id == value }
+            ?: throw IllegalArgumentException("Cannot find element for provided value.")
 
         fun createOrNull(value: Int?): RecordType? {
             return entries.firstOrNull { it.id == value }
@@ -57,10 +55,8 @@ enum class ConcentrationUnit(val id: Int) {
     UNIT_MOLPL(0);
 
     companion object {
-        fun create(value: Int): ConcentrationUnit {
-            return entries.firstOrNull { it.id == value }
-                ?: throw IllegalArgumentException("Cannot find element for provided value.")
-        }
+        fun create(value: Int): ConcentrationUnit = entries.firstOrNull { it.id == value }
+            ?: throw IllegalArgumentException("Cannot find element for provided value.")
     }
 }
 
@@ -69,10 +65,8 @@ enum class MedicationUnit(val id: Int) {
     UNIT_LITER(1);
 
     companion object {
-        fun create(value: Int): MedicationUnit {
-            return entries.firstOrNull { it.id == value }
-                ?: throw IllegalArgumentException("Cannot find element for provided value.")
-        }
+        fun create(value: Int): MedicationUnit = entries.firstOrNull { it.id == value }
+            ?: throw IllegalArgumentException("Cannot find element for provided value.")
     }
 }
 
@@ -84,8 +78,7 @@ enum class SampleLocation(val id: Int) {
     NOT_AVAILABLE(15);
 
     companion object {
-        fun createOrNull(value: Int?): SampleLocation? {
-            return entries.firstOrNull { it.id == value }
-        }
+        fun createOrNull(value: Int?): SampleLocation = entries.firstOrNull { it.id == value }
+            ?: throw IllegalArgumentException("Cannot find element for provided value.")
     }
 }

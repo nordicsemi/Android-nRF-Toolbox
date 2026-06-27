@@ -10,9 +10,7 @@ enum class Health(internal val value: Int) {
     NOT_AVAILABLE(15);
 
     companion object {
-        fun create(value: Int): Health {
-            return entries.firstOrNull { it.value == value }
-                ?: throw IllegalArgumentException("Cannot create Health for value $value")
-        }
+        fun create(value: Int): Health = entries.firstOrNull { it.value == value }
+            ?: throw IllegalArgumentException("Cannot create Health for value $value")
     }
 }

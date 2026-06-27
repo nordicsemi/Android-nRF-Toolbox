@@ -9,9 +9,7 @@ enum class Medication(internal val value: Int) {
     PRE_MIXED_INSULIN(5);
 
     companion object {
-        fun create(value: Int): Medication {
-            return entries.firstOrNull { it.value == value }
-                ?: throw IllegalArgumentException("Cannot create Medication for value $value")
-        }
+        fun create(value: Int): Medication = entries.firstOrNull { it.value == value }
+            ?: throw IllegalArgumentException("Cannot create Medication for value $value")
     }
 }

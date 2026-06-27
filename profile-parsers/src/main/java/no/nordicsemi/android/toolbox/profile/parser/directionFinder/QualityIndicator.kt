@@ -7,9 +7,7 @@ enum class QualityIndicator(val id: Int) {
     NOT_SPECIFIED(3);
 
     companion object {
-        fun create(id: Int): QualityIndicator {
-            return entries.find { it.id == id }
-                ?: throw IllegalArgumentException("Cannot find QualityIndicator for specified id: $id")
-        }
+        fun create(id: Int): QualityIndicator = entries.find { it.id == id }
+            ?: throw IllegalArgumentException("Cannot find QualityIndicator for specified id: $id")
     }
 }

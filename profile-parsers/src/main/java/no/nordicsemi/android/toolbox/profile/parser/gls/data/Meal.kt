@@ -9,9 +9,7 @@ enum class Meal(internal val value: Int) {
     BEDTIME(5);
 
     companion object {
-        fun create(value: Int): Meal {
-            return entries.firstOrNull { it.value == value }
-                ?: throw IllegalArgumentException("Cannot create Meal for value $value")
-        }
+        fun create(value: Int): Meal = entries.firstOrNull { it.value == value }
+            ?: throw IllegalArgumentException("Cannot create Meal for value $value")
     }
 }

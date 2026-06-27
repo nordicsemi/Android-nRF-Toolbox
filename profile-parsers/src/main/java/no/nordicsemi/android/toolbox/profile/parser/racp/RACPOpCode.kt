@@ -7,9 +7,7 @@ enum class RACPOpCode(internal val value: Int) {
     RACP_OP_CODE_REPORT_NUMBER_OF_RECORDS(4);
 
     companion object {
-        fun create(value: Int): RACPOpCode {
-            return entries.firstOrNull { it.value == value }
-                ?: throw IllegalArgumentException("Cannot create RACP op code for value: $value")
-        }
+        fun create(value: Int): RACPOpCode = entries.firstOrNull { it.value == value }
+            ?: throw IllegalArgumentException("Cannot create RACP op code for value: $value")
     }
 }

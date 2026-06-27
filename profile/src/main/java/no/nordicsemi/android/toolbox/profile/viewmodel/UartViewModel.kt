@@ -92,21 +92,23 @@ internal class UartViewModel @Inject constructor(
     /**
      * Observes the UART profile from the device repository.
      */
-    private fun observeUartProfile() = viewModelScope.launch {
-        // Observe the profile handler flow from the device repository.
-        deviceRepository.profileHandlerFlow
-            .filter { it.isNotEmpty() }
-            .onEach { mapOfPeripheralProfiles ->
-                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                    if (peripheral.address == address) {
-                        profiles.filter { it.profile == Profile.UART }
-                            .forEach { _ ->
-                                startUartService()
-                            }
+    private fun observeUartProfile() {
+        viewModelScope.launch {
+            // Observe the profile handler flow from the device repository.
+            deviceRepository.profileHandlerFlow
+                .filter { it.isNotEmpty() }
+                .onEach { mapOfPeripheralProfiles ->
+                    mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
+                        if (peripheral.address == address) {
+                            profiles.filter { it.profile == Profile.UART }
+                                .forEach { _ ->
+                                    startUartService()
+                                }
+                        }
                     }
                 }
-            }.launchIn(this)
-
+                .launchIn(this)
+        }
     }
 
     /**
@@ -127,19 +129,21 @@ internal class UartViewModel @Inject constructor(
      * Observes the UART configurations from the repository.
      * It updates the selected configuration name and loads previous configurations.
      */
-    private fun observeConfigurations() = with(uartConfigurationRepository) {
+    private fun observeConfigurations(): Unit = with(uartConfigurationRepository) {
         // Get the last configuration name from the data store.
         getLastConfigurationName()
             .filterNotNull()
             .onEach { name ->
                 UartRepository.updateSelectedConfigurationName(address, name)
-            }.launchIn(viewModelScope)
+            }
+            .launchIn(viewModelScope)
 
         // Get all configurations for the device.
         getAllConfigurations()
             .onEach { uartConfigurations ->
                 UartRepository.loadPreviousConfigurations(address, uartConfigurations)
-            }.launchIn(viewModelScope)
+            }
+            .launchIn(viewModelScope)
     }
 
     // UART events.
@@ -168,8 +172,10 @@ internal class UartViewModel @Inject constructor(
     /**
      * Deletes the macro from the repository.
      */
-    private fun onDeleteMacro() = viewModelScope.launch(Dispatchers.IO) {
-        UartRepository.onDeleteMacro(address)
+    private fun onDeleteMacro() {
+        viewModelScope.launch(Dispatchers.IO) {
+            UartRepository.onDeleteMacro(address)
+        }
     }
 
     /**
@@ -186,11 +192,13 @@ internal class UartViewModel @Inject constructor(
      * Adds a new macro to the repository.
      * It saves the new macro to the database.
      */
-    private fun addNewMacro(macroName: UARTMacro) = viewModelScope.launch(Dispatchers.IO) {
-        val newConfig = UartRepository.addOrEditMacro(address, macroName)
-        if (newConfig != null) {
-            // Save the new configuration to the database.
-            uartConfigurationRepository.insertConfiguration(newConfig)
+    private fun addNewMacro(macroName: UARTMacro) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val newConfig = UartRepository.addOrEditMacro(address, macroName)
+            if (newConfig != null) {
+                // Save the new configuration to the database.
+                uartConfigurationRepository.insertConfiguration(newConfig)
+            }
         }
     }
 
@@ -198,64 +206,74 @@ internal class UartViewModel @Inject constructor(
      * Called when a macro is edited.
      * It notifies the repository that the macro is edited.
      */
-    private fun onEditMacro(position: Int) = viewModelScope.launch {
-        // Update the configuration in the UART repository.
-        UartRepository.onEditMacro(address, position)
+    private fun onEditMacro(position: Int) {
+        viewModelScope.launch {
+            // Update the configuration in the UART repository.
+            UartRepository.onEditMacro(address, position)
+        }
     }
 
     /**
      * Edit uart configuration.
      */
-    private fun onEditConfiguration() = viewModelScope.launch {
-        // Update the configuration in the UART repository.
-        UartRepository.onEditConfiguration(address)
+    private fun onEditConfiguration() {
+        viewModelScope.launch {
+            // Update the configuration in the UART repository.
+            UartRepository.onEditConfiguration(address)
+        }
     }
 
     /**
      * Runs the macro.
      */
-    private fun runMacro(macro: UARTMacro) = viewModelScope.launch {
-        UartRepository.runMacro(address, macro)
-        // Log the event in the analytics.
-        analytics.logEvent(UARTSendAnalyticsEvent(UARTMode.PRESET))
+    private fun runMacro(macro: UARTMacro) {
+        viewModelScope.launch {
+            UartRepository.runMacro(address, macro)
+            // Log the event in the analytics.
+            analytics.logEvent(UARTSendAnalyticsEvent(UARTMode.PRESET))
+        }
     }
 
     /**
      * Adds a new configuration to the repository and database.
      */
-    private fun onAddConfiguration(name: String) = viewModelScope.launch(Dispatchers.IO) {
-        // Update the configuration in the UART repository.
-        UartRepository.updateSelectedConfigurationName(address, name)
-        // Add configuration to the database.
-        val configurationId =
-            uartConfigurationRepository.insertConfiguration(UARTConfiguration(null, name))
-                ?: return@launch
-        // Add configuration to the repository.
-        UartRepository.addConfiguration(address, UARTConfiguration(configurationId.toInt(), name))
+    private fun onAddConfiguration(name: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // Update the configuration in the UART repository.
+            UartRepository.updateSelectedConfigurationName(address, name)
+            // Add configuration to the database.
+            val configurationId =
+                uartConfigurationRepository.insertConfiguration(UARTConfiguration(null, name))
+                    ?: return@launch
+            // Add configuration to the repository.
+            UartRepository.addConfiguration(address, UARTConfiguration(configurationId.toInt(), name))
 
-        // Save the configuration name in the data store.
-        uartConfigurationRepository.saveLastConfigurationNameToDataSource(name)
-        // Log the event in the analytics.
-        analytics.logEvent(UARTCreateConfiguration())
+            // Save the configuration name in the data store.
+            uartConfigurationRepository.saveLastConfigurationNameToDataSource(name)
+            // Log the event in the analytics.
+            analytics.logEvent(UARTCreateConfiguration())
+        }
     }
 
     /**
      * Called when a configuration is selected.
      * It updates the selected configuration in the repository and saves it to the data store.
      */
-    private fun onConfigurationSelected(configuration: UARTConfiguration) = viewModelScope.launch {
-        UartRepository.updateSelectedConfigurationName(address, configuration.name)
-        // Update the selected configuration in the datastore.
-        uartConfigurationRepository.saveLastConfigurationNameToDataSource(configuration.name)
-        // Log the event in the analytics.
-        analytics.logEvent(UARTChangeConfiguration())
+    private fun onConfigurationSelected(configuration: UARTConfiguration) {
+        viewModelScope.launch {
+            UartRepository.updateSelectedConfigurationName(address, configuration.name)
+            // Update the selected configuration in the datastore.
+            uartConfigurationRepository.saveLastConfigurationNameToDataSource(configuration.name)
+            // Log the event in the analytics.
+            analytics.logEvent(UARTChangeConfiguration())
+        }
     }
 
     /**
      * Deletes the configuration from the repository and database.
      * It also removes the selected configuration if it is deleted.
      */
-    private fun deleteConfiguration(configuration: UARTConfiguration) =
+    private fun deleteConfiguration(configuration: UARTConfiguration) {
         viewModelScope.launch(Dispatchers.IO) {
             // delete the configuration from the list.
             UartRepository.deleteConfiguration(address, configuration)
@@ -264,13 +282,16 @@ internal class UartViewModel @Inject constructor(
             // delete the configuration from the database.
             uartConfigurationRepository.deleteConfiguration(configuration)
         }
+    }
 
     /**
      * Sends the text to the UART device.
      */
-    private fun sendText(text: String, newLineChar: MacroEol) = viewModelScope.launch {
-        UartRepository.sendText(address, text, newLineChar)
-        // Log the event in the analytics.
-        analytics.logEvent(UARTSendAnalyticsEvent(UARTMode.TEXT))
+    private fun sendText(text: String, newLineChar: MacroEol) {
+        viewModelScope.launch {
+            UartRepository.sendText(address, text, newLineChar)
+            // Log the event in the analytics.
+            analytics.logEvent(UARTSendAnalyticsEvent(UARTMode.TEXT))
+        }
     }
 }

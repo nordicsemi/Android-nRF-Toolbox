@@ -45,19 +45,22 @@ internal class LBSViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.LBS].
      */
-    private fun observeLbsProfile() = viewModelScope.launch {
-        // update state or emit to UI
-        deviceRepository.profileHandlerFlow
-            .onEach { mapOfPeripheralProfiles ->
-                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                    if (peripheral.address == address) {
-                        profiles.filter { it.profile == Profile.LBS }
-                            .forEach { _ ->
-                                startLBSService(peripheral.address)
-                            }
+    private fun observeLbsProfile() {
+        viewModelScope.launch {
+            // update state or emit to UI
+            deviceRepository.profileHandlerFlow
+                .onEach { mapOfPeripheralProfiles ->
+                    mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
+                        if (peripheral.address == address) {
+                            profiles.filter { it.profile == Profile.LBS }
+                                .forEach { _ ->
+                                    startLBSService(peripheral.address)
+                                }
+                        }
                     }
                 }
-            }.launchIn(this)
+                .launchIn(this)
+        }
     }
 
     /**
@@ -65,12 +68,14 @@ internal class LBSViewModel @Inject constructor(
      */
     private fun startLBSService(address: String) {
         // Start the LBS service and observe location changes
-        LBSRepository.getData(address).onEach {
-            _lbsState.value = _lbsState.value.copy(
-                profile = it.profile,
-                data = it.data,
-            )
-        }.launchIn(viewModelScope)
+        LBSRepository.getData(address)
+            .onEach {
+                _lbsState.value = _lbsState.value.copy(
+                    profile = it.profile,
+                    data = it.data,
+                )
+            }
+            .launchIn(viewModelScope)
     }
 
     /**

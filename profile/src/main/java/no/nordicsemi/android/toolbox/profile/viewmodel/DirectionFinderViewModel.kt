@@ -44,7 +44,7 @@ internal class DirectionFinderViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.DFS].
      */
-    private fun observeDFSProfile() =
+    private fun observeDFSProfile() {
         deviceRepository.profileHandlerFlow
             .onEach { mapOfPeripheralProfiles ->
                 mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
@@ -55,21 +55,26 @@ internal class DirectionFinderViewModel @Inject constructor(
                             }
                     }
                 }
-            }.launchIn(viewModelScope)
+            }
+            .launchIn(viewModelScope)
+    }
 
     /**
      * Starts the DFS service and observes direction finder profile data changes.
      */
-    private fun startDFSService() =
-        DFSRepository.getData(address).onEach {
-            _dfsState.value = _dfsState.value.copy(
-                requestStatus = it.requestStatus,
-                data = it.data,
-                ddfFeature = it.ddfFeature,
-                selectedDevice = it.selectedDevice,
-                distanceRange = it.distanceRange,
-            )
-        }.launchIn(viewModelScope)
+    private fun startDFSService() {
+        DFSRepository.getData(address)
+            .onEach {
+                _dfsState.value = _dfsState.value.copy(
+                    requestStatus = it.requestStatus,
+                    data = it.data,
+                    ddfFeature = it.ddfFeature,
+                    selectedDevice = it.selectedDevice,
+                    distanceRange = it.distanceRange,
+                )
+            }
+            .launchIn(viewModelScope)
+    }
 
     /**
      * Handles events related to the Direction Finder Service (DFS).

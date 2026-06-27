@@ -27,7 +27,6 @@ import java.nio.ByteBuffer
 
 @Suppress("unused")
 object CGMSpecificOpsControlPointDataParser {
-
     private const val OP_CODE_SET_COMMUNICATION_INTERVAL: Byte = 1
     private const val OP_CODE_GET_COMMUNICATION_INTERVAL: Byte = 2
     private const val OP_CODE_SET_CALIBRATION_VALUE: Byte = 4

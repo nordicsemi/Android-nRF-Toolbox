@@ -14,9 +14,7 @@ enum class CGMOpCode(val value: Int) {
     CGM_OP_CODE_STOP_SESSION(27);
 
     companion object {
-        fun create(value: Int): CGMOpCode {
-            return entries.firstOrNull { it.value == value }
-                ?: throw IllegalArgumentException("Cannot create op code for value: $value")
-        }
+        fun create(value: Int): CGMOpCode = entries.firstOrNull { it.value == value }
+            ?: throw IllegalArgumentException("Cannot create op code for value: $value")
     }
 }

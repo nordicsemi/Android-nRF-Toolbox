@@ -47,7 +47,7 @@ internal class ThroughputViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.THROUGHPUT].
      */
-    private fun observeThroughputProfile() =
+    private fun observeThroughputProfile() {
         deviceRepository.profileHandlerFlow
             .onEach { mapOfPeripheralProfiles ->
                 mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
@@ -58,20 +58,25 @@ internal class ThroughputViewModel @Inject constructor(
                             }
                     }
                 }
-            }.launchIn(viewModelScope)
+            }
+            .launchIn(viewModelScope)
+    }
 
     /**
      * Starts the Throughput service and observes throughput data changes.
      */
-    private fun startThroughputService(address: String) =
-        ThroughputRepository.getData(address).onEach {
-            _throughputState.value = _throughputState.value.copy(
-                profile = it.profile,
-                throughputData = it.throughputData,
-                writingStatus = it.writingStatus,
-                maxWriteValueLength = it.maxWriteValueLength
-            )
-        }.launchIn(viewModelScope)
+    private fun startThroughputService(address: String) {
+        ThroughputRepository.getData(address)
+            .onEach {
+                _throughputState.value = _throughputState.value.copy(
+                    profile = it.profile,
+                    throughputData = it.throughputData,
+                    writingStatus = it.writingStatus,
+                    maxWriteValueLength = it.maxWriteValueLength
+                )
+            }
+            .launchIn(viewModelScope)
+    }
 
     /**
      * Handles events related to the Throughput profile.

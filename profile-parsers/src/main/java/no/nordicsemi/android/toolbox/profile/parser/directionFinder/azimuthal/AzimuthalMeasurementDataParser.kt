@@ -37,6 +37,5 @@ class AzimuthalMeasurementDataParser {
         val azimuth = data.getInt(offset, IntFormat.UINT16, byteOrder)
 
         return AzimuthMeasurementData(qualityIndicator, address, azimuth)
-
     }
 }

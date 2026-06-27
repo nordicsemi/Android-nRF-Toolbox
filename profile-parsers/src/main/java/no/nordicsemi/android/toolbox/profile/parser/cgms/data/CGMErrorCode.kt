@@ -7,9 +7,7 @@ enum class CGMErrorCode(val value: Int) {
     CGM_ERROR_PARAMETER_OUT_OF_RANGE(5);
 
     companion object {
-        fun create(value: Int): CGMErrorCode {
-            return entries.firstOrNull { it.value == value }
-                ?: throw IllegalArgumentException("Cannot create error code for value: $value")
-        }
+        fun create(value: Int): CGMErrorCode = entries.firstOrNull { it.value == value }
+            ?: throw IllegalArgumentException("Cannot create error code for value: $value")
     }
 }

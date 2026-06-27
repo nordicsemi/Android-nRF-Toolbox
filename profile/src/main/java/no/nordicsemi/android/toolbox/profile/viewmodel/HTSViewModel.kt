@@ -3,6 +3,7 @@ package no.nordicsemi.android.toolbox.profile.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -43,19 +44,21 @@ internal class HTSViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.HTS].
      */
-    private fun observeHtsProfile() = viewModelScope.launch {
-        // update state or emit to UI
-        deviceRepository.profileHandlerFlow
-            .onEach { mapOfPeripheralProfiles ->
-                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                    if (peripheral.address == address) {
-                        profiles.filter { it.profile == Profile.HTS }
-                            .forEach { _ ->
-                                startHTSService(peripheral.address)
-                            }
+    private fun observeHtsProfile() {
+        viewModelScope.launch {
+            // update state or emit to UI
+            deviceRepository.profileHandlerFlow
+                .onEach { mapOfPeripheralProfiles ->
+                    mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
+                        if (peripheral.address == address) {
+                            profiles.filter { it.profile == Profile.HTS }
+                                .forEach { _ ->
+                                    startHTSService(peripheral.address)
+                                }
+                        }
                     }
-                }
-            }.launchIn(this)
+                }.launchIn(this)
+        }
     }
 
     /**
@@ -71,7 +74,8 @@ internal class HTSViewModel @Inject constructor(
                     data = htsServiceData.data,
                     temperatureUnit = htsServiceData.temperatureUnit,
                 )
-            }.launchIn(viewModelScope)
+            }
+            .launchIn(viewModelScope)
     }
 
     /**

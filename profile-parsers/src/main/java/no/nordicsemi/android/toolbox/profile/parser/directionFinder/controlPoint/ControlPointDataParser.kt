@@ -29,7 +29,7 @@ class ControlPointDataParser {
                         onCheckModeResult(
                             opCode = result,
                             modes = data.slice(offset until data.size)
-                                .mapNotNull { ControlPointMode.create(it.toInt()) })
+                                .map { ControlPointMode.create(it.toInt()) })
                     }
                 }
             }

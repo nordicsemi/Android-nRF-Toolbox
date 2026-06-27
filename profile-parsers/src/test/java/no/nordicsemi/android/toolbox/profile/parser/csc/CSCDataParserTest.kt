@@ -5,7 +5,7 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import java.nio.ByteBuffer
-import no.nordicsemi.kotlin.data.ByteOrder
+import java.nio.ByteOrder
 
 class CSCDataParserTest {
 

@@ -43,30 +43,36 @@ internal class GLSViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.GLS].
      */
-    private fun observeGLSProfile() = deviceRepository.profileHandlerFlow
-        .onEach { mapOfPeripheralProfiles ->
-            mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                if (peripheral.address == address) {
-                    profiles.filter { it.profile == Profile.GLS }
-                        .forEach { _ ->
-                            startGLSService(peripheral.address)
-                        }
+    private fun observeGLSProfile() {
+        deviceRepository.profileHandlerFlow
+            .onEach { mapOfPeripheralProfiles ->
+                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
+                    if (peripheral.address == address) {
+                        profiles.filter { it.profile == Profile.GLS }
+                            .forEach { _ ->
+                                startGLSService(peripheral.address)
+                            }
+                    }
                 }
             }
-        }.launchIn(viewModelScope)
+            .launchIn(viewModelScope)
+    }
 
     /**
      * Starts the GLS service and observes glucose profile data changes.
      */
-    private fun startGLSService(address: String) =
-        GLSRepository.getData(address).onEach {
-            _glsState.value = _glsState.value.copy(
-                profile = it.profile,
-                records = it.records,
-                requestStatus = it.requestStatus,
-                workingMode = it.workingMode,
-            )
-        }.launchIn(viewModelScope)
+    private fun startGLSService(address: String) {
+        GLSRepository.getData(address)
+            .onEach {
+                _glsState.value = _glsState.value.copy(
+                    profile = it.profile,
+                    records = it.records,
+                    requestStatus = it.requestStatus,
+                    workingMode = it.workingMode,
+                )
+            }
+            .launchIn(viewModelScope)
+    }
 
     /**
      * Handles events related to the GLS profile.

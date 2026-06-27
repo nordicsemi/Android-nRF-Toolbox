@@ -58,6 +58,7 @@ internal class UartConfigurationRepository @Inject constructor(
         }
     }
 
+    @IgnorableReturnValue
     suspend fun insertConfiguration(configuration: UARTConfiguration): Long? {
         val configurationEntity = configuration.toConfigurationEntity()
         return configurationEntity?.let { configurationDao.insertConfiguration(it) }

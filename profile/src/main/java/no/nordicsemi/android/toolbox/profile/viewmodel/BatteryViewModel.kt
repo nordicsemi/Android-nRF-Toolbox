@@ -36,18 +36,21 @@ internal class BatteryViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.BATTERY].
      */
-    private fun observeBatteryProfile() = viewModelScope.launch {
-        deviceRepository.profileHandlerFlow
-            .onEach { mapOfPeripheralProfiles ->
-                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                    if (peripheral.address == address) {
-                        profiles.filter { it.profile == Profile.BATTERY }
-                            .forEach { _ ->
-                                startBatteryService(peripheral.address)
-                            }
+    private fun observeBatteryProfile() {
+        viewModelScope.launch {
+            deviceRepository.profileHandlerFlow
+                .onEach { mapOfPeripheralProfiles ->
+                    mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
+                        if (peripheral.address == address) {
+                            profiles.filter { it.profile == Profile.BATTERY }
+                                .forEach { _ ->
+                                    startBatteryService(peripheral.address)
+                                }
+                        }
                     }
                 }
-            }.launchIn(this)
+                .launchIn(this)
+        }
     }
 
     /**
@@ -55,11 +58,13 @@ internal class BatteryViewModel @Inject constructor(
      *
      * @param address The address of the peripheral device.
      */
-    private fun startBatteryService(address: String) = BatteryRepository.getData(address)
-        .onEach { batteryServiceState ->
-            // Handle the temperature data, e.g., update UI or state
-            // This is where you would emit the temperature data to your UI
-            _batteryServiceState.value = batteryServiceState
-        }.launchIn(viewModelScope)
-
+    private fun startBatteryService(address: String) {
+        BatteryRepository.getData(address)
+            .onEach { batteryServiceState ->
+                // Handle the temperature data, e.g., update UI or state
+                // This is where you would emit the temperature data to your UI
+                _batteryServiceState.value = batteryServiceState
+            }
+            .launchIn(viewModelScope)
+    }
 }

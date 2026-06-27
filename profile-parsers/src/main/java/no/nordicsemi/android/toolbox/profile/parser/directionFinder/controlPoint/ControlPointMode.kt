@@ -5,9 +5,8 @@ enum class ControlPointMode(val value: Int) {
     MCPD(0x01);
 
     companion object {
-        fun create(value: Int): ControlPointMode? {
-            return entries.find { it.value == value }
-        }
+        fun create(value: Int): ControlPointMode = entries.find { it.value == value }
+            ?: throw IllegalArgumentException("Cannot create Carbohydrate for value $value")
     }
 }
 

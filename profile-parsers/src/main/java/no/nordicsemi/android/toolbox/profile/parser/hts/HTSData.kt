@@ -55,12 +55,10 @@ enum class TemperatureUnitData {
     CELSIUS, FAHRENHEIT;
 
     companion object {
-        fun create(flag: Int): TemperatureUnitData? {
-            return when (flag) {
-                0 -> CELSIUS
-                1 -> FAHRENHEIT
-                else -> null
-            }
+        fun create(flag: Int): TemperatureUnitData? = when (flag) {
+            0 -> CELSIUS
+            1 -> FAHRENHEIT
+            else -> null
         }
     }
 }

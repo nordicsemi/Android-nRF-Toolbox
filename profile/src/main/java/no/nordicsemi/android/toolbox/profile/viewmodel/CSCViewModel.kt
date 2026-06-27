@@ -3,6 +3,7 @@ package no.nordicsemi.android.toolbox.profile.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -39,30 +40,36 @@ internal class CSCViewModel @Inject constructor(
         observeCSCProfile()
     }
 
-    private fun observeCSCProfile() = viewModelScope.launch {
-        // update state or emit to UI
-        deviceRepository.profileHandlerFlow
-            .onEach { mapOfPeripheralProfiles ->
-                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                    if (peripheral.address == address) {
-                        profiles.filter { it.profile == Profile.CSC }
-                            .forEach { _ ->
-                                startCSCService(peripheral.address)
-                            }
+    private fun observeCSCProfile() {
+        viewModelScope.launch {
+            // update state or emit to UI
+            deviceRepository.profileHandlerFlow
+                .onEach { mapOfPeripheralProfiles ->
+                    mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
+                        if (peripheral.address == address) {
+                            profiles.filter { it.profile == Profile.CSC }
+                                .forEach { _ ->
+                                    startCSCService(peripheral.address)
+                                }
+                        }
                     }
                 }
-            }.launchIn(this)
+                .launchIn(this)
+        }
     }
 
-    private fun startCSCService(address: String) =
+    private fun startCSCService(address: String) {
         // Start the LBS service and observe location changes
-        CSCRepository.getData(address).onEach {
-            _cscState.value = _cscState.value.copy(
-                profile = it.profile,
-                data = it.data,
-                speedUnit = it.speedUnit
-            )
-        }.launchIn(viewModelScope)
+        CSCRepository.getData(address)
+            .onEach {
+                _cscState.value = _cscState.value.copy(
+                    profile = it.profile,
+                    data = it.data,
+                    speedUnit = it.speedUnit
+                )
+            }
+            .launchIn(viewModelScope)
+    }
 
     fun onEvent(event: CSCEvent) {
         when (event) {

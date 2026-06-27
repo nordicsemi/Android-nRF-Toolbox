@@ -39,7 +39,7 @@ internal class HRSViewModel @Inject constructor(
     /**
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.HRS].
      */
-    private fun observeHRSProfile() =
+    private fun observeHRSProfile() {
         deviceRepository.profileHandlerFlow
             .onEach { mapOfPeripheralProfiles ->
                 mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
@@ -50,21 +50,26 @@ internal class HRSViewModel @Inject constructor(
                             }
                     }
                 }
-            }.launchIn(viewModelScope)
+            }
+            .launchIn(viewModelScope)
+    }
 
     /**
      * Starts the HRS service and observes heart rate data changes.
      */
-    private fun startHRSService(address: String) =
-        HRSRepository.getData(address).onEach {
-            _hrsState.value = _hrsState.value.copy(
-                profile = it.profile,
-                heartRate = it.heartRate,
-                data = it.data,
-                bodySensorLocation = it.bodySensorLocation,
-                zoomIn = it.zoomIn,
-            )
-        }.launchIn(viewModelScope)
+    private fun startHRSService(address: String) {
+        HRSRepository.getData(address)
+            .onEach {
+                _hrsState.value = _hrsState.value.copy(
+                    profile = it.profile,
+                    heartRate = it.heartRate,
+                    data = it.data,
+                    bodySensorLocation = it.bodySensorLocation,
+                    zoomIn = it.zoomIn,
+                )
+            }
+            .launchIn(viewModelScope)
+    }
 
     /**
      * Handles events related to the HRS profile.
@@ -74,5 +79,4 @@ internal class HRSViewModel @Inject constructor(
             HRSEvent.SwitchZoomEvent -> HRSRepository.updateZoomIn(address)
         }
     }
-
 }

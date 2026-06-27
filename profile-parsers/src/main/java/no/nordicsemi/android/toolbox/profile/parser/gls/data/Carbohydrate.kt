@@ -11,9 +11,7 @@ enum class Carbohydrate(internal val value: Int) {
     BRUNCH(7);
 
     companion object {
-        fun create(value: Int): Carbohydrate {
-            return entries.firstOrNull { it.value == value }
-                ?: throw IllegalArgumentException("Cannot create Carbohydrate for value $value")
-        }
+        fun create(value: Int): Carbohydrate = entries.firstOrNull { it.value == value }
+            ?: throw IllegalArgumentException("Cannot create Carbohydrate for value $value")
     }
 }

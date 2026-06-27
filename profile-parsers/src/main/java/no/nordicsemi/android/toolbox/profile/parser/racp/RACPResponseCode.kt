@@ -12,9 +12,7 @@ enum class RACPResponseCode(internal val value: Int) {
     RACP_ERROR_OPERAND_NOT_SUPPORTED(9);
 
     companion object {
-        fun create(value: Int): RACPResponseCode {
-            return entries.firstOrNull { it.value == value }
-                ?: throw IllegalArgumentException("Cannot create RACP response code for value: $value")
-        }
+        fun create(value: Int): RACPResponseCode = entries.firstOrNull { it.value == value }
+            ?: throw IllegalArgumentException("Cannot create RACP response code for value: $value")
     }
 }
