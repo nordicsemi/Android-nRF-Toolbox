@@ -11,7 +11,6 @@ android {
 
 dependencies {
     implementation(nordic.kotlin.data)
-    api(nordic.blek.client.core.android)
     api(libs.androidx.annotation)
 
     // Unit test dependencies

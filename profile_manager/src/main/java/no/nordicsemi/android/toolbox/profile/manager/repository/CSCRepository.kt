@@ -20,13 +20,7 @@ object CSCRepository {
     }
 
     fun setWheelSize(deviceId: String, wheelSize: WheelSize) {
-        _dataMap[deviceId]?.update { currentValue ->
-            currentValue.copy(
-                data = CSCData(
-                    wheelSize = wheelSize
-                )
-            )
-        }
+        _dataMap[deviceId]?.update { it.copy(data = CSCData(wheelSize = wheelSize)) }
     }
 
     fun setSpeedUnit(deviceId: String, speedUnit: SpeedUnit) {

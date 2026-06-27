@@ -95,11 +95,11 @@ object DFSRepository {
             val elevations = sensorData.elevation ?: SensorValue()
             val newElevation = elevations.copyWithNewValue(validatedElevation)
             val newSensorData = sensorData.copy(elevation = newElevation)
-            val newDevicesData = current.data.toMutableMap().apply {
-                put(key, newSensorData)
-            }.toMap()
+            val newDevicesData = current.data
+                .toMutableMap()
+                .apply { put(key, newSensorData) }
+                .toMap()
             current.copy(data = newDevicesData)
-
         }
     }
 

@@ -41,7 +41,6 @@ object GLSRepository {
                 )
             }
         }
-
     }
 
     suspend fun requestRecord(deviceId: String, workingMode: WorkingMode) {

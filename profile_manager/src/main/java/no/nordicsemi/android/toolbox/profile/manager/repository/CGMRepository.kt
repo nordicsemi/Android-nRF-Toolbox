@@ -20,12 +20,7 @@ object CGMRepository {
     }
 
     fun onMeasurementDataReceived(deviceId: String, data: List<CGMRecordWithSequenceNumber>) {
-        _dataMap[deviceId]?.update {
-            it.copy(
-                records = it.records + data
-
-            )
-        }
+        _dataMap[deviceId]?.update { it.copy(records = it.records + data) }
     }
 
     fun updateNewRequestStatus(deviceId: String, requestStatus: RequestStatus) {
@@ -33,11 +28,7 @@ object CGMRepository {
     }
 
     private fun clearState(deviceId: String) {
-        _dataMap[deviceId]?.update {
-            it.copy(
-                records = emptyList(),
-            )
-        }
+        _dataMap[deviceId]?.update { it.copy(records = emptyList()) }
     }
 
     suspend fun requestRecord(deviceId: String, workingMode: WorkingMode) {

@@ -4,6 +4,6 @@ suspend fun tryOrLog(block: suspend () -> Unit) {
     try {
         block()
     } catch (t: Throwable) {
-        t.printStackTrace()
+        t.logAndReport()
     }
 }

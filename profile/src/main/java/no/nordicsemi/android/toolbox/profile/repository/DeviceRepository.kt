@@ -38,7 +38,6 @@ class DeviceRepository @Inject constructor(
         _profilePeripheralPair.update {
             it.toMutableMap().apply { this[peripheral] = serviceManager }
         }
-
     }
 
     /**

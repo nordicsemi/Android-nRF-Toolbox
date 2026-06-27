@@ -10,6 +10,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":profile_parsers"))
     implementation(project(":lib_utils"))
+    implementation(project(":profile_parsers"))
 }

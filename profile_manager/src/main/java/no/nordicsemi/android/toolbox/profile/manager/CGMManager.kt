@@ -206,8 +206,7 @@ internal class CGMManager : ServiceManager {
 
         if (numberOfRecords > 0)
             tryOrLog {
-                recordAccessControlPointCharacteristic
-                    .write(
+                recordAccessControlPointCharacteristic.write(
                         if (state.value.records.isNotEmpty()) {
                             RecordAccessControlPointInputParser.reportStoredRecordsGreaterThenOrEqualTo(
                                 highestSequenceNumber.toShort()
@@ -235,12 +234,12 @@ internal class CGMManager : ServiceManager {
         suspend fun requestRecord(deviceId: String, workingMode: WorkingMode) {
             writeOrSetStatusFailed(deviceId) {
                 recordAccessControlPointCharacteristic.write(
-                    when (workingMode) {
+                    data = when (workingMode) {
                         WorkingMode.ALL -> RecordAccessControlPointInputParser.reportNumberOfAllStoredRecords()
                         WorkingMode.LAST -> RecordAccessControlPointInputParser.reportLastStoredRecord()
                         WorkingMode.FIRST -> RecordAccessControlPointInputParser.reportFirstStoredRecord()
                     },
-                    WriteType.WITH_RESPONSE
+                    writeType = WriteType.WITH_RESPONSE
                 )
             }
         }

@@ -32,11 +32,7 @@ data object LBSRepository {
      */
     fun updateButtonState(deviceId: String, buttonState: Boolean) {
         _dataMap[deviceId]?.update {
-            it.copy(
-                data = it.data.copy(
-                    buttonState = buttonState
-                )
-            )
+            it.copy(data = it.data.copy(buttonState = buttonState))
         }
     }
 
