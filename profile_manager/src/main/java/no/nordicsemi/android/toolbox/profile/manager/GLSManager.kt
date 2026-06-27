@@ -26,7 +26,6 @@ import no.nordicsemi.android.toolbox.profile.parser.racp.RACPResponseCode
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.WriteType
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val GLUCOSE_MEASUREMENT_CHARACTERISTIC = Uuid.parse("00002A18-0000-1000-8000-00805f9b34fb")
@@ -37,7 +36,6 @@ private val RACP_CHARACTERISTIC = Uuid.parse("00002A52-0000-1000-8000-00805f9b34
 internal class GLSManager : ServiceManager {
     override val profile: Profile = Profile.GLS
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

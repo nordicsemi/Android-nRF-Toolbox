@@ -14,7 +14,6 @@ import no.nordicsemi.kotlin.ble.core.WriteType
 import no.nordicsemi.kotlin.ble.core.util.chunked
 import timber.log.Timber
 import kotlin.uuid.Uuid
-import kotlin.uuid.ExperimentalUuidApi
 
 private val THROUGHPUT_CHAR_UUID = Uuid.parse("00001524-0000-1000-8000-00805F9B34FB")
 
@@ -22,7 +21,6 @@ internal class ThroughputManager : ServiceManager {
     override val profile: Profile
         get() = Profile.THROUGHPUT
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

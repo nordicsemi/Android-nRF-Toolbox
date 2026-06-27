@@ -12,7 +12,6 @@ import no.nordicsemi.android.toolbox.profile.parser.battery.BatteryLevelParser
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.CharacteristicProperty
 import timber.log.Timber
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val BATTERY_LEVEL_CHARACTERISTIC_UUID: Uuid = Uuid.parse("00002A19-0000-1000-8000-00805f9b34fb")
@@ -20,7 +19,6 @@ private val BATTERY_LEVEL_CHARACTERISTIC_UUID: Uuid = Uuid.parse("00002A19-0000-
 internal class BatteryManager : ServiceManager {
     override val profile: Profile = Profile.BATTERY
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

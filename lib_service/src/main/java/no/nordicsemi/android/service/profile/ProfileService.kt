@@ -33,7 +33,6 @@ import no.nordicsemi.kotlin.ble.core.ConnectionState
 import no.nordicsemi.kotlin.ble.core.WriteType
 import timber.log.Timber
 import javax.inject.Inject
-import kotlin.uuid.ExperimentalUuidApi
 
 @AndroidEntryPoint
 internal class ProfileService : NotificationService() {
@@ -137,7 +136,6 @@ internal class ProfileService : NotificationService() {
     /**
      * Discovers services on the peripheral and sets up observation for each recognized service.
      */
-    @OptIn(ExperimentalUuidApi::class)
     private fun discoverAndObserveServices(
         peripheral: Peripheral,
         scope: CoroutineScope
@@ -180,7 +178,6 @@ internal class ProfileService : NotificationService() {
      * Observes interactions for a specific service on the peripheral.
      */
     @SuppressLint("TimberExceptionLogging")
-    @OptIn(ExperimentalUuidApi::class)
     private suspend fun observeService(
         peripheral: Peripheral,
         service: RemoteService,

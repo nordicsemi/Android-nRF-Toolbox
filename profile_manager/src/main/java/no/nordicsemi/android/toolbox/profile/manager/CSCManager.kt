@@ -10,7 +10,6 @@ import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.manager.repository.CSCRepository
 import no.nordicsemi.android.toolbox.profile.parser.csc.CSCDataParser
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val CSC_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A5B-0000-1000-8000-00805f9b34fb")
@@ -19,7 +18,6 @@ internal class CSCManager : ServiceManager {
     override val profile: Profile
         get() = Profile.CSC
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

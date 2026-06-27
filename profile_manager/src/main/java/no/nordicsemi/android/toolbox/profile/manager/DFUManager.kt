@@ -10,13 +10,11 @@ import no.nordicsemi.android.toolbox.lib.utils.spec.SMP_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.data.DFUsAvailable
 import no.nordicsemi.android.toolbox.profile.manager.repository.DFURepository
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import kotlin.uuid.ExperimentalUuidApi
 
 internal class DFUManager : ServiceManager {
     override val profile: Profile
         get() = Profile.DFU
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

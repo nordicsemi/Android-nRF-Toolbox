@@ -33,7 +33,6 @@ import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.CharacteristicProperty
 import no.nordicsemi.kotlin.ble.core.WriteType
 import timber.log.Timber
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val CGM_STATUS_UUID = Uuid.parse("00002AA9-0000-1000-8000-00805f9b34fb")
@@ -47,7 +46,6 @@ internal class CGMManager : ServiceManager {
     override val profile: Profile
         get() = Profile.CGM
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

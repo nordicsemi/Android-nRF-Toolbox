@@ -11,7 +11,6 @@ import no.nordicsemi.android.toolbox.profile.manager.repository.HTSRepository
 import no.nordicsemi.android.toolbox.profile.parser.hts.HTSDataParser
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val HTS_MEASUREMENT_CHARACTERISTIC_UUID =
@@ -20,7 +19,6 @@ private val HTS_MEASUREMENT_CHARACTERISTIC_UUID =
 internal class HTSManager : ServiceManager {
     override val profile: Profile = Profile.HTS
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

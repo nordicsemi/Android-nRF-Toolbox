@@ -12,7 +12,6 @@ import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.WriteType
 import timber.log.Timber
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val BLINKY_BUTTON_CHARACTERISTIC_UUID = Uuid.parse("00001524-1212-EFDE-1523-785FEABCD123")
@@ -22,7 +21,6 @@ internal class LBSManager : ServiceManager {
     override val profile: Profile
         get() = Profile.LBS
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

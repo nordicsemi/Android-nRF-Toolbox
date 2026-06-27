@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
-
 package no.nordicsemi.android.toolbox.profile.manager
 
 import kotlinx.coroutines.CoroutineScope
@@ -23,7 +21,6 @@ import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.CharacteristicProperty
 import no.nordicsemi.kotlin.ble.core.WriteType
 import timber.log.Timber
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val DISTANCE_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("21490001-494a-4573-98af-f126af76f490")
@@ -36,7 +33,6 @@ internal class DFSManager : ServiceManager {
     override val profile: Profile
         get() = Profile.DFS
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

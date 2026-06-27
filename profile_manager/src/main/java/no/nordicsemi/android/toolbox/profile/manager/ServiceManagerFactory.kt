@@ -18,10 +18,8 @@ import no.nordicsemi.android.toolbox.lib.utils.spec.RSCS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.SMP_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.THROUGHPUT_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.UART_SERVICE_UUID
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
 object ServiceManagerFactory {
 
     private val serviceManagers = mapOf(

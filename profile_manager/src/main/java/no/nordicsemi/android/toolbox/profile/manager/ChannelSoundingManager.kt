@@ -5,7 +5,6 @@ import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
 import kotlin.uuid.Uuid
-import kotlin.uuid.ExperimentalUuidApi
 
 private val RAS_FEATURES = Uuid.parse("00002C14-0000-1000-8000-00805F9B34FB")
 private val REALTIME_RANGING_DATA = Uuid.parse("00002C15-0000-1000-8000-00805F9B34FB")
@@ -18,7 +17,6 @@ internal class ChannelSoundingManager : ServiceManager {
     override val profile: Profile
         get() = Profile.CHANNEL_SOUNDING
 
-    @OptIn(ExperimentalUuidApi::class, ExperimentalStdlibApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

@@ -12,7 +12,6 @@ import no.nordicsemi.android.toolbox.profile.parser.hrs.BodySensorLocationParser
 import no.nordicsemi.android.toolbox.profile.parser.hrs.HRSDataParser
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val BODY_SENSOR_LOCATION_CHARACTERISTIC_UUID = Uuid.parse("00002A38-0000-1000-8000-00805f9b34fb")
@@ -21,7 +20,6 @@ private val HEART_RATE_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A37-00
 internal class HRSManager : ServiceManager {
     override val profile: Profile = Profile.HRS
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

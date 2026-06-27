@@ -13,7 +13,6 @@ import no.nordicsemi.android.toolbox.profile.manager.repository.BPSRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val BPM_CHARACTERISTIC_UUID = Uuid.parse("00002A35-0000-1000-8000-00805f9b34fb")
@@ -23,7 +22,6 @@ private val BPF_CHARACTERISTIC_UUID = Uuid.parse("00002A49-0000-1000-8000-00805f
 internal class BPSManager : ServiceManager {
     override val profile: Profile = Profile.BPS
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

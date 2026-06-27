@@ -12,7 +12,6 @@ import no.nordicsemi.android.toolbox.profile.manager.repository.RSCSRepository
 import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSDataParser
 import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSFeatureDataParser
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val RSC_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A53-0000-1000-8000-00805F9B34FB")
@@ -22,7 +21,6 @@ internal class RSCSManager : ServiceManager {
     override val profile: Profile
         get() = Profile.RSCS
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,

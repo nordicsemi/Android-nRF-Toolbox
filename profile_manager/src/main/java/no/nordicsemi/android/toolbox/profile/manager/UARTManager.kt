@@ -14,7 +14,6 @@ import no.nordicsemi.kotlin.ble.core.CharacteristicProperty
 import no.nordicsemi.kotlin.ble.core.WriteType
 import no.nordicsemi.kotlin.ble.core.util.chunked
 import timber.log.Timber
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val UART_RX_CHARACTERISTIC_UUID =
@@ -26,7 +25,6 @@ internal class UARTManager : ServiceManager {
     override val profile: Profile
         get() = Profile.UART
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun observeServiceInteractions(
         deviceId: String,
         remoteService: RemoteService,
