@@ -65,7 +65,6 @@ rootProject.name = "Android nRF Toolbox"
 
 include(":app")
 include(":lib_analytics")
-include(":profile-parsers")
 include(":lib_service")
 include(":lib_storage")
 include(":lib_ui")
@@ -73,6 +72,7 @@ include(":lib_utils")
 include(":profile")
 include(":profile_data")
 include(":profile_manager")
+include(":profile_parsers")
 
 //if (file("../Android-Common-Libraries").exists()) {
 //    includeBuild("../Android-Common-Libraries")

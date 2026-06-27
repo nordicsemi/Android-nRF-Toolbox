@@ -16,7 +16,7 @@ dependencies {
     implementation(project(":profile_data"))
     implementation(project(":lib_ui"))
     implementation(project(":lib_utils"))
-    implementation(project(":profile-parsers"))
+    implementation(project(":profile_parsers"))
     api(project(":lib_service"))
     implementation(project(":profile_manager"))
     implementation(project(":lib_storage"))
