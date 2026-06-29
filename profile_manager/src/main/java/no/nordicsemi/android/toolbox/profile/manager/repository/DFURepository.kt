@@ -12,11 +12,10 @@ object DFURepository {
     fun getData(deviceId: String): Flow<DFUServiceData> =
         _dataMap.getOrPut(deviceId) { MutableStateFlow(DFUServiceData()) }
 
-
     fun updateAppName(deviceId: String, appName: DFUsAvailable) {
         _dataMap[deviceId]?.let {
-            it.update { dFUServiceData ->
-                dFUServiceData.copy(dfuAppName = appName)
+            it.update { dfuServiceData ->
+                dfuServiceData.copy(dfuAppName = appName)
             }
         } ?: run {
             _dataMap[deviceId] = MutableStateFlow(DFUServiceData(dfuAppName = appName))
