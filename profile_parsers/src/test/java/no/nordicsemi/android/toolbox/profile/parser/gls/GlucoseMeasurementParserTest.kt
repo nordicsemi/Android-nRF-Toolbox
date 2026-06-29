@@ -134,7 +134,7 @@ class GlucoseMeasurementParserNewTest {
         )
 
         val littleEndianResult = GlucoseMeasurementParser.parse(littleEndianData)
-        val bigEndianResult = GlucoseMeasurementParser.parse(bigEndianData, ByteOrder.BIG_ENDIAN)
+        val bigEndianResult = GlucoseMeasurementParser.parse(bigEndianData)
 
         assertEquals(1, littleEndianResult?.sequenceNumber)
         assertEquals(1, bigEndianResult?.sequenceNumber)

@@ -45,8 +45,8 @@ data class HTSData(
     val temperature: Float = 0f,
     val unit: TemperatureUnitData = TemperatureUnitData.CELSIUS,
     val timestamp: Calendar? = null,
-    val type: Int? = null
 )
+    val type: HTSMeasurementType? = null
 
 /**
  * The temperature unit data class.
@@ -95,8 +95,6 @@ enum class HTSMeasurementType(val value: Int) {
         }
 
     companion object {
-        fun fromValue(value: Int): HTSMeasurementType? {
-            return entries.find { it.value == value }
-        }
+        fun fromValue(value: Int): HTSMeasurementType? = entries.find { it.value == value }
     }
 }

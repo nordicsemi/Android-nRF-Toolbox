@@ -15,10 +15,7 @@ import no.nordicsemi.kotlin.data.ByteOrder
 
 object GlucoseMeasurementContextParser {
 
-    fun parse(
-        data: ByteArray,
-        byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN
-    ): GLSMeasurementContext? {
+    fun parse(data: ByteArray): GLSMeasurementContext? {
         if (data.size < 3) return null
 
         var offset = 0
@@ -40,7 +37,7 @@ object GlucoseMeasurementContextParser {
             return null
         }
 
-        val sequenceNumber: Int = data.getInt(offset, IntFormat.UINT16, byteOrder)
+        val sequenceNumber: Int = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
         offset += 2
 
         // Optional fields
@@ -57,7 +54,7 @@ object GlucoseMeasurementContextParser {
             carbohydrate = Carbohydrate.create(carbohydrateId)
 
             carbohydrateAmount =
-                data.getFloat(offset + 1, FloatFormat.IEEE_11073_16_BIT, byteOrder) // in grams
+                data.getFloat(offset + 1, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN) // in grams
             offset += 3
         }
 
@@ -80,7 +77,7 @@ object GlucoseMeasurementContextParser {
         var exerciseDuration: Int? = null
         var exerciseIntensity: Int? = null
         if (exercisePresent) {
-            exerciseDuration = data.getInt(offset, IntFormat.UINT16, byteOrder) // in seconds
+            exerciseDuration = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN) // in seconds
             exerciseIntensity = data.getInt(offset + 2, IntFormat.UINT8) // in percentage
             offset += 3
         }
@@ -93,7 +90,7 @@ object GlucoseMeasurementContextParser {
             val medicationId: Int = data.getInt(offset, IntFormat.UINT8)
             medication = Medication.create(medicationId)
             medicationAmount =
-                data.getFloat(offset + 1, FloatFormat.IEEE_11073_16_BIT, byteOrder) // mg or ml
+                data.getFloat(offset + 1, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN) // mg or ml
             medicationUnit =
                 if (medicationUnitLiter) MedicationUnit.UNIT_LITER else MedicationUnit.UNIT_KG
             offset += 3
@@ -101,7 +98,7 @@ object GlucoseMeasurementContextParser {
 
         var hbA1c: Float? = null
         if (hbA1cPresent) {
-            hbA1c = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, byteOrder)
+            hbA1c = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN)
             // offset += 2;
         }
 

@@ -2,8 +2,8 @@ package no.nordicsemi.android.toolbox.profile.parser.cgms.data
 
 data class CGMFeaturesEnvelope(
     val features: CGMFeatures,
-    val type: Int,
-    val sampleLocation: Int,
+    val type: CGMType,
+    val sampleLocation: CGMLocation,
     val secured: Boolean,
     val crcValid: Boolean
 )
@@ -47,4 +47,35 @@ class CGMFeatures(
         cgmTrendInfoSupported = value and 0x008000 != 0,
         cgmQualityInfoSupported = value and 0x010000 != 0
     )
+
+enum class CGMType(internal val value: Int) {
+    RESERVED(0x0),
+    CAPILLARY_WHOLE_BLOOD(0x1),
+    CAPILLARY_PLASMA(0x2),
+    VENOUS_WHOLE_BLOOD(0x3),
+    VENOUS_PLASMA(0x4),
+    ARTERIAL_WHOLE_BLOOD(0x5),
+    ARTERIAL_PLASMA(0x6),
+    UNDETERMINED_WHOLE_BLOOD(0x7),
+    UNDETERMINED_PLASMA(0x8),
+    INTERSTITIAL_FLUID(0x9),
+    CONTROL_SOLUTION(0xA);
+
+    companion object {
+        fun create(value: Int) = CGMType.entries.firstOrNull { it.value == value } ?: RESERVED
+    }
+
+enum class CGMLocation(internal val value: Int) {
+    RESERVED(0x0),
+    FINGER(0x1),
+    ALTERNATE_SITE_TEST(0x2),
+    EARLOBE(0x3),
+    CONTROL_SOLUTION(0x4),
+    SUBCUTANEOUS_TISSUE(0x5),
+    NOT_AVAILABLE(0xF);
+
+    companion object {
+        fun create(value: Int) = CGMLocation.entries.firstOrNull { it.value == value } ?: RESERVED
+    }
+
 }

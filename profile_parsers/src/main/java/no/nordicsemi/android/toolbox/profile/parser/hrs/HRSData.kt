@@ -9,7 +9,7 @@ package no.nordicsemi.android.toolbox.profile.parser.hrs
  */
 data class HRSData(
     val heartRate: Int,
-    val sensorContact: Boolean,
+    val sensorContact: Boolean?,
     val energyExpanded: Int?,
     val rrIntervals: List<Int>
 )

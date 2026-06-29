@@ -9,13 +9,10 @@ import no.nordicsemi.kotlin.data.ByteOrder
 
 object CGMStatusParser {
 
-    fun parse(
-        data: ByteArray,
-        byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN
-    ): CGMStatusEnvelope? {
+    fun parse(data: ByteArray): CGMStatusEnvelope? {
         if (data.size != 5 && data.size != 7) return null
 
-        val timeOffset: Int = data.getInt(0, IntFormat.UINT16, byteOrder)
+        val timeOffset: Int = data.getInt(0, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
         val warningStatus: Int = data.getInt(2, IntFormat.UINT8)
         val calibrationTempStatus: Int = data.getInt(3, IntFormat.UINT8)
         val sensorStatus: Int = data.getInt(4, IntFormat.UINT8)
@@ -23,7 +20,7 @@ object CGMStatusParser {
         val crcPresent = data.size == 7
         if (crcPresent) {
             val actualCrc: Int = CRC16.MCRF4XX(data, 0, 5)
-            val expectedCrc: Int = data.getInt(5, IntFormat.UINT16, byteOrder)
+            val expectedCrc: Int = data.getInt(5, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
             if (actualCrc != expectedCrc) {
                 return null
             }

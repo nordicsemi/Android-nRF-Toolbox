@@ -41,14 +41,11 @@ import java.util.Calendar
 
 object HTSDataParser {
 
-    fun parse(byte: ByteArray, byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN): HTSData? {
+    fun parse(byte: ByteArray): HTSData? {
         if (byte.size < 5) return null
 
         var offset = 0
-        val flag: Int = byte.getInt(offset, IntFormat.UINT8, byteOrder)
-
-        if (flag > 7) return null
-
+        val flag: Int = byte.getInt(offset, IntFormat.UINT8, ByteOrder.LITTLE_ENDIAN)
         val unit: TemperatureUnitData = TemperatureUnitData.create(flag and 0x01) ?: return null
 
         val timestampPresent = flag and 0x02 != 0
@@ -60,7 +57,7 @@ object HTSDataParser {
             return null
         }
 
-        val temperature: Float = byte.getFloat(offset, FloatFormat.IEEE_11073_32_BIT, byteOrder)
+        val temperature: Float = byte.getFloat(offset, FloatFormat.IEEE_11073_32_BIT, ByteOrder.LITTLE_ENDIAN)
         offset += 4
 
         var calendar: Calendar? = null
@@ -71,9 +68,9 @@ object HTSDataParser {
 
         var type: Int? = null
         if (temperatureTypePresent) {
-            type = byte.getInt(offset, IntFormat.UINT8, byteOrder)
+            type = byte.getInt(offset, IntFormat.UINT8, ByteOrder.LITTLE_ENDIAN)
             offset += 1
         }
-        return HTSData(temperature, unit, calendar, type)
+        return HTSData(temperature, unit, calendar, type?.let { HTSMeasurementType.fromValue(it) } )
     }
 }

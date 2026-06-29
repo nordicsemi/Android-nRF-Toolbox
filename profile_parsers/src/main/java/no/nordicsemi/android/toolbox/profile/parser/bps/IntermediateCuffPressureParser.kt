@@ -10,10 +10,7 @@ import java.util.Calendar
 
 object IntermediateCuffPressureParser {
 
-    fun parse(
-        data: ByteArray,
-        byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN
-    ): IntermediateCuffPressureData? {
+    fun parse(data: ByteArray): IntermediateCuffPressureData? {
         if (data.size < 7) return null
 
         // First byte: flags
@@ -39,7 +36,7 @@ object IntermediateCuffPressureParser {
         }
 
         // Following bytes - current cuff pressure
-        val cuffPressure: Float = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, byteOrder)
+        val cuffPressure: Float = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN)
         offset += 2 + 4 // Skip diastolic and mean arterial pressure, which are set to NaN.
 
         // Parse timestamp if present
@@ -52,7 +49,7 @@ object IntermediateCuffPressureParser {
         // Parse pulse rate if present
         var pulseRate: Float? = null
         if (pulseRatePresent) {
-            pulseRate = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, byteOrder)
+            pulseRate = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN)
             offset += 2
         }
 
@@ -66,7 +63,7 @@ object IntermediateCuffPressureParser {
         // Read measurement status if present
         var status: BPMStatus? = null
         if (measurementStatusPresent) {
-            val measurementStatus: Int = data.getInt(offset, IntFormat.UINT16, byteOrder)
+            val measurementStatus: Int = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
             // offset += 2;
             status = BPMStatus(measurementStatus)
         }

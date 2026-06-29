@@ -30,7 +30,7 @@ class HTSDataParserTest {
 
         assertNotNull(result)
         result?.let {
-            assertEquals(HTSMeasurementType.ARMPIT, HTSMeasurementType.fromValue(it.type!!))
+            assertEquals(HTSMeasurementType.ARMPIT, it.type)
             assertEquals(36.97f, it.temperature, 0.01f)
             assertEquals(TemperatureUnitData.CELSIUS, it.unit)
             assertNotNull(it.timestamp)

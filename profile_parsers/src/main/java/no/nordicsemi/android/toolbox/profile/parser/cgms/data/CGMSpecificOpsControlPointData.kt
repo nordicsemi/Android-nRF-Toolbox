@@ -10,8 +10,8 @@ data class CGMSpecificOpsControlPointData(
     val glucoseConcentrationOfCalibration: Float = 0f,
     val calibrationTime: Int = 0,
     val nextCalibrationTime: Int = 0,
-    val type: Int = 0,
-    val sampleLocation: Int = 0,
+    val type: CGMType? = null,
+    val sampleLocation: CGMLocation? = null,
     val calibrationDataRecordNumber: Int = 0,
     val calibrationStatus: CGMCalibrationStatus? = null,
     val alertLevel: Float = 0f
