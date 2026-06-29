@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import no.nordicsemi.android.toolbox.profile.parser.hrs.HRSData
 import no.nordicsemi.android.toolbox.profile.data.HRSServiceData
+import no.nordicsemi.android.toolbox.profile.parser.hrs.BodySensorLocation
 
 object HRSRepository {
     private val _dataMap = mutableMapOf<String, MutableStateFlow<HRSServiceData>>()
@@ -26,7 +27,7 @@ object HRSRepository {
         _dataMap.remove(deviceId)
     }
 
-    fun updateBodySensorLocation(deviceId: String, location: Int) {
+    fun updateBodySensorLocation(deviceId: String, location: BodySensorLocation) {
         _dataMap[deviceId]?.update { it.copy(bodySensorLocation = location) }
     }
 

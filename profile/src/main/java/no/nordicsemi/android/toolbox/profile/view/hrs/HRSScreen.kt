@@ -71,7 +71,7 @@ internal fun HRSScreen() {
 
             KeyValueColumn(
                 key = stringResource(id = R.string.body_sensor_location),
-                value = hrsServiceData.displayBodySensorLocation(),
+                value = it.toString(),
             )
         }
     }
