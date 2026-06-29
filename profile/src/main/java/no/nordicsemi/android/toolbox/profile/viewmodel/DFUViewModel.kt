@@ -3,12 +3,10 @@ package no.nordicsemi.android.toolbox.profile.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewModel
 import no.nordicsemi.android.toolbox.lib.utils.Profile
@@ -38,20 +36,18 @@ internal class DFUViewModel @Inject constructor(
      * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.DFU].
      */
     private fun observeDFUProfile() {
-        viewModelScope.launch {
-            deviceRepository.profileHandlerFlow
-                .onEach { mapOfPeripheralProfiles ->
-                    mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                        if (peripheral.address == address) {
-                            profiles.filter { it.profile == Profile.DFU }
-                                .forEach { _ ->
-                                    startDFUService(peripheral.address)
-                                }
-                        }
+        deviceRepository.profileHandlerFlow
+            .onEach { mapOfPeripheralProfiles ->
+                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
+                    if (peripheral.address == address) {
+                        profiles.filter { it.profile == Profile.DFU }
+                            .forEach { _ ->
+                                startDFUService(peripheral.address)
+                            }
                     }
                 }
-                .launchIn(this)
-        }
+            }
+            .launchIn(viewModelScope)
     }
 
     /**

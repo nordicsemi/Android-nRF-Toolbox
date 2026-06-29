@@ -18,22 +18,20 @@ enum class Profile {
     THROUGHPUT,
     UART;
 
-    override fun toString(): String =
-        when (this) {
-            BPS -> "Blood Pressure"
-            CGM -> "Continuous Glucose"
-            CHANNEL_SOUNDING -> "Channel Sounding"
-            CSC -> "Cycling Speed and Cadence"
-            DFS -> "Distance Measurement"
-            GLS -> "Glucose"
-            HRS -> "Heart Rate"
-            HTS -> "Health Thermometer"
-            LBS -> "LED Button"
-            RSCS -> "Running Speed and Cadence"
-            BATTERY -> "Battery"
-            THROUGHPUT -> "Throughput Service"
-            UART -> "UART"
-            DFU -> "Device Firmware Update"
-        }
-
+    override fun toString(): String = when (this) {
+        BPS -> "Blood Pressure"
+        CGM -> "Continuous Glucose"
+        CHANNEL_SOUNDING -> "Channel Sounding"
+        CSC -> "Cycling Speed and Cadence"
+        DFS -> "Distance Measurement"
+        GLS -> "Glucose"
+        HRS -> "Heart Rate"
+        HTS -> "Health Thermometer"
+        LBS -> "LED Button"
+        RSCS -> "Running Speed and Cadence"
+        BATTERY -> "Battery"
+        THROUGHPUT -> "Throughput Service"
+        UART -> "UART"
+        DFU -> "Device Firmware Update"
+    }
 }
