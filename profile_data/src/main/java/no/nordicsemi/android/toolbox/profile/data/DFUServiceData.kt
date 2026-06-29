@@ -44,7 +44,7 @@ enum class DFUsAvailable(
         appLink = SMP_APP_LINK,
         appName = R.string.mds_app_name,
         appIcon = R.drawable.ic_device_manager,
-        appShortName = R.string.mds_app_name,
+        appShortName = R.string.mds_short_name,
     ),
     LEGACY_DFU_SERVICE(
         packageName = DFU_PACKAGE_NAME,
