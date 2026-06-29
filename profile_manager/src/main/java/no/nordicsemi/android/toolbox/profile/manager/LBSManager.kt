@@ -7,14 +7,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
+import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.LBS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.LBSRepository
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import no.nordicsemi.kotlin.ble.core.WriteType
 import timber.log.Timber
 import kotlin.uuid.Uuid
+import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
 private val BLINKY_BUTTON_CHARACTERISTIC_UUID = Uuid.parse("00001524-1212-EFDE-1523-785FEABCD123")
 private val BLINKY_LED_CHARACTERISTIC_UUID = Uuid.parse("00001525-1212-EFDE-1523-785FEABCD123")
@@ -38,17 +38,21 @@ internal class LBSManager(
     override suspend fun CoroutineScope.initialize() {
         buttonCharacteristic.subscribe()
             .map { ButtonStateParser.parse(it) }
-            .onEach { LBSRepository.updateButtonState(deviceId, it) }
-            .catch { Timber.e("Error observing button state: ${it.message}") }
+            .onEach {
+                Timber.tag("LBS").log(Log.Level.APPLICATION, "Button ${if (it) "pressed" else "released"}")
+                LBSRepository.updateButtonState(deviceId, it)
+            }
+            .catch { Timber.tag("LBS").e(it) }
             .onCompletion { LBSRepository.clear(deviceId) }
             .launchIn(this)
 
         launch {
             try {
                 val state = ButtonStateParser.parse(buttonCharacteristic.read())
+                Timber.tag("LBS").log(Log.Level.APPLICATION, "Button ${if (state) "pressed" else "released"}")
                 LBSRepository.updateButtonState(deviceId, state)
             } catch (e: Exception) {
-                Timber.e("Error reading initial button state: ${e.message}")
+                Timber.tag("LBS").e(e, "Error reading initial button state")
             }
         }
 
@@ -59,9 +63,11 @@ internal class LBSManager(
     suspend fun writeLED(ledState: Boolean) {
         val data = byteArrayOf((if (ledState) 0x01 else 0x00).toByte())
         try {
-            ledCharacteristic.write(data, WriteType.WITHOUT_RESPONSE)
+            Timber.tag("LBS").v("Turning LED ${if (ledState) "ON" else "OFF"}...")
+            ledCharacteristic.write(data)
+            Timber.tag("LBS").log(Log.Level.APPLICATION, "LED ${if (ledState) "ON" else "OFF"}")
         } catch (e: Exception) {
-            Timber.e("Error writing to LED characteristic: ${e.message}")
+            Timber.tag("LBS").e(e, "Error writing to LED characteristic")
         } finally {
             LBSRepository.updateLedState(deviceId, ledState)
         }

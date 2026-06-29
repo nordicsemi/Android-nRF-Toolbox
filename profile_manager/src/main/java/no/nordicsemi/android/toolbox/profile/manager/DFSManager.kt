@@ -7,8 +7,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
-import no.nordicsemi.android.toolbox.lib.utils.logAndReport
+import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.DF_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.DFSRepository
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.azimuthal.AzimuthalMeasurementDataParser
@@ -24,6 +23,7 @@ import no.nordicsemi.kotlin.ble.core.CharacteristicProperty
 import no.nordicsemi.kotlin.ble.core.WriteType
 import timber.log.Timber
 import kotlin.uuid.Uuid
+import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
 private val DISTANCE_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("21490001-494a-4573-98af-f126af76f490")
 private val AZIMUTH_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("21490002-494a-4573-98af-f126af76f490")
@@ -59,41 +59,57 @@ internal class DFSManager(
     override suspend fun CoroutineScope.initialize() {
         azimuthCharacteristic?.subscribe()
             ?.mapNotNull { AzimuthalMeasurementDataParser().parse(it) }
-            ?.onEach { DFSRepository.addNewAzimuth(deviceId, it) }
-            ?.catch { it.logAndReport() }
+            ?.onEach {
+                Timber.tag("DFS").log(Log.Level.APPLICATION, it.toString())
+                DFSRepository.addNewAzimuth(deviceId, it)
+            }
+            ?.catch { Timber.tag("DFS").e(it) }
             ?.onCompletion { DFSRepository.clear(deviceId) }
             ?.launchIn(this)
 
         distanceCharacteristic?.subscribe()
             ?.mapNotNull { DistanceMeasurementDataParser().parse(it) }
-            ?.onEach { DFSRepository.addNewDistance(deviceId, it) }
-            ?.catch { it.logAndReport() }
+            ?.onEach {
+                Timber.tag("DFS").log(Log.Level.APPLICATION, it.toString())
+                DFSRepository.addNewDistance(deviceId, it)
+            }
+            ?.catch { Timber.tag("DFS").e(it) }
             ?.onCompletion { DFSRepository.clear(deviceId) }
             ?.launchIn(this)
 
         elevationCharacteristic?.subscribe()
             ?.mapNotNull { ElevationMeasurementDataParser().parse(it) }
-            ?.onEach { DFSRepository.addNewElevation(deviceId, it) }
-            ?.catch { it.logAndReport() }
+            ?.onEach {
+                Timber.tag("DFS").log(Log.Level.APPLICATION, it.toString())
+                DFSRepository.addNewElevation(deviceId, it)
+            }
+            ?.catch { Timber.tag("DFS").e(it) }
             ?.onCompletion { DFSRepository.clear(deviceId) }
             ?.launchIn(this)
 
         controlPointCharacteristic.subscribe()
             .mapNotNull { ControlPointDataParser().parse(it) }
-            .onEach { DFSRepository.onControlPointDataReceived(deviceId, it, this) }
-            .catch { it.logAndReport() }
+            .onEach {
+                Timber.tag("DFS").log(Log.Level.APPLICATION, it.toString())
+                DFSRepository.onControlPointDataReceived(deviceId, it, this)
+            }
+            .catch { Timber.tag("DFS").e(it) }
             .onCompletion { DFSRepository.clear(deviceId) }
             .launchIn(this)
 
         ddfFeatureCharacteristic?.let { char ->
             launch {
                 try {
-                    if (char.properties.contains(CharacteristicProperty.READ)) {
+                    if (char.isReadable()) {
+                        Timber.tag("DFS").v("Reading DDF features...")
                         DDFDataParser().parse(char.read())
-                            ?.also { DFSRepository.setAvailableDistanceModes(deviceId, it) }
+                            ?.also {
+                                Timber.tag("DFS").log(Log.Level.APPLICATION, it.toString())
+                                DFSRepository.setAvailableDistanceModes(deviceId, it)
+                            }
                     }
                 } catch (e: Exception) {
-                    Timber.e("Error reading DDF features: ${e.message}")
+                    Timber.tag("DFS").e(e, "Error reading DDF features")
                 }
             }
         }
@@ -108,20 +124,23 @@ internal class DFSManager(
             ControlPointMode.RTT -> RTT_ENABLED_BYTES
         }
         try {
-            controlPointCharacteristic.write(data, WriteType.WITH_RESPONSE)
+            Timber.tag("DFS").v("Enabling distance mode: $mode")
+            controlPointCharacteristic.write(data)
+            Timber.tag("DFS").log(Log.Level.APPLICATION, "$mode enabled")
             DFSRepository.updateNewRequestStatus(deviceId, RequestStatus.SUCCESS)
         } catch (e: Exception) {
-            Timber.e(e, "Failed to enable distance mode: $mode for $deviceId")
+            Timber.tag("DFS").e(e, "Failed to enable $mode mode")
             DFSRepository.updateNewRequestStatus(deviceId, RequestStatus.FAILED)
         }
     }
 
     suspend fun checkForCurrentDistanceMode() {
         try {
-            controlPointCharacteristic.write(CHECK_CONFIG_BYTES, WriteType.WITH_RESPONSE)
+            Timber.tag("DFS").v("Checking current distance mode...")
+            controlPointCharacteristic.write(CHECK_CONFIG_BYTES)
             DFSRepository.updateNewRequestStatus(deviceId, RequestStatus.SUCCESS)
         } catch (e: Exception) {
-            Timber.e(e, "Failed to check current distance mode for $deviceId")
+            Timber.tag("DFS").e(e, "Failed to check current distance mode")
             DFSRepository.updateNewRequestStatus(deviceId, RequestStatus.FAILED)
         }
     }
@@ -129,12 +148,15 @@ internal class DFSManager(
     suspend fun checkAvailableFeatures() {
         DFSRepository.updateNewRequestStatus(deviceId, RequestStatus.PENDING)
         val char = ddfFeatureCharacteristic ?: return
-        if (char.properties.contains(CharacteristicProperty.READ)) {
+        if (char.isReadable()) {
             try {
-                DDFDataParser().parse(char.read())
-                    ?.also { DFSRepository.setAvailableDistanceModes(deviceId, it) }
+                Timber.tag("DFS").v("Reading DDF features...")
+                DDFDataParser().parse(char.read())?.let {
+                    Timber.log(Log.Level.APPLICATION, "Features: $it")
+                    DFSRepository.setAvailableDistanceModes(deviceId, it)
+                }
             } catch (e: Exception) {
-                Timber.e("Error checking available features: ${e.message}")
+                Timber.tag("DFS").e(e, "Error checking available features")
             }
         }
     }

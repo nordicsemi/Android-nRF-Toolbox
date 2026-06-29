@@ -13,6 +13,7 @@ import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.WriteType
 import no.nordicsemi.kotlin.ble.core.util.chunked
+import no.nordicsemi.android.log.LogContract.Log
 import timber.log.Timber
 import kotlin.uuid.Uuid
 
@@ -45,7 +46,7 @@ internal class ThroughputManager(
                 is NumberOfSeconds -> writeTimesData(maxWriteValueLength, inputType.numberOfSeconds)
             }
         } catch (e: Exception) {
-            Timber.tag("ThroughputManager").e("Error: ${e.message}")
+            Timber.tag("Throughput Service").e(e, "Write request failed")
         } finally {
             readThroughputMetrics()
             ThroughputRepository.updateWriteStatus(deviceId, WritingStatus.COMPLETED)
@@ -71,10 +72,14 @@ internal class ThroughputManager(
 
     private suspend fun readThroughputMetrics() {
         try {
+            Timber.tag("Throughput Service").v("Reading throughput metrics...")
             ThroughputDataParser.parse(writeCharacteristic.read())
-                ?.let { ThroughputRepository.updateThroughput(deviceId, it) }
+                ?.let {
+                    Timber.tag("Throughput Service").log(Log.Level.APPLICATION, it.toString())
+                    ThroughputRepository.updateThroughput(deviceId, it)
+                }
         } catch (e: Exception) {
-            Timber.tag("ThroughputManager").e("Error reading metrics: ${e.message}")
+            Timber.tag("Throughput Service").e(e, "Error reading throughput metrics")
         }
     }
 }

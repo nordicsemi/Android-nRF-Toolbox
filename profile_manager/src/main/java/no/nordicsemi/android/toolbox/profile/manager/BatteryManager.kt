@@ -7,15 +7,15 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
+import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.BATTERY_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.BatteryRepository
 import no.nordicsemi.android.toolbox.profile.parser.battery.BatteryLevelParser
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import no.nordicsemi.kotlin.ble.core.CharacteristicProperty
 import timber.log.Timber
 import kotlin.uuid.Uuid
+import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
 private val BATTERY_LEVEL_CHARACTERISTIC_UUID: Uuid = Uuid.parse("00002A19-0000-1000-8000-00805f9b34fb")
 
@@ -33,21 +33,29 @@ internal class BatteryManager(
 
     override suspend fun CoroutineScope.initialize() {
         if (batteryLevelCharacteristic.isSubscribable()) {
-            batteryLevelCharacteristic.subscribe()
+            Timber.tag("Battery Service").v("Enabling battery level notifications...")
+            batteryLevelCharacteristic
+                .subscribe { Timber.tag("Battery Service").v("Battery level notifications enabled") }
                 .mapNotNull { BatteryLevelParser.parse(it) }
-                .onEach { BatteryRepository.updateBatteryLevel(deviceId, it) }
+                .onEach {
+                    Timber.tag("Battery Service").log(Log.Level.APPLICATION, "Battery level: $it%")
+                    BatteryRepository.updateBatteryLevel(deviceId, it)
+                }
                 .onCompletion { BatteryRepository.clear(deviceId) }
-                .catch { e -> Timber.e(e) }
+                .catch { Timber.tag("Battery Service").e(it) }
                 .launchIn(this)
         }
 
-        if (batteryLevelCharacteristic.properties.contains(CharacteristicProperty.READ)) {
+        if (batteryLevelCharacteristic.isReadable()) {
             launch {
                 try {
-                    BatteryLevelParser.parse(batteryLevelCharacteristic.read())
-                        ?.let { BatteryRepository.updateBatteryLevel(deviceId, it) }
+                    Timber.tag("Battery Service").v("Reading battery level...")
+                    BatteryLevelParser.parse(batteryLevelCharacteristic.read())?.let {
+                        Timber.tag("Battery Service").log(Log.Level.APPLICATION, "Battery level: $it%")
+                        BatteryRepository.updateBatteryLevel(deviceId, it)
+                    }
                 } catch (e: Exception) {
-                    Timber.e("Error reading battery level: ${e.message}")
+                    Timber.tag("Battery Service").e(e, "Error reading battery level")
                 }
             }
         }

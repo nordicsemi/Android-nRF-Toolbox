@@ -1,7 +1,9 @@
 package no.nordicsemi.android.toolbox.profile.manager
 
 import kotlinx.coroutines.CoroutineScope
+import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
+import timber.log.Timber
 import no.nordicsemi.android.toolbox.lib.utils.spec.DFU_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.LEGACY_DFU_SERVICE_UUID
@@ -32,6 +34,7 @@ internal class DFUManager(
             MDS_SERVICE_UUID -> DFUsAvailable.MDS_SERVICE
             else -> return
         }
+        Timber.tag("DFU").log(Log.Level.APPLICATION, "$dfuType found")
         try {
             DFURepository.updateAppName(deviceId, dfuType)
         } catch (_: Exception) {

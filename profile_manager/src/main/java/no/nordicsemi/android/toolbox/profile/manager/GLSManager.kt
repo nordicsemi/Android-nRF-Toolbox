@@ -7,10 +7,8 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
-import no.nordicsemi.android.toolbox.lib.utils.logAndReport
+import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.GLS_SERVICE_UUID
-import no.nordicsemi.android.toolbox.lib.utils.tryOrLog
 import no.nordicsemi.android.toolbox.profile.manager.repository.GLSRepository
 import no.nordicsemi.android.toolbox.profile.parser.common.WorkingMode
 import no.nordicsemi.android.toolbox.profile.parser.gls.GlucoseMeasurementContextParser
@@ -25,8 +23,9 @@ import no.nordicsemi.android.toolbox.profile.parser.racp.RACPOpCode
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPResponseCode
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import no.nordicsemi.kotlin.ble.core.WriteType
+import timber.log.Timber
 import kotlin.uuid.Uuid
+import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
 private val GLUCOSE_MEASUREMENT_CHARACTERISTIC = Uuid.parse("00002A18-0000-1000-8000-00805f9b34fb")
 private val GLUCOSE_MEASUREMENT_CONTEXT_CHARACTERISTIC = Uuid.parse("00002A34-0000-1000-8000-00805f9b34fb")
@@ -55,22 +54,31 @@ internal class GLSManager(
     override suspend fun CoroutineScope.initialize() {
         glucoseMeasurementCharacteristic.subscribe()
             .mapNotNull { GlucoseMeasurementParser.parse(it) }
-            .onEach { GLSRepository.updateNewRecord(deviceId, it) }
+            .onEach {
+                Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
+                GLSRepository.updateNewRecord(deviceId, it)
+            }
             .onCompletion { GLSRepository.clear(deviceId) }
-            .catch { it.logAndReport() }
+            .catch { Timber.tag("GLS").e(it) }
             .launchIn(this)
 
         contextCharacteristic?.subscribe()
             ?.mapNotNull { GlucoseMeasurementContextParser.parse(it) }
-            ?.onEach { GLSRepository.updateWithNewContext(deviceId, it) }
+            ?.onEach {
+                Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
+                GLSRepository.updateWithNewContext(deviceId, it)
+            }
             ?.onCompletion { GLSRepository.clear(deviceId) }
-            ?.catch { it.logAndReport() }
+            ?.catch { Timber.tag("GLS").e(it) }
             ?.launchIn(this)
 
         racpCharacteristic.subscribe()
             .mapNotNull { RecordAccessControlPointParser.parse(it) }
-            .onEach { onAccessControlPointDataReceived(deviceId, it, this) }
-            .catch { it.logAndReport() }
+            .onEach {
+                Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
+                onAccessControlPointDataReceived(deviceId, it, this)
+            }
+            .catch { Timber.tag("GLS").e(it) }
             .launchIn(this)
 
         GLSRepository.registerManager(deviceId, this@GLSManager)
@@ -126,16 +134,24 @@ internal class GLSManager(
             .maxByOrNull { it.sequenceNumber }?.sequenceNumber ?: -1
 
         if (numberOfRecords > 0) {
-            tryOrLog {
-                racpCharacteristic.write(
-                    if (state.value.records.isNotEmpty())
+            try {
+                if (state.value.records.isNotEmpty()) {
+                    Timber.tag("GLS").v("Requesting GLS records greater or equal to: $highestSequenceNumber...")
+                    racpCharacteristic.write(
                         RecordAccessControlPointInputParser.reportStoredRecordsGreaterThenOrEqualTo(
                             highestSequenceNumber.toShort()
-                        )
-                    else
+                        ),
+                    )
+                } else {
+                    Timber.tag("GLS").v("Requesting ${WorkingMode.ALL}...")
+                    racpCharacteristic.write(
                         RecordAccessControlPointInputParser.reportAllStoredRecords(),
-                    WriteType.WITH_RESPONSE,
-                )
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.tag("GLS").e(e)
+                GLSRepository.updateNewRequestStatus(deviceId, RequestStatus.FAILED)
+                return
             }
         }
         GLSRepository.updateNewRequestStatus(deviceId, RequestStatus.SUCCESS)
@@ -143,15 +159,16 @@ internal class GLSManager(
 
     suspend fun requestRecord(workingMode: WorkingMode) {
         try {
+            Timber.tag("GLS").v("Requesting $workingMode...")
             racpCharacteristic.write(
                 when (workingMode) {
                     WorkingMode.ALL -> RecordAccessControlPointInputParser.reportNumberOfAllStoredRecords()
                     WorkingMode.LAST -> RecordAccessControlPointInputParser.reportLastStoredRecord()
                     WorkingMode.FIRST -> RecordAccessControlPointInputParser.reportFirstStoredRecord()
                 },
-                WriteType.WITH_RESPONSE,
             )
         } catch (e: Exception) {
+            Timber.tag("GLS").e(e)
             GLSRepository.updateNewRequestStatus(deviceId, RequestStatus.FAILED)
         }
     }

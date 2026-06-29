@@ -7,20 +7,18 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
-import no.nordicsemi.android.toolbox.lib.utils.logAndReport
+import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.CGMS_SERVICE_UUID
-import no.nordicsemi.android.toolbox.lib.utils.tryOrLog
 import no.nordicsemi.android.toolbox.profile.data.CGMRecordWithSequenceNumber
 import no.nordicsemi.android.toolbox.profile.manager.repository.CGMRepository
 import no.nordicsemi.android.toolbox.profile.parser.cgms.CGMFeatureParser
 import no.nordicsemi.android.toolbox.profile.parser.cgms.CGMMeasurementParser
+import no.nordicsemi.android.toolbox.profile.parser.cgms.CGMSpecificOpsControlPointDataParser
 import no.nordicsemi.android.toolbox.profile.parser.cgms.CGMSpecificOpsControlPointParser
 import no.nordicsemi.android.toolbox.profile.parser.cgms.CGMStatusParser
 import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMErrorCode
 import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMOpCode
 import no.nordicsemi.android.toolbox.profile.parser.common.WorkingMode
-import no.nordicsemi.android.toolbox.profile.parser.gls.CGMSpecificOpsControlPointDataParser
 import no.nordicsemi.android.toolbox.profile.parser.gls.RecordAccessControlPointInputParser
 import no.nordicsemi.android.toolbox.profile.parser.gls.RecordAccessControlPointParser
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.NumberOfRecordsData
@@ -31,10 +29,9 @@ import no.nordicsemi.android.toolbox.profile.parser.racp.RACPOpCode
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPResponseCode
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import no.nordicsemi.kotlin.ble.core.CharacteristicProperty
-import no.nordicsemi.kotlin.ble.core.WriteType
 import timber.log.Timber
 import kotlin.uuid.Uuid
+import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
 private val CGM_MEASUREMENT_UUID = Uuid.parse("00002AA7-0000-1000-8000-00805f9b34fb")
 private val CGM_FEATURE_UUID = Uuid.parse("00002AA8-0000-1000-8000-00805f9b34fb")
@@ -75,6 +72,7 @@ internal class CGMManager(
         measurementCharacteristic.subscribe()
             .mapNotNull { CGMMeasurementParser.parse(it) }
             .onEach { cgmRecords ->
+                Timber.tag("CGMS").log(Log.Level.APPLICATION, cgmRecords.toString())
                 if (sessionStartTime == 0L && !recordAccessRequestInProgress) {
                     val timeOffset = cgmRecords.minOf { it.timeOffset }
                     sessionStartTime = System.currentTimeMillis() - timeOffset * 60000L
@@ -85,44 +83,53 @@ internal class CGMManager(
                 }.also { CGMRepository.onMeasurementDataReceived(deviceId, it) }
             }
             .onCompletion { CGMRepository.clear(deviceId) }
-            .catch { it.logAndReport() }
+            .catch { Timber.tag("CGMS").e(it) }
             .launchIn(this)
 
         racpCharacteristic.subscribe()
             .mapNotNull { RecordAccessControlPointParser.parse(it) }
             .onEach { onAccessControlPointDataReceived(deviceId, it, this) }
-            .catch { it.logAndReport() }
+            .catch { Timber.tag("CGMS").e(it) }
             .launchIn(this)
 
         opsControlPointCharacteristic.subscribe()
             .mapNotNull { CGMSpecificOpsControlPointParser.parse(it) }
             .onEach { result ->
+                Timber.tag("CGMS").log(Log.Level.APPLICATION, result.toString())
                 when {
                     result.isOperationCompleted &&
-                            result.requestCode == CGMOpCode.CGM_OP_CODE_START_SESSION ->
+                            result.requestCode == CGMOpCode.START_SESSION ->
                         sessionStartTime = System.currentTimeMillis()
 
-                    result.requestCode == CGMOpCode.CGM_OP_CODE_START_SESSION &&
+                    result.requestCode == CGMOpCode.START_SESSION &&
                             result.errorCode == CGMErrorCode.CGM_ERROR_PROCEDURE_NOT_COMPLETED ->
                         sessionStartTime = 0
 
-                    result.requestCode == CGMOpCode.CGM_OP_CODE_STOP_SESSION ->
+                    result.requestCode == CGMOpCode.STOP_SESSION ->
                         sessionStartTime = 0
                 }
             }
             .onCompletion { CGMRepository.clear(deviceId) }
-            .catch { it.logAndReport() }
+            .catch { Timber.tag("CGMS").e(it) }
             .launchIn(this)
 
         launch {
             featureCharacteristic
-                ?.takeIf { CharacteristicProperty.READ in it.properties }
-                ?.let { secured = CGMFeatureParser.parse(it.read())?.features?.e2eCrcSupported ?: false }
+                ?.takeIf { it.isReadable() }
+                ?.let {
+                    Timber.tag("CGMS").v("Reading CGM feature...")
+                    val envelope = CGMFeatureParser.parse(it.read())
+                    Timber.tag("CGMS").log(Log.Level.APPLICATION, "Features: $envelope")
+                    val e2eCrcSupported = envelope?.features?.e2eCrcSupported ?: false
+                    secured = e2eCrcSupported
+                }
 
             statusCharacteristic
-                ?.takeIf { CharacteristicProperty.READ in it.properties }
+                ?.takeIf { it.isReadable() }
                 ?.let { statusData ->
+                    Timber.tag("CGMS").v("Reading CGM status...")
                     CGMStatusParser.parse(statusData.read())?.let {
+                        Timber.tag("CGMS").log(Log.Level.APPLICATION, "Status: $it")
                         if (!it.status.sessionStopped) {
                             sessionStartTime = System.currentTimeMillis() - it.timeOffset * 60000L
                         }
@@ -131,12 +138,12 @@ internal class CGMManager(
 
             if (sessionStartTime == 0L) {
                 try {
+                    Timber.tag("CGMS").v("Starting CGM session...")
                     opsControlPointCharacteristic.write(
-                        CGMSpecificOpsControlPointDataParser.startSession(secured),
-                        WriteType.WITH_RESPONSE,
+                        data = CGMSpecificOpsControlPointDataParser.startSession(secured),
                     )
                 } catch (e: Exception) {
-                    Timber.e("Error starting CGM session: ${e.message}")
+                    Timber.tag("CGMS").e(e, "Error starting CGM session")
                 }
             }
         }
@@ -194,16 +201,19 @@ internal class CGMManager(
             .maxByOrNull { it.sequenceNumber }?.sequenceNumber ?: -1
 
         if (numberOfRecords > 0) {
-            tryOrLog {
+            try {
                 racpCharacteristic.write(
-                    if (state.value.records.isNotEmpty())
+                    data = if (state.value.records.isNotEmpty())
                         RecordAccessControlPointInputParser.reportStoredRecordsGreaterThenOrEqualTo(
                             highestSequenceNumber.toShort()
                         )
                     else
                         RecordAccessControlPointInputParser.reportAllStoredRecords(),
-                    WriteType.WITH_RESPONSE,
                 )
+            } catch (e: Exception) {
+                Timber.tag("CGMS").e(e)
+                CGMRepository.updateNewRequestStatus(deviceId, RequestStatus.FAILED)
+                return
             }
         }
         CGMRepository.updateNewRequestStatus(deviceId = deviceId, requestStatus = RequestStatus.SUCCESS)
@@ -212,14 +222,14 @@ internal class CGMManager(
     suspend fun requestRecord(workingMode: WorkingMode) {
         try {
             racpCharacteristic.write(
-                when (workingMode) {
+                data = when (workingMode) {
                     WorkingMode.ALL -> RecordAccessControlPointInputParser.reportNumberOfAllStoredRecords()
                     WorkingMode.LAST -> RecordAccessControlPointInputParser.reportLastStoredRecord()
                     WorkingMode.FIRST -> RecordAccessControlPointInputParser.reportFirstStoredRecord()
                 },
-                WriteType.WITH_RESPONSE,
             )
         } catch (e: Exception) {
+            Timber.tag("CGMS").e(e)
             CGMRepository.updateNewRequestStatus(deviceId, RequestStatus.FAILED)
         }
     }

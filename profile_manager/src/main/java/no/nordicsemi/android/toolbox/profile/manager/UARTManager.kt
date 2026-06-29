@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
+import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.UART_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.UartRepository
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
@@ -14,6 +14,7 @@ import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.util.chunked
 import timber.log.Timber
 import kotlin.uuid.Uuid
+import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
 private val UART_RX_CHARACTERISTIC_UUID = Uuid.parse("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
 private val UART_TX_CHARACTERISTIC_UUID = Uuid.parse("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
@@ -37,8 +38,11 @@ internal class UARTManager(
     override suspend fun CoroutineScope.initialize() {
         txCharacteristic.subscribe()
             .map { String(it) }
-            .onEach { UartRepository.onNewMessageReceived(deviceId, it) }
-            .catch { it.printStackTrace() }
+            .onEach {
+                Timber.tag("UART").log(Log.Level.APPLICATION, "<- \"$it\"")
+                UartRepository.onNewMessageReceived(deviceId, it)
+            }
+            .catch { Timber.tag("UART").e(it) }
             .onCompletion { UartRepository.clear(deviceId) }
             .launchIn(this)
 
@@ -48,9 +52,10 @@ internal class UARTManager(
 
     suspend fun sendText(message: String, maxWriteLength: Int) {
         try {
+            Timber.tag("UART").v("-> \"$message\"")
             message.toByteArray().chunked(maxWriteLength).forEach { rxCharacteristic.write(it) }
         } catch (e: Exception) {
-            Timber.tag("UARTManager").e("Error sending text: ${e.message}")
+            Timber.tag("UART").e(e, "Error sending text")
         } finally {
             UartRepository.onNewMessageSent(deviceId, message)
         }

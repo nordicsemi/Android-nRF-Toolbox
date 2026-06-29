@@ -2,6 +2,7 @@ package no.nordicsemi.android.toolbox.profile.manager
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 import no.nordicsemi.android.toolbox.lib.utils.spec.CHANNEL_SOUND_SERVICE_UUID
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
@@ -27,10 +28,11 @@ internal class ChannelSoundingManager(
         rasFeaturesCharacteristic?.let { char ->
             launch {
                 try {
+                    Timber.tag("CS").v("Reading RAS features...")
                     val rasFeature = RasFeatureParser.parse(char.read())
-                    Timber.tag("ChannelSoundingManager").d("Ranging Feature: $rasFeature")
+                    Timber.tag("CS").log(Log.Level.APPLICATION, "Ranging Feature: $rasFeature")
                 } catch (e: Exception) {
-                    Timber.e("Error reading RAS features: ${e.message}")
+                    Timber.tag("CS").e(e, "Error reading RAS features")
                 }
             }
         }

@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
+import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.HRS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.HRSRepository
 import no.nordicsemi.android.toolbox.profile.parser.hrs.BodySensorLocationParser
@@ -16,6 +16,7 @@ import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
 import kotlin.uuid.Uuid
+import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
 private val BODY_SENSOR_LOCATION_CHARACTERISTIC_UUID = Uuid.parse("00002A38-0000-1000-8000-00805f9b34fb")
 private val HEART_RATE_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A37-0000-1000-8000-00805f9b34fb")
@@ -38,18 +39,24 @@ internal class HRSManager(
     override suspend fun CoroutineScope.initialize() {
         hrMeasurementCharacteristic.subscribe()
             .mapNotNull { HRSDataParser.parse(it) }
-            .onEach { HRSRepository.updateHRSData(deviceId, it) }
+            .onEach {
+                Timber.tag("HRS").log(Log.Level.APPLICATION, it.toString())
+                HRSRepository.updateHRSData(deviceId, it)
+            }
             .onCompletion { HRSRepository.clear(deviceId) }
-            .catch { e -> Timber.e(e) }
+            .catch { Timber.tag("HRS").e(it) }
             .launchIn(this)
 
         bodySensorLocationCharacteristic?.let { char ->
             launch {
                 try {
-                    BodySensorLocationParser.parse(char.read())
-                        ?.let { HRSRepository.updateBodySensorLocation(deviceId, it) }
+                    Timber.tag("HRS").v("Reading body sensor location...")
+                    BodySensorLocationParser.parse(char.read())?.let {
+                        Timber.log(Log.Level.APPLICATION, "Body sensor location: $it")
+                        HRSRepository.updateBodySensorLocation(deviceId, it)
+                    }
                 } catch (e: Exception) {
-                    Timber.e("Error reading body sensor location: ${e.message}")
+                    Timber.tag("HRS").e(e, "Error reading body sensor location")
                 }
             }
         }
