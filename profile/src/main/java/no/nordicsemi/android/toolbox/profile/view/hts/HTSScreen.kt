@@ -94,9 +94,7 @@ private fun HTSContent(
                 htsServiceData.data?.let { data ->
                     KeyValueColumnReverse(
                         key = stringResource(id = R.string.temp_measurement_location),
-                        value = data.type
-                            ?.let { HTSMeasurementType.fromValue(it).toString() }
-                            ?: "Unknown",
+                        value = data.type?.toString() ?: "Unknown",
                     )
                 }
                 htsServiceData.data?.timestamp?.let {
@@ -204,7 +202,7 @@ private fun HTSContentPreview() {
         htsServiceData = HTSServiceData(
             data = HTSData(
                 temperature = 36.5f,
-                type = HTSMeasurementType.FINGER.value,
+                type = HTSMeasurementType.FINGER,
                 timestamp = Calendar.getInstance()
             ),
             temperatureUnit = TemperatureUnit.CELSIUS
