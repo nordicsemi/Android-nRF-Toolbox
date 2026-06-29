@@ -11,7 +11,35 @@ data class GLSRecord(
     val status: GlucoseStatus? = null,
     val sampleLocation: SampleLocation? = null,
     val contextInformationFollows: Boolean
-)
+) {
+    override fun toString() = buildString {
+        append(sequenceNumber)
+        append(": ")
+        if (glucoseConcentration != null) {
+            append(glucoseConcentration)
+            append(" ")
+            append(unit)
+        }
+        if (type != null || sampleLocation != null) {
+            append(" (")
+            if (type != null) {
+                append(type)
+            }
+            if (type != null && sampleLocation != null) {
+                append(", ")
+            }
+            if (sampleLocation != null) {
+                append("sample location: ")
+                append(sampleLocation)
+            }
+            append(")")
+        }
+        if (status != null) {
+            append(", status: ")
+            append(status)
+        }
+    }
+}
 
 enum class RecordType(val id: Int) {
     CAPILLARY_WHOLE_BLOOD(1),
@@ -32,6 +60,19 @@ enum class RecordType(val id: Int) {
         fun createOrNull(value: Int?): RecordType? {
             return entries.firstOrNull { it.id == value }
         }
+    }
+
+    override fun toString() = when (this) {
+        CAPILLARY_WHOLE_BLOOD -> "Capillary Whole Blood"
+        CAPILLARY_PLASMA -> "Capillary Plasma"
+        VENOUS_WHOLE_BLOOD -> "Venous Whole Blood"
+        VENOUS_PLASMA -> "Venous Plasma"
+        ARTERIAL_WHOLE_BLOOD -> "Arterial Whole Blood"
+        ARTERIAL_PLASMA -> "Arterial Plasma"
+        UNDETERMINED_WHOLE_BLOOD -> "Undetermined Whole Blood"
+        UNDETERMINED_PLASMA -> "Undetermined Plasma"
+        INTERSTITIAL_FLUID -> "Interstitial Fluid"
+        CONTROL_SOLUTION -> "Control Solution"
     }
 }
 
@@ -58,6 +99,11 @@ enum class ConcentrationUnit(val id: Int) {
         fun create(value: Int): ConcentrationUnit = entries.firstOrNull { it.id == value }
             ?: throw IllegalArgumentException("Cannot find element for provided value.")
     }
+
+    override fun toString() = when (this) {
+        UNIT_KGPL -> "kg/L"
+        UNIT_MOLPL -> "mmol/L"
+    }
 }
 
 enum class MedicationUnit(val id: Int) {
@@ -67,6 +113,11 @@ enum class MedicationUnit(val id: Int) {
     companion object {
         fun create(value: Int): MedicationUnit = entries.firstOrNull { it.id == value }
             ?: throw IllegalArgumentException("Cannot find element for provided value.")
+    }
+
+    override fun toString() = when (this) {
+        UNIT_KG -> "kg"
+        UNIT_LITER -> "L"
     }
 }
 
@@ -80,5 +131,13 @@ enum class SampleLocation(val id: Int) {
     companion object {
         fun createOrNull(value: Int?): SampleLocation = entries.firstOrNull { it.id == value }
             ?: throw IllegalArgumentException("Cannot find element for provided value.")
+    }
+
+    override fun toString() = when (this) {
+        FINGER -> "Finger"
+        AST -> "AST"
+        EARLOBE -> "Earlobe"
+        CONTROL_SOLUTION -> "Control Solution"
+        NOT_AVAILABLE -> "Not Available"
     }
 }

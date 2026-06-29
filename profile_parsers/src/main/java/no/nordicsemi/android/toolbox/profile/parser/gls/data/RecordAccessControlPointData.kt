@@ -12,6 +12,8 @@ data class NumberOfRecordsData(
 ) : RecordAccessControlPointData {
 
     override val operationCompleted: Boolean = true
+
+    override fun toString() = "Number of records: $numberOfRecords"
 }
 
 data class ResponseData(
@@ -30,4 +32,6 @@ data class ResponseData(
         RACPResponseCode.RACP_ERROR_PROCEDURE_NOT_COMPLETED,
         RACPResponseCode.RACP_ERROR_OPERAND_NOT_SUPPORTED -> false
     }
+
+    override fun toString() = "Response for \"$requestCode\": $responseCode"
 }

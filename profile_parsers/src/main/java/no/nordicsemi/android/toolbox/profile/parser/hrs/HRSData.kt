@@ -12,4 +12,6 @@ data class HRSData(
     val sensorContact: Boolean?,
     val energyExpanded: Int?,
     val rrIntervals: List<Int>
-)
+) {
+    override fun toString() = "$heartRate bpm"
+}

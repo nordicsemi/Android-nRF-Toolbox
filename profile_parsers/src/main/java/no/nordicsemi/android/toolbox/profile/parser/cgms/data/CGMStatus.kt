@@ -5,7 +5,17 @@ data class CGMStatusEnvelope(
     val timeOffset: Int,
     val secured: Boolean,
     val crcValid: Boolean
-)
+) {
+    override fun toString() = buildString {
+        append(status)
+        if (timeOffset > 0) {
+            append(" (time offset: ")
+            append(timeOffset)
+            append(" min)")
+        }
+        if (secured && !crcValid) append(", CRC: invalid")
+    }
+}
 
 data class CGMStatus(
     val sessionStopped: Boolean,
@@ -52,4 +62,27 @@ data class CGMStatus(
         sensorResultLowerThenDeviceCanProcess = sensorStatus and 0x40 != 0,
         sensorResultHigherThenDeviceCanProcess = sensorStatus and 0x80 != 0
     )
+
+    override fun toString() = buildString {
+        if (sessionStopped) append("Session stopped, ")
+        if (deviceBatteryLow) append("Device battery low, ")
+        if (sensorTypeIncorrectForDevice) append("Sensor type incorrect for device, ")
+        if (sensorMalfunction) append("Sensor malfunction, ")
+        if (deviceSpecificAlert) append("Device specific alert, ")
+        if (generalDeviceFault) append("General device fault, ")
+        if (timeSyncRequired) append("Time sync required, ")
+        if (calibrationNotAllowed) append("Calibration not allowed, ")
+        if (calibrationRecommended) append("Calibration recommended, ")
+        if (calibrationRequired) append("Calibration required, ")
+        if (sensorTemperatureTooHigh) append("Sensor temperature too high, ")
+        if (sensorTemperatureTooLow) append("Sensor temperature too low, ")
+        if (sensorResultLowerThenPatientLowLevel) append("Sensor result lower then patient low level, ")
+        if (sensorResultHigherThenPatientHighLevel) append("Sensor result higher then patient high level, ")
+        if (sensorResultLowerThenHypoLevel) append("Sensor result lower then hypo level, ")
+        if (sensorResultHigherThenHyperLevel) append("Sensor result higher then hyper level, ")
+        if (sensorRateOfDecreaseExceeded) append("Sensor rate of decrease exceeded, ")
+        if (sensorRateOfIncreaseExceeded) append("Sensor rate of increase exceeded, ")
+        if (sensorResultLowerThenDeviceCanProcess) append("Sensor result lower then device can process, ")
+        if (sensorResultHigherThenDeviceCanProcess) append("Sensor result higher then device can process, ")
+    }.removeSuffix(", ").ifEmpty { "OK" }
 }
