@@ -110,7 +110,7 @@ enum class CGMType(internal val value: Int) {
         UNDETERMINED_PLASMA -> "Undetermined plasma"
         INTERSTITIAL_FLUID -> "Interstitial fluid"
         CONTROL_SOLUTION -> "Control solution"
-        RESERVED -> "Reserved ($value)"
+        RESERVED -> "Reserved"
     }
 }
 
@@ -134,6 +134,6 @@ enum class CGMLocation(internal val value: Int) {
         CONTROL_SOLUTION -> "Control solution"
         SUBCUTANEOUS_TISSUE -> "Subcutaneous tissue"
         NOT_AVAILABLE -> "Not available"
-        RESERVED -> "Reserved ($value)"
+        RESERVED -> "Reserved"
     }
 }
