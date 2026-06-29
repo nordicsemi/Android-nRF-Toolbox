@@ -22,6 +22,7 @@ import no.nordicsemi.android.service.NotificationService
 import no.nordicsemi.android.service.R
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManager
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManagerFactory
+import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.client.RemoteServices
 import no.nordicsemi.kotlin.ble.client.android.CentralManager
 import no.nordicsemi.kotlin.ble.client.android.CentralManager.ConnectionOptions
@@ -96,13 +97,25 @@ internal class ProfileService : NotificationService() {
 
             // Track whether any known service was found after discovery.
             peripheral.services()
-                .filterIsInstance<RemoteServices.Discovered>()
-                .map { it.services }
                 .onEach { services ->
-                    if (services.any { ServiceManagerFactory.isKnownService(it.uuid) }) {
-                        _isMissingServices.update { it - address }
-                    } else {
-                        _isMissingServices.update { it + (address to true) }
+                    when (services) {
+                        is RemoteServices.Unknown -> {
+                            _devices.update { currentMap ->
+                                val existingData = currentMap[address] ?: return@update currentMap
+                                currentMap + (address to existingData.copy(
+                                    services = emptyList()
+                                ))
+                            }
+                        }
+                        is RemoteServices.Discovered -> {
+                            val list = services.services
+                            if (list.any { ServiceManagerFactory.isKnownService(it.uuid) }) {
+                                _isMissingServices.update { it - address }
+                            } else {
+                                _isMissingServices.update { it + (address to true) }
+                            }
+                        }
+                        else -> {}
                     }
                 }
                 .launchIn(this)
