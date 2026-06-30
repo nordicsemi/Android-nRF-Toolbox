@@ -192,7 +192,7 @@ internal fun HomeView() {
                                                     onClick = onClick,
                                                 )
 
-                                                Profile.DFS -> FeatureButton(
+                                                Profile.DDFS -> FeatureButton(
                                                     icon = rememberVectorPainter(Icons.Default.MyLocation),
                                                     description = stringResource(R.string.direction_module_full),
                                                     deviceName = peripheral.name,

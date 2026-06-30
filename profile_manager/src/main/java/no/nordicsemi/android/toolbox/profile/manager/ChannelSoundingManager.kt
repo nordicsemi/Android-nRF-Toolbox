@@ -4,7 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
-import no.nordicsemi.android.toolbox.lib.utils.spec.CHANNEL_SOUND_SERVICE_UUID
+import no.nordicsemi.android.toolbox.lib.utils.spec.RANGING_SERVICE_UUID
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -15,7 +15,7 @@ private val RAS_FEATURES = Uuid.parse("00002C14-0000-1000-8000-00805F9B34FB")
 internal class ChannelSoundingManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(CHANNEL_SOUND_SERVICE_UUID, deviceId, "Channel Sounding", onReady) {
+) : ServiceManager(RANGING_SERVICE_UUID, deviceId, "Channel Sounding", onReady) {
     override val profile: ServiceType = ServiceType.CHANNEL_SOUNDING
 
     private var rasFeaturesCharacteristic: RemoteCharacteristic? = null
@@ -28,11 +28,11 @@ internal class ChannelSoundingManager(
         rasFeaturesCharacteristic?.let { char ->
             launch {
                 try {
-                    Timber.tag("CS").v("Reading RAS features...")
+                    Timber.tag("RAS").v("Reading RAS features...")
                     val rasFeature = RasFeatureParser.parse(char.read())
-                    Timber.tag("CS").log(Log.Level.APPLICATION, "Ranging Feature: $rasFeature")
+                    Timber.tag("RAS").log(Log.Level.APPLICATION, "Features: $rasFeature")
                 } catch (e: Exception) {
-                    Timber.tag("CS").e(e, "Error reading RAS features")
+                    Timber.tag("RAS").e(e, "Error reading RAS features")
                 }
             }
         }
@@ -45,11 +45,18 @@ internal class ChannelSoundingManager(
         val retrieveLostSegments: Boolean,
         val abortOperation: Boolean,
         val filterRangingData: Boolean,
-    )
+    ) {
+        override fun toString() = buildString {
+            if (realTimeRangingData) append("Real Time Ranging Data, ")
+            if (retrieveLostSegments) append("Retrieve Lost Segments, ")
+            if (abortOperation) append("Abort Operation, ")
+            if (filterRangingData) append("Filter Ranging Data, ")
+        }.removeSuffix(", ").ifEmpty { "None" }
+    }
 
     object RasFeatureParser {
         fun parse(data: ByteArray): RasFeature {
-            require(data.size >= 4) { "RAS Features characteristic must be at least 4 bytes." }
+            require(data.size == 4) { "RAS Features characteristic must be 4 bytes." }
             val bits = (data[0].toInt() and 0xFF) or
                     ((data[1].toInt() and 0xFF) shl 8) or
                     ((data[2].toInt() and 0xFF) shl 16) or

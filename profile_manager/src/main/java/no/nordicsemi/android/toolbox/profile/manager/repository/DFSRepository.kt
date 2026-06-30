@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 import no.nordicsemi.android.toolbox.profile.data.DFSServiceData
 import no.nordicsemi.android.toolbox.profile.data.SensorData
 import no.nordicsemi.android.toolbox.profile.data.SensorValue
-import no.nordicsemi.android.toolbox.profile.manager.DFSManager
+import no.nordicsemi.android.toolbox.profile.manager.DDFSManager
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.PeripheralBluetoothAddress
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.azimuthal.AzimuthMeasurementData
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.controlPoint.ControlPointChangeModeError
@@ -26,9 +26,9 @@ import no.nordicsemi.android.toolbox.profile.parser.gls.data.RequestStatus
 
 object DFSRepository {
     private val _dataMap = mutableMapOf<String, MutableStateFlow<DFSServiceData>>()
-    private val _managers = mutableMapOf<String, DFSManager>()
+    private val _managers = mutableMapOf<String, DDFSManager>()
 
-    internal fun registerManager(deviceId: String, manager: DFSManager) {
+    internal fun registerManager(deviceId: String, manager: DDFSManager) {
         _managers[deviceId] = manager
     }
 

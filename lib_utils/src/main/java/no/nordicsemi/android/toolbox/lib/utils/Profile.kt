@@ -5,7 +5,7 @@ enum class Profile {
     CGM,
     CHANNEL_SOUNDING,
     CSC,
-    DFS,
+    DDFS,
     DFU,
     GLS,
     HRS,
@@ -23,7 +23,7 @@ enum class Profile {
         CGM -> "Continuous Glucose"
         CHANNEL_SOUNDING -> "Channel Sounding"
         CSC -> "Cycling Speed and Cadence"
-        DFS -> "Distance Measurement"
+        DDFS -> "Distance Measurement"
         GLS -> "Glucose"
         HRS -> "Heart Rate"
         HTS -> "Health Thermometer"

@@ -194,7 +194,7 @@ internal fun DeviceConnectedView(
                         Profile.BPS -> BPSScreen()
                         Profile.CSC -> CSCScreen()
                         Profile.CGM -> CGMScreen()
-                        Profile.DFS -> DFSScreen()
+                        Profile.DDFS -> DFSScreen()
                         Profile.GLS -> GLSScreen()
                         Profile.HRS -> HRSScreen()
                         Profile.LBS -> BlinkyScreen()

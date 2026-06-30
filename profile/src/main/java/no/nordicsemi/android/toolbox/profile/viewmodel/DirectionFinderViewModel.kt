@@ -42,14 +42,14 @@ internal class DirectionFinderViewModel @Inject constructor(
     }
 
     /**
-     * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.DFS].
+     * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.DDFS].
      */
     private fun observeDFSProfile() {
         deviceRepository.profileHandlerFlow
             .onEach { mapOfPeripheralProfiles ->
                 mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
                     if (peripheral.address == address) {
-                        profiles.filter { it.profile == Profile.DFS }
+                        profiles.filter { it.profile == Profile.DDFS }
                             .forEach { _ ->
                                 startDFSService()
                             }

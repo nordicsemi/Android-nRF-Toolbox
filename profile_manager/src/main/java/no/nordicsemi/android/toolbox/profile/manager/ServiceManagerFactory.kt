@@ -3,10 +3,10 @@ package no.nordicsemi.android.toolbox.profile.manager
 import no.nordicsemi.android.toolbox.lib.utils.spec.BATTERY_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.BPS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.CGMS_SERVICE_UUID
-import no.nordicsemi.android.toolbox.lib.utils.spec.CHANNEL_SOUND_SERVICE_UUID
+import no.nordicsemi.android.toolbox.lib.utils.spec.RANGING_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.CSC_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.DFU_SERVICE_UUID
-import no.nordicsemi.android.toolbox.lib.utils.spec.DF_SERVICE_UUID
+import no.nordicsemi.android.toolbox.lib.utils.spec.DDF_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.GLS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.HRS_SERVICE_UUID
@@ -27,14 +27,14 @@ object ServiceManagerFactory {
         BPS_SERVICE_UUID,
         CSC_SERVICE_UUID,
         CGMS_SERVICE_UUID,
-        DF_SERVICE_UUID,
+        DDF_SERVICE_UUID,
         GLS_SERVICE_UUID,
         HTS_SERVICE_UUID,
         HRS_SERVICE_UUID,
         RSCS_SERVICE_UUID,
         THROUGHPUT_SERVICE_UUID,
         UART_SERVICE_UUID,
-        CHANNEL_SOUND_SERVICE_UUID,
+        RANGING_SERVICE_UUID,
         LBS_SERVICE_UUID,
         DFU_SERVICE_UUID,
         SMP_SERVICE_UUID,
@@ -53,7 +53,7 @@ object ServiceManagerFactory {
         BPSManager(deviceId, onReady),
         CSCManager(deviceId, onReady),
         CGMManager(deviceId, onReady),
-        DFSManager(deviceId, onReady),
+        DDFSManager(deviceId, onReady),
         GLSManager(deviceId, onReady),
         HTSManager(deviceId, onReady),
         HRSManager(deviceId, onReady),

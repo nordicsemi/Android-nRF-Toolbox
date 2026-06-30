@@ -12,7 +12,7 @@ import no.nordicsemi.android.toolbox.profile.parser.gls.data.RequestStatus
 private const val MAX_STORED_ITEMS = 5
 
 data class DFSServiceData(
-    override val profile: Profile = Profile.DFS,
+    override val profile: Profile = Profile.DDFS,
     val requestStatus: RequestStatus = RequestStatus.IDLE,
     val data: Map<PeripheralBluetoothAddress, SensorData> = emptyMap(),
     val ddfFeature: DDFData? = null,
