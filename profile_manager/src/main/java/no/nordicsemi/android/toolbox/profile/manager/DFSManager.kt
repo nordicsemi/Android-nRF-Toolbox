@@ -19,8 +19,6 @@ import no.nordicsemi.android.toolbox.profile.parser.directionFinder.elevation.El
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.RequestStatus
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import no.nordicsemi.kotlin.ble.core.CharacteristicProperty
-import no.nordicsemi.kotlin.ble.core.WriteType
 import timber.log.Timber
 import kotlin.uuid.Uuid
 import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
