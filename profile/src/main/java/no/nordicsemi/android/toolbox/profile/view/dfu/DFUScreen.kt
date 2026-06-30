@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -33,12 +32,11 @@ import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.data.DFUsAvailable
 import no.nordicsemi.android.toolbox.profile.viewmodel.ConnectionEvent
 import no.nordicsemi.android.toolbox.profile.viewmodel.DFUViewModel
-import no.nordicsemi.android.ui.view.ScreenSection
 
 @Composable
 internal fun DFUScreen(onRedirection: (ConnectionEvent.DisconnectEvent) -> Unit) {
     val dfuViewModel = hiltViewModel<DFUViewModel>()
-    val dfuServiceState by dfuViewModel.dfuServiceState.collectAsStateWithLifecycle()
+    val dfuServiceState by dfuViewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     dfuServiceState.dfuAppName?.let { dfuApp ->

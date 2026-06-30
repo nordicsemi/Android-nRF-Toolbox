@@ -73,7 +73,7 @@ import java.util.Calendar
 @Composable
 internal fun GLSScreen() {
     val glsViewModel = hiltViewModel<GLSViewModel>()
-    val glsServiceData by glsViewModel.glsState.collectAsStateWithLifecycle()
+    val glsServiceData by glsViewModel.state.collectAsStateWithLifecycle()
     val onClickEvent: (GLSEvent) -> Unit = { glsViewModel.onEvent(it) }
 
     GLSView(

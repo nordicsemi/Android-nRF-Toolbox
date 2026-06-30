@@ -63,7 +63,7 @@ import no.nordicsemi.android.ui.view.ScreenSection
 @Composable
 internal fun BatteryScreen() {
     val batteryViewModel = hiltViewModel<BatteryViewModel>()
-    val batteryServiceData by batteryViewModel.batteryServiceState.collectAsStateWithLifecycle()
+    val batteryServiceData by batteryViewModel.state.collectAsStateWithLifecycle()
 
     BatteryView(batteryServiceData.batteryLevel)
 }

@@ -3,7 +3,6 @@ package no.nordicsemi.android.toolbox.profile.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -14,6 +13,7 @@ import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewMod
 import no.nordicsemi.android.toolbox.profile.manager.repository.HTSRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.HTSServiceData
 import no.nordicsemi.android.toolbox.profile.data.uiMapper.TemperatureUnit
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
@@ -32,10 +32,11 @@ internal class HTSViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
+
     // StateFlow to hold the selected temperature unit
-    private val _htsServiceState = MutableStateFlow(HTSServiceData())
-    val htsServiceState = _htsServiceState.asStateFlow()
-    val address = parameterOf(ProfileDestinationId)
+    private val _state = MutableStateFlow(HTSServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeHtsProfile()
@@ -70,7 +71,7 @@ internal class HTSViewModel @Inject constructor(
         // Start the HTS service and observe temperature changes
         HTSRepository.getData(address)
             .onEach { htsServiceData ->
-                _htsServiceState.value = _htsServiceState.value.copy(
+                _state.value = _state.value.copy(
                     data = htsServiceData.data,
                     temperatureUnit = htsServiceData.temperatureUnit,
                 )

@@ -21,6 +21,7 @@ import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewModel
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.UARTServiceData
 import no.nordicsemi.android.toolbox.profile.data.uart.MacroEol
 import no.nordicsemi.android.toolbox.profile.data.uart.UARTConfiguration
@@ -80,10 +81,10 @@ internal class UartViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    private val _uartState = MutableStateFlow(UARTServiceData())
-    val uartState = _uartState.asStateFlow()
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
 
-    private val address = parameterOf(ProfileDestinationId)
+    private val _state = MutableStateFlow(UARTServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeUartProfile()
@@ -118,7 +119,7 @@ internal class UartViewModel @Inject constructor(
         // Initialize the UART repository with the address.
         UartRepository.getData(address)
             .onEach { data ->
-                _uartState.value = data
+                _state.value = data
             }
             .launchIn(viewModelScope)
         // Observe the UART configurations.

@@ -57,7 +57,7 @@ import no.nordicsemi.android.ui.view.SectionRow
 internal fun CSCScreen() {
     val csVM = hiltViewModel<CSCViewModel>()
     val onClickEvent: (CSCEvent) -> Unit = { csVM.onEvent(it) }
-    val serviceData by csVM.cscState.collectAsStateWithLifecycle()
+    val serviceData by csVM.state.collectAsStateWithLifecycle()
 
     CSCView(
         serviceData = serviceData,

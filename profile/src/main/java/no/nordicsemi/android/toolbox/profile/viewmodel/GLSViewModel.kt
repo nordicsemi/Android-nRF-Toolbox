@@ -14,6 +14,7 @@ import no.nordicsemi.android.toolbox.profile.parser.common.WorkingMode
 import no.nordicsemi.android.toolbox.profile.manager.repository.GLSRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.GLSServiceData
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import javax.inject.Inject
@@ -32,9 +33,10 @@ internal class GLSViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    val address = parameterOf(ProfileDestinationId)
-    private val _glsState = MutableStateFlow(GLSServiceData())
-    val glsState = _glsState.asStateFlow()
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
+
+    private val _state = MutableStateFlow(GLSServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeGLSProfile()
@@ -64,7 +66,7 @@ internal class GLSViewModel @Inject constructor(
     private fun startGLSService(address: String) {
         GLSRepository.getData(address)
             .onEach {
-                _glsState.value = _glsState.value.copy(
+                _state.value = _state.value.copy(
                     profile = it.profile,
                     records = it.records,
                     requestStatus = it.requestStatus,

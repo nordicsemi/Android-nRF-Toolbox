@@ -14,6 +14,7 @@ import no.nordicsemi.android.toolbox.profile.parser.common.WorkingMode
 import no.nordicsemi.android.toolbox.profile.manager.repository.CGMRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.CGMServiceData
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import javax.inject.Inject
@@ -31,11 +32,11 @@ internal class CGMSViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    // StateFlow to hold the selected temperature unit
-    private val _cgmsServiceState = MutableStateFlow(CGMServiceData())
-    val channelSoundingState = _cgmsServiceState.asStateFlow()
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
 
-    private val address = parameterOf(ProfileDestinationId)
+    // StateFlow to hold the selected temperature unit
+    private val _state = MutableStateFlow(CGMServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeCGMSProfile()
@@ -68,7 +69,7 @@ internal class CGMSViewModel @Inject constructor(
     private fun startCGMSService(address: String) {
         CGMRepository.getData(address)
             .onEach {
-                _cgmsServiceState.value = _cgmsServiceState.value.copy(
+                _state.value = _state.value.copy(
                     profile = it.profile,
                     records = it.records,
                     requestStatus = it.requestStatus,

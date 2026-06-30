@@ -13,6 +13,7 @@ import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewMod
 import no.nordicsemi.android.toolbox.profile.manager.repository.BPSRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.BPSServiceData
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import javax.inject.Inject
@@ -23,10 +24,11 @@ internal class BPSViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
+
     // StateFlow to hold the selected temperature unit
-    private val _bpsServiceState = MutableStateFlow(BPSServiceData())
-    val bpsServiceState = _bpsServiceState.asStateFlow()
-    private val address = parameterOf(ProfileDestinationId)
+    private val _state = MutableStateFlow(BPSServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeBPSProfile()
@@ -59,7 +61,7 @@ internal class BPSViewModel @Inject constructor(
     private fun startBPSService(address: String) {
         BPSRepository.getData(address)
             .onEach {
-                _bpsServiceState.value = _bpsServiceState.value.copy(
+                _state.value = _state.value.copy(
                     profile = it.profile,
                     bloodPressureMeasurement = it.bloodPressureMeasurement,
                     intermediateCuffPressure = it.intermediateCuffPressure,

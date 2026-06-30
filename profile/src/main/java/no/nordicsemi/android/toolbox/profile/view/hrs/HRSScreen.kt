@@ -36,7 +36,7 @@ import no.nordicsemi.android.ui.view.animate.AnimatedHeart
 @Composable
 internal fun HRSScreen() {
     val hrsViewModel = hiltViewModel<HRSViewModel>()
-    val hrsServiceData by hrsViewModel.hrsState.collectAsStateWithLifecycle()
+    val hrsServiceData by hrsViewModel.state.collectAsStateWithLifecycle()
     val onClickEvent: (HRSEvent) -> Unit = { hrsViewModel.onEvent(it) }
 
     ScreenSection{

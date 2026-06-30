@@ -11,6 +11,7 @@ import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewModel
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.DFUServiceData
 import no.nordicsemi.android.toolbox.profile.manager.repository.DFURepository
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
@@ -22,11 +23,11 @@ internal class DFUViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    val address = parameterOf(ProfileDestinationId)
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
 
     // StateFlow to hold the selected temperature unit
-    private val _dfuServiceState = MutableStateFlow(DFUServiceData())
-    val dfuServiceState = _dfuServiceState.asStateFlow()
+    private val _state = MutableStateFlow(DFUServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeDFUProfile()
@@ -58,7 +59,7 @@ internal class DFUViewModel @Inject constructor(
     private fun startDFUService(address: String) {
         DFURepository.getData(address)
             .onEach { dFUServiceData ->
-                _dfuServiceState.value = _dfuServiceState.value.copy(
+                _state.value = _state.value.copy(
                     profile = dFUServiceData.profile,
                     dfuAppName = dFUServiceData.dfuAppName
                 )

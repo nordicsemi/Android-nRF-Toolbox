@@ -47,7 +47,7 @@ internal fun ThroughputScreen(
     maxWriteValueLength: Int?
 ) {
     val throughputViewModel = hiltViewModel<ThroughputViewModel>()
-    val serviceData by throughputViewModel.throughputState.collectAsStateWithLifecycle()
+    val serviceData by throughputViewModel.state.collectAsStateWithLifecycle()
     val onClickEvent: (ThroughputEvent) -> Unit = { throughputViewModel.onEvent(it) }
 
     // Update the max write value length in the ViewModel.

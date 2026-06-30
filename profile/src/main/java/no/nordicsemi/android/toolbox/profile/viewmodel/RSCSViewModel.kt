@@ -13,6 +13,7 @@ import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSSettingsUnit
 import no.nordicsemi.android.toolbox.profile.manager.repository.RSCSRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.RSCSServiceData
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import javax.inject.Inject
@@ -28,9 +29,10 @@ internal class RSCSViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    private val _rscsState = MutableStateFlow(RSCSServiceData())
-    val rscsState = _rscsState.asStateFlow()
-    private val address = parameterOf(ProfileDestinationId)
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
+
+    private val _state = MutableStateFlow(RSCSServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeRSCSProfile()
@@ -60,7 +62,7 @@ internal class RSCSViewModel @Inject constructor(
     private fun startRSCSService(address: String) {
         RSCSRepository.getData(address)
             .onEach {
-                _rscsState.value = _rscsState.value.copy(
+                _state.value = _state.value.copy(
                     profile = it.profile,
                     data = it.data,
                     unit = it.unit,

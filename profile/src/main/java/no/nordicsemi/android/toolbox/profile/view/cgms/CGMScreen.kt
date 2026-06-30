@@ -58,7 +58,7 @@ import java.util.Calendar
 @Composable
 internal fun CGMScreen() {
     val cgmVm = hiltViewModel<CGMSViewModel>()
-    val serviceData by cgmVm.channelSoundingState.collectAsStateWithLifecycle()
+    val serviceData by cgmVm.state.collectAsStateWithLifecycle()
     val onClickEvent: (CGMSEvent) -> Unit = { cgmVm.onEvent(it) }
 
     CGMSView(serviceData, onClickEvent)

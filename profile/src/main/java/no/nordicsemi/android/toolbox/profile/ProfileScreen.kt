@@ -56,7 +56,6 @@ import no.nordicsemi.android.ui.view.internal.ServiceDiscoveryView
 internal fun ProfileScreen() {
     val profileViewModel: ProfileViewModel = hiltViewModel()
     val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
-    val deviceAddress = profileViewModel.address
 
     // Event handler now sends simpler, context-free events.
     val onEvent: (ConnectionEvent) -> Unit = { event ->
@@ -71,14 +70,9 @@ internal fun ProfileScreen() {
         contentWindowInsets = WindowInsets.displayCutout
             .only(WindowInsetsSides.Horizontal),
         topBar = {
-            // The device name is derived directly from the current state.
-            val deviceName = (uiState as? ProfileUiState.Connected)
-                ?.deviceData?.peripheral?.name
-                ?: deviceAddress
-
             ProfileAppBar(
-                deviceName = deviceName,
-                title = deviceAddress,
+                deviceName = profileViewModel.name,
+                title = profileViewModel.address,
                 // The AppBar needs to be updated to accept the new ProfileUiState
                 connectionState = uiState,
                 navigateUp = { onEvent(ConnectionEvent.NavigateUp) },

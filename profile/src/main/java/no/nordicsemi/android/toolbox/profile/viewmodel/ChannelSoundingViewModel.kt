@@ -15,6 +15,7 @@ import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewModel
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.ChannelSoundingServiceData
 import no.nordicsemi.android.toolbox.profile.data.UpdateRate
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
@@ -37,13 +38,12 @@ internal class ChannelSoundingViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val channelSoundingManager: ChannelSoundingManager,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    private val _channelSoundingServiceState =
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
+
+    private val _state =
         MutableStateFlow<Map<String, ChannelSoundingServiceData>>(emptyMap())
+    val state = _state.asStateFlow()
 
-    val channelSoundingState =
-        _channelSoundingServiceState.asStateFlow()
-
-    private val address = parameterOf(ProfileDestinationId)
     private val collectionJobs = mutableMapOf<String, Job>()
 
     init {
@@ -80,14 +80,14 @@ internal class ChannelSoundingViewModel @Inject constructor(
 
         collectionJobs[deviceAddress] = channelSoundingManager.getData(deviceAddress)
             .onEach { incomingData ->
-                val currentMap = _channelSoundingServiceState.value
+                val currentMap = _state.value
                 val existingData = currentMap[deviceAddress] ?: ChannelSoundingServiceData()
                 val updatedData = existingData.copy(
                     profile = incomingData.profile,
                     updateRate = incomingData.updateRate,
                     rangingSessionAction = incomingData.rangingSessionAction,
                 )
-                _channelSoundingServiceState.value = currentMap + (deviceAddress to updatedData)
+                _state.value = currentMap + (deviceAddress to updatedData)
             }
             .launchIn(viewModelScope)
     }
@@ -100,7 +100,7 @@ internal class ChannelSoundingViewModel @Inject constructor(
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             try {
-                val currentDeviceData = _channelSoundingServiceState.value[deviceAddress]
+                val currentDeviceData = _state.value[deviceAddress]
                 if (currentDeviceData != null && currentDeviceData.updateRate != rate) {
                     channelSoundingManager.closeSession(deviceAddress) {
                         channelSoundingManager.startRangingMeasurement(deviceAddress, rate)
@@ -128,7 +128,7 @@ internal class ChannelSoundingViewModel @Inject constructor(
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
                     try {
-                        val currentDeviceData = _channelSoundingServiceState.value[targetAddress]
+                        val currentDeviceData = _state.value[targetAddress]
                         if (currentDeviceData?.updateRate != event.frequency) {
                             channelSoundingManager.closeSession(targetAddress) {
                                 channelSoundingManager.startRangingMeasurement(
@@ -152,7 +152,7 @@ internal class ChannelSoundingViewModel @Inject constructor(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
                     try {
                         channelSoundingManager.closeSession(targetAddress) {
-                            val deviceData = _channelSoundingServiceState.value[targetAddress]
+                            val deviceData = _state.value[targetAddress]
                             val targetRate = deviceData?.updateRate ?: UpdateRate.NORMAL
                             channelSoundingManager.startRangingMeasurement(
                                 targetAddress,

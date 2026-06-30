@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ElevatedCard
@@ -54,7 +53,7 @@ import java.util.Calendar
 internal fun HTSScreen() {
     val htsViewModel = hiltViewModel<HTSViewModel>()
     val onClickEvent: (HTSEvent) -> Unit = { htsViewModel.onEvent(it) }
-    val htsServiceData by htsViewModel.htsServiceState.collectAsStateWithLifecycle()
+    val htsServiceData by htsViewModel.state.collectAsStateWithLifecycle()
 
     HTSContent(htsServiceData, onClickEvent)
 }

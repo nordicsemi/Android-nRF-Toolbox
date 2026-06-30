@@ -52,7 +52,7 @@ import no.nordicsemi.android.ui.view.SectionRow
 @Composable
 internal fun RSCSScreen() {
     val rscsViewModel = hiltViewModel<RSCSViewModel>()
-    val serviceData by rscsViewModel.rscsState.collectAsStateWithLifecycle()
+    val serviceData by rscsViewModel.state.collectAsStateWithLifecycle()
     val onClickEvent: (RSCSEvent) -> Unit = { rscsViewModel.onEvent(it) }
 
     Column {

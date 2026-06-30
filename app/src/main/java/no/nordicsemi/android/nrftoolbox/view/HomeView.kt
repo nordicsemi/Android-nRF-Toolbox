@@ -117,6 +117,7 @@ internal fun HomeView() {
                                                 onEvent(
                                                     UiEvent.OnDeviceClick(
                                                         deviceData.peripheral.address,
+                                                        deviceData.peripheral.name,
                                                         deviceData.services.first().profile
                                                     )
                                                 )
@@ -133,6 +134,7 @@ internal fun HomeView() {
                                                 onEvent(
                                                     UiEvent.OnDeviceClick(
                                                         peripheral.address,
+                                                        peripheral.name,
                                                         serviceManager.profile
                                                     )
                                                 )

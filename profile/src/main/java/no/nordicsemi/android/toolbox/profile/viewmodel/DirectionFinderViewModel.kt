@@ -12,6 +12,7 @@ import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewModel
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.DFSServiceData
 import no.nordicsemi.android.toolbox.profile.manager.repository.DFSRepository
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.PeripheralBluetoothAddress
@@ -33,9 +34,10 @@ internal class DirectionFinderViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    private val _dfsState = MutableStateFlow(DFSServiceData())
-    val dfsState = _dfsState.asStateFlow()
-    private val address = parameterOf(ProfileDestinationId)
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
+
+    private val _state = MutableStateFlow(DFSServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeDFSProfile()
@@ -65,7 +67,7 @@ internal class DirectionFinderViewModel @Inject constructor(
     private fun startDFSService() {
         DFSRepository.getData(address)
             .onEach {
-                _dfsState.value = _dfsState.value.copy(
+                _state.value = _state.value.copy(
                     requestStatus = it.requestStatus,
                     data = it.data,
                     ddfFeature = it.ddfFeature,

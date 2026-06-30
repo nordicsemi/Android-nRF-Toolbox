@@ -12,6 +12,7 @@ import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewMod
 import no.nordicsemi.android.toolbox.profile.manager.repository.HRSRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.HRSServiceData
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import javax.inject.Inject
@@ -27,10 +28,10 @@ internal class HRSViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    private val _hrsState = MutableStateFlow(HRSServiceData())
-    val hrsState = _hrsState.asStateFlow()
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
 
-    private val address = parameterOf(ProfileDestinationId)
+    private val _state = MutableStateFlow(HRSServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeHRSProfile()
@@ -60,7 +61,7 @@ internal class HRSViewModel @Inject constructor(
     private fun startHRSService(address: String) {
         HRSRepository.getData(address)
             .onEach {
-                _hrsState.value = _hrsState.value.copy(
+                _state.value = _state.value.copy(
                     profile = it.profile,
                     heartRate = it.heartRate,
                     data = it.data,

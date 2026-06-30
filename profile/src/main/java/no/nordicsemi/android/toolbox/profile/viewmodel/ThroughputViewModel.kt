@@ -13,6 +13,7 @@ import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewMod
 import no.nordicsemi.android.toolbox.profile.manager.repository.ThroughputRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.ThroughputInputType
 import no.nordicsemi.android.toolbox.profile.data.ThroughputServiceData
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
@@ -36,9 +37,10 @@ internal class ThroughputViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    private val _throughputState = MutableStateFlow(ThroughputServiceData())
-    val throughputState = _throughputState.asStateFlow()
-    private val address = parameterOf(ProfileDestinationId)
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
+
+    private val _state = MutableStateFlow(ThroughputServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeThroughputProfile()
@@ -68,7 +70,7 @@ internal class ThroughputViewModel @Inject constructor(
     private fun startThroughputService(address: String) {
         ThroughputRepository.getData(address)
             .onEach {
-                _throughputState.value = _throughputState.value.copy(
+                _state.value = _state.value.copy(
                     profile = it.profile,
                     throughputData = it.throughputData,
                     writingStatus = it.writingStatus,

@@ -2,25 +2,12 @@ package no.nordicsemi.android.toolbox.profile.view.directionFinder
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import no.nordicsemi.android.common.ui.view.SectionTitle
-import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.data.DFSServiceData
 import no.nordicsemi.android.toolbox.profile.data.SensorData
 import no.nordicsemi.android.toolbox.profile.data.SensorValue
@@ -37,13 +24,12 @@ import no.nordicsemi.android.toolbox.profile.parser.directionFinder.elevation.El
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.RequestStatus
 import no.nordicsemi.android.toolbox.profile.viewmodel.DFSEvent
 import no.nordicsemi.android.toolbox.profile.viewmodel.DirectionFinderViewModel
-import no.nordicsemi.android.ui.view.ScreenSection
 
 @Composable
 internal fun DFSScreen() {
     val dfsVM = hiltViewModel<DirectionFinderViewModel>()
     val onClick: (DFSEvent) -> Unit = { dfsVM.onEvent(it) }
-    val serviceData by dfsVM.dfsState.collectAsStateWithLifecycle()
+    val serviceData by dfsVM.state.collectAsStateWithLifecycle()
 
     DFSView(serviceData, onClick)
 }

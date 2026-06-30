@@ -30,7 +30,7 @@ import no.nordicsemi.android.ui.view.ScreenSection
 internal fun BlinkyScreen() {
     val lbsViewModel = hiltViewModel<LBSViewModel>()
     val onClickEvent: (LBSEvent) -> Unit = { lbsViewModel.onEvent(it) }
-    val serviceData by lbsViewModel.lbsState.collectAsStateWithLifecycle()
+    val serviceData by lbsViewModel.state.collectAsStateWithLifecycle()
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),

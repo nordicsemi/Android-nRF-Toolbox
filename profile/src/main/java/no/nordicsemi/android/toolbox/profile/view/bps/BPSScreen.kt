@@ -42,7 +42,7 @@ import no.nordicsemi.android.ui.view.StatusColumn
 @Composable
 internal fun BPSScreen() {
     val bpsViewModel = hiltViewModel<BPSViewModel>()
-    val serviceData by bpsViewModel.bpsServiceState.collectAsStateWithLifecycle()
+    val serviceData by bpsViewModel.state.collectAsStateWithLifecycle()
 
     serviceData.intermediateCuffPressure?.let {
         IntermediateBloodPressureView(it)

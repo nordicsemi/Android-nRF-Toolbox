@@ -3,7 +3,6 @@ package no.nordicsemi.android.toolbox.profile.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -16,6 +15,7 @@ import no.nordicsemi.android.toolbox.profile.parser.csc.WheelSize
 import no.nordicsemi.android.toolbox.profile.manager.repository.CSCRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.CSCServiceData
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import javax.inject.Inject
@@ -32,9 +32,10 @@ internal class CSCViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    private val _cscState = MutableStateFlow(CSCServiceData())
-    val cscState = _cscState.asStateFlow()
-    val address = parameterOf(ProfileDestinationId)
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
+
+    private val _state = MutableStateFlow(CSCServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeCSCProfile()
@@ -62,7 +63,7 @@ internal class CSCViewModel @Inject constructor(
         // Start the LBS service and observe location changes
         CSCRepository.getData(address)
             .onEach {
-                _cscState.value = _cscState.value.copy(
+                _state.value = _state.value.copy(
                     profile = it.profile,
                     data = it.data,
                     speedUnit = it.speedUnit

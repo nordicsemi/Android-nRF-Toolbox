@@ -66,7 +66,7 @@ internal fun ChannelSoundingScreen(
     if (Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1 && isNotificationPermissionGranted != null) {
         RequestRangingPermission {
             val channelSoundingViewModel = hiltViewModel<ChannelSoundingViewModel>()
-            val channelSoundingMapState by channelSoundingViewModel.channelSoundingState.collectAsStateWithLifecycle()
+            val channelSoundingMapState by channelSoundingViewModel.state.collectAsStateWithLifecycle()
             val channelSoundingState =
                 channelSoundingMapState[deviceId] ?: ChannelSoundingServiceData()
 

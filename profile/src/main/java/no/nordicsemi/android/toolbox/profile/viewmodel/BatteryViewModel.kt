@@ -13,6 +13,7 @@ import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewMod
 import no.nordicsemi.android.toolbox.profile.manager.repository.BatteryRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.BatteryServiceData
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import javax.inject.Inject
@@ -23,11 +24,11 @@ internal class BatteryViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    val address = parameterOf(ProfileDestinationId)
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
 
     // StateFlow to hold the selected temperature unit
     private val _batteryServiceState = MutableStateFlow(BatteryServiceData())
-    val batteryServiceState = _batteryServiceState.asStateFlow()
+    val state = _batteryServiceState.asStateFlow()
 
     init {
         observeBatteryProfile()

@@ -14,7 +14,7 @@ import no.nordicsemi.android.toolbox.profile.viewmodel.UartViewModel
 @Composable
 internal fun UARTScreen(maxValueLength: Int?) {
     val uartViewModel = hiltViewModel<UartViewModel>()
-    val state by uartViewModel.uartState.collectAsStateWithLifecycle()
+    val state by uartViewModel.state.collectAsStateWithLifecycle()
     val onEvent: (UARTEvent) -> Unit = { uartViewModel.onEvent(it) }
 
     LaunchedEffect(key1 = maxValueLength != null) {

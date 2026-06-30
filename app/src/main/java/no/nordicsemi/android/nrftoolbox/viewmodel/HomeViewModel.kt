@@ -1,6 +1,8 @@
 package no.nordicsemi.android.nrftoolbox.viewmodel
 
+import android.os.Bundle
 import androidx.core.net.toUri
+import androidx.core.os.bundleOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,6 +18,8 @@ import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.nrftoolbox.ScannerDestinationId
 import no.nordicsemi.android.service.profile.ServiceApi
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
+import no.nordicsemi.android.toolbox.profile.argName
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import javax.inject.Inject
 
@@ -51,9 +55,11 @@ internal class HomeViewModel @Inject constructor(
                 // Log the event for analytics.
                 analytics.logEvent(ProfileOpenEvent(event.profile))
 
-                navigator.navigateTo(
-                    ProfileDestinationId, event.deviceAddress
-                )
+                val bundle = Bundle().apply {
+                    putString(argAddress, event.deviceAddress)
+                    putString(argName, event.name)
+                }
+                navigator.navigateTo(ProfileDestinationId, bundle)
             }
 
             UiEvent.OnGitHubClick -> {

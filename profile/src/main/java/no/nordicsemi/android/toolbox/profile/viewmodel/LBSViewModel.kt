@@ -13,6 +13,7 @@ import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewMod
 import no.nordicsemi.android.toolbox.profile.manager.repository.LBSRepository
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
+import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.LBSServiceData
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import javax.inject.Inject
@@ -34,9 +35,10 @@ internal class LBSViewModel @Inject constructor(
     navigator: Navigator,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    private val _lbsState = MutableStateFlow(LBSServiceData())
-    val lbsState = _lbsState.asStateFlow()
-    val address = parameterOf(ProfileDestinationId)
+    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
+
+    private val _state = MutableStateFlow(LBSServiceData())
+    val state = _state.asStateFlow()
 
     init {
         observeLbsProfile()
@@ -70,7 +72,7 @@ internal class LBSViewModel @Inject constructor(
         // Start the LBS service and observe location changes
         LBSRepository.getData(address)
             .onEach {
-                _lbsState.value = _lbsState.value.copy(
+                _state.value = _state.value.copy(
                     profile = it.profile,
                     data = it.data,
                 )
