@@ -13,6 +13,7 @@ import no.nordicsemi.android.toolbox.profile.data.SensorData
 import no.nordicsemi.android.toolbox.profile.data.SensorValue
 import no.nordicsemi.android.toolbox.profile.data.directionFinder.distanceValue
 import no.nordicsemi.android.toolbox.profile.data.directionFinder.isAzimuthAndElevationDataAvailable
+import no.nordicsemi.android.toolbox.profile.manager.DDFSManager
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.PeripheralBluetoothAddress
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.QualityIndicator
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.azimuthal.AzimuthMeasurementData
@@ -26,8 +27,11 @@ import no.nordicsemi.android.toolbox.profile.viewmodel.DFSEvent
 import no.nordicsemi.android.toolbox.profile.viewmodel.DirectionFinderViewModel
 
 @Composable
-internal fun DFSScreen() {
-    val dfsVM = hiltViewModel<DirectionFinderViewModel>()
+internal fun DFSScreen(manager: DDFSManager) {
+    val dfsVM = hiltViewModel<DirectionFinderViewModel, DirectionFinderViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
     val onClick: (DFSEvent) -> Unit = { dfsVM.onEvent(it) }
     val serviceData by dfsVM.state.collectAsStateWithLifecycle()
 

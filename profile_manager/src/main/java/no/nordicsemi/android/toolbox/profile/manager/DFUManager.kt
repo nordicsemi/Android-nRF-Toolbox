@@ -14,12 +14,14 @@ import no.nordicsemi.android.toolbox.profile.manager.repository.DFURepository
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import kotlin.uuid.Uuid
 
-internal class DFUManager(
+class DFUManager(
     private val serviceUuid: Uuid,
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(serviceUuid, deviceId, "DFU", onReady) {
     override val profile: ServiceType = ServiceType.DFU
+
+    val repository = DFURepository()
 
     override fun prepare(service: RemoteService) {
         // DFU is detected by service presence only; no specific characteristic is required.
@@ -36,9 +38,9 @@ internal class DFUManager(
         }
         Timber.tag("DFU").log(Log.Level.APPLICATION, "$dfuType found")
         try {
-            DFURepository.updateAppName(deviceId, dfuType)
+            repository.updateAppName(dfuType)
         } catch (_: Exception) {
-            DFURepository.clear(deviceId)
+            repository.clear()
         }
         onReady(this@DFUManager)
     }

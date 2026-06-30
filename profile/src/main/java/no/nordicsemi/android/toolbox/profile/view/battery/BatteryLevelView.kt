@@ -56,13 +56,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.theme.nordicGreen
 import no.nordicsemi.android.common.theme.nordicSun
 import no.nordicsemi.android.common.ui.view.SectionTitle
+import no.nordicsemi.android.toolbox.profile.manager.BatteryManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.BatteryViewModel
 import no.nordicsemi.android.ui.R
 import no.nordicsemi.android.ui.view.ScreenSection
 
 @Composable
-internal fun BatteryScreen() {
-    val batteryViewModel = hiltViewModel<BatteryViewModel>()
+internal fun BatteryScreen(manager: BatteryManager) {
+    val batteryViewModel = hiltViewModel<BatteryViewModel, BatteryViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
     val batteryServiceData by batteryViewModel.state.collectAsStateWithLifecycle()
 
     BatteryView(batteryServiceData.batteryLevel)

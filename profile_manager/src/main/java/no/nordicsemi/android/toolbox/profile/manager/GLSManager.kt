@@ -32,11 +32,13 @@ private val GLUCOSE_MEASUREMENT_CONTEXT_CHARACTERISTIC = Uuid.parse("00002A34-00
 private val GLUCOSE_FEATURE_CHARACTERISTIC = Uuid.parse("00002A51-0000-1000-8000-00805f9b34fb")
 private val RACP_CHARACTERISTIC = Uuid.parse("00002A52-0000-1000-8000-00805f9b34fb")
 
-internal class GLSManager(
+class GLSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(GLS_SERVICE_UUID, deviceId, "GLS", onReady) {
     override val profile: ServiceType = ServiceType.GLS
+
+    val repository = GLSRepository()
 
     private lateinit var glucoseMeasurementCharacteristic: RemoteCharacteristic
     private lateinit var racpCharacteristic: RemoteCharacteristic
@@ -56,9 +58,9 @@ internal class GLSManager(
             .mapNotNull { GlucoseMeasurementParser.parse(it) }
             .onEach {
                 Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
-                GLSRepository.updateNewRecord(deviceId, it)
+                repository.updateNewRecord(it)
             }
-            .onCompletion { GLSRepository.clear(deviceId) }
+            .onCompletion { repository.clear() }
             .catch { Timber.tag("GLS").e(it) }
             .launchIn(this)
 
@@ -66,9 +68,9 @@ internal class GLSManager(
             ?.mapNotNull { GlucoseMeasurementContextParser.parse(it) }
             ?.onEach {
                 Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
-                GLSRepository.updateWithNewContext(deviceId, it)
+                repository.updateWithNewContext(it)
             }
-            ?.onCompletion { GLSRepository.clear(deviceId) }
+            ?.onCompletion { repository.clear() }
             ?.catch { Timber.tag("GLS").e(it) }
             ?.launchIn(this)
 
@@ -76,37 +78,34 @@ internal class GLSManager(
             .mapNotNull { RecordAccessControlPointParser.parse(it) }
             .onEach {
                 Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
-                onAccessControlPointDataReceived(deviceId, it, this)
+                onAccessControlPointDataReceived(it, this)
             }
             .catch { Timber.tag("GLS").e(it) }
             .launchIn(this)
 
-        GLSRepository.registerManager(deviceId, this@GLSManager)
         onReady(this@GLSManager)
     }
 
     private fun onAccessControlPointDataReceived(
-        deviceId: String,
         data: RecordAccessControlPointData,
         scope: CoroutineScope,
     ) {
         scope.launch {
             when (data) {
-                is NumberOfRecordsData -> onNumberOfRecordsReceived(deviceId, data.numberOfRecords)
+                is NumberOfRecordsData -> onNumberOfRecordsReceived(data.numberOfRecords)
                 is ResponseData -> when (data.responseCode) {
                     RACPResponseCode.RACP_RESPONSE_SUCCESS ->
-                        onRecordAccessOperationCompleted(deviceId, data.requestCode)
+                        onRecordAccessOperationCompleted(data.requestCode)
                     RACPResponseCode.RACP_ERROR_OP_CODE_NOT_SUPPORTED ->
-                        onRecordAccessOperationCompletedWithNoRecordsFound(deviceId)
-                    else -> onRecordAccessOperationError(deviceId, data.responseCode)
+                        onRecordAccessOperationCompletedWithNoRecordsFound()
+                    else -> onRecordAccessOperationError(data.responseCode)
                 }
             }
         }
     }
 
-    private fun onRecordAccessOperationError(deviceId: String, responseCode: RACPResponseCode) {
-        GLSRepository.updateNewRequestStatus(
-            deviceId,
+    private fun onRecordAccessOperationError(responseCode: RACPResponseCode) {
+        repository.updateNewRequestStatus(
             if (responseCode == RACPResponseCode.RACP_ERROR_OP_CODE_NOT_SUPPORTED)
                 RequestStatus.NOT_SUPPORTED
             else
@@ -114,9 +113,8 @@ internal class GLSManager(
         )
     }
 
-    private fun onRecordAccessOperationCompleted(deviceId: String, requestCode: RACPOpCode) {
-        GLSRepository.updateNewRequestStatus(
-            deviceId,
+    private fun onRecordAccessOperationCompleted(requestCode: RACPOpCode) {
+        repository.updateNewRequestStatus(
             if (requestCode == RACPOpCode.RACP_OP_CODE_ABORT_OPERATION)
                 RequestStatus.ABORTED
             else
@@ -124,12 +122,12 @@ internal class GLSManager(
         )
     }
 
-    private fun onRecordAccessOperationCompletedWithNoRecordsFound(deviceId: String) {
-        GLSRepository.updateNewRequestStatus(deviceId, RequestStatus.SUCCESS)
+    private fun onRecordAccessOperationCompletedWithNoRecordsFound() {
+        repository.updateNewRequestStatus(RequestStatus.SUCCESS)
     }
 
-    private suspend fun onNumberOfRecordsReceived(deviceId: String, numberOfRecords: Int) {
-        val state = GLSRepository.getData(deviceId)
+    private suspend fun onNumberOfRecordsReceived(numberOfRecords: Int) {
+        val state = repository.data
         val highestSequenceNumber = state.value.records.keys
             .maxByOrNull { it.sequenceNumber }?.sequenceNumber ?: -1
 
@@ -150,14 +148,17 @@ internal class GLSManager(
                 }
             } catch (e: Exception) {
                 Timber.tag("GLS").e(e)
-                GLSRepository.updateNewRequestStatus(deviceId, RequestStatus.FAILED)
+                repository.updateNewRequestStatus(RequestStatus.FAILED)
                 return
             }
         }
-        GLSRepository.updateNewRequestStatus(deviceId, RequestStatus.SUCCESS)
+        repository.updateNewRequestStatus(RequestStatus.SUCCESS)
     }
 
     suspend fun requestRecord(workingMode: WorkingMode) {
+        repository.clearState()
+        repository.updateNewRequestStatus(RequestStatus.PENDING)
+        repository.updateWorkingMode(workingMode)
         try {
             Timber.tag("GLS").v("Requesting $workingMode...")
             racpCharacteristic.write(
@@ -169,7 +170,7 @@ internal class GLSManager(
             )
         } catch (e: Exception) {
             Timber.tag("GLS").e(e)
-            GLSRepository.updateNewRequestStatus(deviceId, RequestStatus.FAILED)
+            repository.updateNewRequestStatus(RequestStatus.FAILED)
         }
     }
 }

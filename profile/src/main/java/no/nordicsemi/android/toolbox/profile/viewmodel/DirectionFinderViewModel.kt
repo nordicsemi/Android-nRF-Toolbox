@@ -1,24 +1,15 @@
 package no.nordicsemi.android.toolbox.profile.viewmodel
 
-import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.common.navigation.Navigator
-import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewModel
-import no.nordicsemi.android.toolbox.lib.utils.Profile
-import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
-import no.nordicsemi.android.toolbox.profile.argAddress
-import no.nordicsemi.android.toolbox.profile.data.DFSServiceData
-import no.nordicsemi.android.toolbox.profile.manager.repository.DFSRepository
+import no.nordicsemi.android.toolbox.profile.manager.DDFSManager
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.PeripheralBluetoothAddress
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.controlPoint.ControlPointMode
-import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
-import javax.inject.Inject
 
 internal sealed interface DFSEvent {
     data object OnAvailableDistanceModeRequest : DFSEvent
@@ -28,83 +19,35 @@ internal sealed interface DFSEvent {
     data class OnBluetoothDeviceSelected(val device: PeripheralBluetoothAddress) : DFSEvent
 }
 
-@HiltViewModel
-internal class DirectionFinderViewModel @Inject constructor(
-    private val deviceRepository: DeviceRepository,
-    navigator: Navigator,
-    savedStateHandle: SavedStateHandle,
-) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
+@HiltViewModel(assistedFactory = DirectionFinderViewModel.Factory::class)
+internal class DirectionFinderViewModel @AssistedInject constructor(
+    @Assisted private val manager: DDFSManager,
+) : ViewModel() {
 
-    private val _state = MutableStateFlow(DFSServiceData())
-    val state = _state.asStateFlow()
+    @AssistedFactory
+    interface Factory { fun create(manager: DDFSManager): DirectionFinderViewModel }
 
-    init {
-        observeDFSProfile()
-    }
+    val state = manager.repository.data
 
-    /**
-     * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.DDFS].
-     */
-    private fun observeDFSProfile() {
-        deviceRepository.profileHandlerFlow
-            .onEach { mapOfPeripheralProfiles ->
-                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                    if (peripheral.address == address) {
-                        profiles.filter { it.profile == Profile.DDFS }
-                            .forEach { _ ->
-                                startDFSService()
-                            }
-                    }
-                }
-            }
-            .launchIn(viewModelScope)
-    }
-
-    /**
-     * Starts the DFS service and observes direction finder profile data changes.
-     */
-    private fun startDFSService() {
-        DFSRepository.getData(address)
-            .onEach {
-                _state.value = _state.value.copy(
-                    requestStatus = it.requestStatus,
-                    data = it.data,
-                    ddfFeature = it.ddfFeature,
-                    selectedDevice = it.selectedDevice,
-                    distanceRange = it.distanceRange,
-                )
-            }
-            .launchIn(viewModelScope)
-    }
-
-    /**
-     * Handles events related to the Direction Finder Service (DFS).
-     */
     fun onEvent(event: DFSEvent) {
         when (event) {
             DFSEvent.OnAvailableDistanceModeRequest -> viewModelScope.launch {
-                DFSRepository.checkAvailableFeatures(address)
+                manager.checkAvailableFeatures()
             }
 
             DFSEvent.OnCheckDistanceModeRequest -> viewModelScope.launch {
-                DFSRepository.checkCurrentDistanceMode(address)
+                manager.checkForCurrentDistanceMode()
             }
 
-            is DFSEvent.OnRangeChangedEvent -> {
-                DFSRepository.updateDistanceRange(address, event.range)
+            is DFSEvent.OnRangeChangedEvent ->
+                manager.repository.updateDistanceRange(event.range)
+
+            is DFSEvent.OnDistanceModeSelected -> viewModelScope.launch {
+                manager.enableDistanceMode(event.mode)
             }
 
-            is DFSEvent.OnDistanceModeSelected -> {
-                viewModelScope.launch {
-                    DFSRepository.enableDistanceMode(address, event.mode)
-                }
-            }
-
-            is DFSEvent.OnBluetoothDeviceSelected -> DFSRepository.updateSelectedDevice(
-                address,
-                event.device
-            )
+            is DFSEvent.OnBluetoothDeviceSelected ->
+                manager.repository.updateSelectedDevice(event.device)
         }
     }
 }

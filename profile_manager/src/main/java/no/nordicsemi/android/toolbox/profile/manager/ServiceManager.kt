@@ -25,6 +25,9 @@ abstract class ServiceManager(
     protected val onReady: (ServiceManager) -> Unit,
 ) : Profile.Simple(serviceUuid, name) {
 
+    /** Stable identity for this manager instance, used as the Compose/ViewModel key. */
+    val instanceId: String = "${deviceId}_${serviceUuid}_${java.util.UUID.randomUUID()}"
+
     /** Returns the profile type enum used by the UI to select the correct screen. */
     abstract val profile: ServiceType
 }

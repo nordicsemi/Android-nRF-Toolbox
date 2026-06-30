@@ -18,11 +18,13 @@ import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
 private val CSC_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A5B-0000-1000-8000-00805f9b34fb")
 
-internal class CSCManager(
+class CSCManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(CSC_SERVICE_UUID, deviceId, "CSC", onReady) {
     override val profile: ServiceType = ServiceType.CSC
+
+    val repository = CSCRepository()
 
     private lateinit var measurementCharacteristic: RemoteCharacteristic
 
@@ -33,15 +35,13 @@ internal class CSCManager(
 
     override suspend fun CoroutineScope.initialize() {
         measurementCharacteristic.subscribe()
-            .mapNotNull {
-                CSCDataParser.parse(it, CSCRepository.getData(deviceId).value.data.wheelSize)
-            }
+            .mapNotNull { CSCDataParser.parse(it, repository.wheelSize) }
             .onEach {
                 Timber.tag("CSC").log(Log.Level.APPLICATION, it.toString())
-                CSCRepository.onCSCDataChanged(deviceId, it)
+                repository.onCSCDataChanged(it)
             }
             .catch { Timber.tag("CSC").e(it) }
-            .onCompletion { CSCRepository.clear(deviceId) }
+            .onCompletion { repository.clear() }
             .launchIn(this)
 
         onReady(this@CSCManager)

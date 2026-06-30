@@ -1,6 +1,7 @@
 package no.nordicsemi.android.toolbox.profile.manager
 
 import kotlinx.coroutines.CoroutineScope
+import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 import no.nordicsemi.android.toolbox.lib.utils.spec.THROUGHPUT_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.data.NumberOfBytes
@@ -13,17 +14,18 @@ import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.WriteType
 import no.nordicsemi.kotlin.ble.core.util.chunked
-import no.nordicsemi.android.log.LogContract.Log
 import timber.log.Timber
 import kotlin.uuid.Uuid
 
 private val THROUGHPUT_CHAR_UUID = Uuid.parse("00001524-0000-1000-8000-00805F9B34FB")
 
-internal class ThroughputManager(
+class ThroughputManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(THROUGHPUT_SERVICE_UUID, deviceId, "Throughput", onReady) {
     override val profile: ServiceType = ServiceType.THROUGHPUT
+
+    val repository = ThroughputRepository()
 
     private lateinit var writeCharacteristic: RemoteCharacteristic
 
@@ -33,14 +35,13 @@ internal class ThroughputManager(
     }
 
     override suspend fun CoroutineScope.initialize() {
-        ThroughputRepository.clearData(deviceId)
-        ThroughputRepository.registerManager(deviceId, this@ThroughputManager)
+        repository.clearData()
         onReady(this@ThroughputManager)
     }
 
     suspend fun writeRequest(maxWriteValueLength: Int, inputType: ThroughputInputType) {
         try {
-            ThroughputRepository.updateWriteStatus(deviceId, WritingStatus.IN_PROGRESS)
+            repository.updateWriteStatus(WritingStatus.IN_PROGRESS)
             when (inputType) {
                 is NumberOfBytes -> writeBytesData(maxWriteValueLength, inputType.numberOfBytes)
                 is NumberOfSeconds -> writeTimesData(maxWriteValueLength, inputType.numberOfSeconds)
@@ -49,7 +50,7 @@ internal class ThroughputManager(
             Timber.tag("Throughput Service").e(e, "Write request failed")
         } finally {
             readThroughputMetrics()
-            ThroughputRepository.updateWriteStatus(deviceId, WritingStatus.COMPLETED)
+            repository.updateWriteStatus(WritingStatus.COMPLETED)
         }
     }
 
@@ -76,7 +77,7 @@ internal class ThroughputManager(
             ThroughputDataParser.parse(writeCharacteristic.read())
                 ?.let {
                     Timber.tag("Throughput Service").log(Log.Level.APPLICATION, it.toString())
-                    ThroughputRepository.updateThroughput(deviceId, it)
+                    repository.updateThroughput(it)
                 }
         } catch (e: Exception) {
             Timber.tag("Throughput Service").e(e, "Error reading throughput metrics")

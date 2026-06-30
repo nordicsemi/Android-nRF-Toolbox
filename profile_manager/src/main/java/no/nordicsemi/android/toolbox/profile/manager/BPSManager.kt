@@ -23,11 +23,13 @@ private val BPM_CHARACTERISTIC_UUID = Uuid.parse("00002A35-0000-1000-8000-00805f
 private val ICP_CHARACTERISTIC_UUID = Uuid.parse("00002A36-0000-1000-8000-00805f9b34fb")
 private val BPF_CHARACTERISTIC_UUID = Uuid.parse("00002A49-0000-1000-8000-00805f9b34fb")
 
-internal class BPSManager(
+class BPSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(BPS_SERVICE_UUID, deviceId, "BPS", onReady) {
     override val profile: ServiceType = ServiceType.BPS
+
+    val repository = BPSRepository()
 
     private lateinit var bpmCharacteristic: RemoteCharacteristic
     private var icpCharacteristic: RemoteCharacteristic? = null
@@ -51,9 +53,9 @@ internal class BPSManager(
             .mapNotNull { BloodPressureMeasurementParser.parse(it) }
             .onEach {
                 Timber.tag("BPS").log(Log.Level.APPLICATION, it.toString())
-                BPSRepository.updateBPSData(deviceId, it)
+                repository.updateBPSData(it)
             }
-            .onCompletion { BPSRepository.clear(deviceId) }
+            .onCompletion { repository.clear() }
             .catch { Timber.tag("BPS").e(it) }
             .launchIn(this)
 
@@ -61,9 +63,9 @@ internal class BPSManager(
             ?.mapNotNull { IntermediateCuffPressureParser.parse(it) }
             ?.onEach {
                 Timber.tag("BPS").log(Log.Level.APPLICATION, it.toString())
-                BPSRepository.updateICPData(deviceId, it)
+                repository.updateICPData(it)
             }
-            ?.onCompletion { BPSRepository.clear(deviceId) }
+            ?.onCompletion { repository.clear() }
             ?.catch { Timber.tag("BPS").e(it) }
             ?.launchIn(this)
 
@@ -72,7 +74,7 @@ internal class BPSManager(
                 try {
                     BloodPressureFeatureParser.parse(char.read())?.let {
                         Timber.tag("BPS").log(Log.Level.APPLICATION, "Features: $it")
-                        BPSRepository.updateBPSFeatureData(deviceId, it)
+                        repository.updateBPSFeatureData(it)
                     }
                 } catch (e: Exception) {
                     Timber.tag("BPS").e(e, "Error reading blood pressure feature")

@@ -18,11 +18,13 @@ import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
 private val HTS_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A1C-0000-1000-8000-00805f9b34fb")
 
-internal class HTSManager(
+class HTSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(HTS_SERVICE_UUID, deviceId, "HTS", onReady) {
     override val profile: ServiceType = ServiceType.HTS
+
+    val repository = HTSRepository()
 
     private lateinit var measurementCharacteristic: RemoteCharacteristic
 
@@ -36,9 +38,9 @@ internal class HTSManager(
             .mapNotNull { HTSDataParser.parse(it) }
             .onEach {
                 Timber.tag("HTS").log(Log.Level.APPLICATION, it.toString())
-                HTSRepository.updateHTSData(deviceId, it)
+                repository.updateHTSData(it)
             }
-            .onCompletion { HTSRepository.clear(deviceId) }
+            .onCompletion { repository.clear() }
             .catch { Timber.tag("HTS").e(it) }
             .launchIn(this)
 

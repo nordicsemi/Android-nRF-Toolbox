@@ -21,11 +21,13 @@ import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 private val BODY_SENSOR_LOCATION_CHARACTERISTIC_UUID = Uuid.parse("00002A38-0000-1000-8000-00805f9b34fb")
 private val HEART_RATE_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A37-0000-1000-8000-00805f9b34fb")
 
-internal class HRSManager(
+class HRSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(HRS_SERVICE_UUID, deviceId, "HRS", onReady) {
     override val profile: ServiceType = ServiceType.HRS
+
+    val repository = HRSRepository()
 
     private lateinit var hrMeasurementCharacteristic: RemoteCharacteristic
     private var bodySensorLocationCharacteristic: RemoteCharacteristic? = null
@@ -41,9 +43,9 @@ internal class HRSManager(
             .mapNotNull { HRSDataParser.parse(it) }
             .onEach {
                 Timber.tag("HRS").log(Log.Level.APPLICATION, it.toString())
-                HRSRepository.updateHRSData(deviceId, it)
+                repository.updateHRSData(it)
             }
-            .onCompletion { HRSRepository.clear(deviceId) }
+            .onCompletion { repository.clear() }
             .catch { Timber.tag("HRS").e(it) }
             .launchIn(this)
 
@@ -52,8 +54,8 @@ internal class HRSManager(
                 try {
                     Timber.tag("HRS").v("Reading body sensor location...")
                     BodySensorLocationParser.parse(char.read())?.let {
-                        Timber.log(Log.Level.APPLICATION, "Body sensor location: $it")
-                        HRSRepository.updateBodySensorLocation(deviceId, it)
+                        Timber.tag("HRS").log(Log.Level.APPLICATION, "Body sensor location: $it")
+                        repository.updateBodySensorLocation(it)
                     }
                 } catch (e: Exception) {
                     Timber.tag("HRS").e(e, "Error reading body sensor location")

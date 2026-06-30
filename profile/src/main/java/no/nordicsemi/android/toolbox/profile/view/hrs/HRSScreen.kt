@@ -26,6 +26,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
+import no.nordicsemi.android.toolbox.profile.manager.HRSManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.HRSEvent
 import no.nordicsemi.android.toolbox.profile.viewmodel.HRSEvent.SwitchZoomEvent
 import no.nordicsemi.android.toolbox.profile.viewmodel.HRSViewModel
@@ -34,8 +35,11 @@ import no.nordicsemi.android.ui.view.ScreenSection
 import no.nordicsemi.android.ui.view.animate.AnimatedHeart
 
 @Composable
-internal fun HRSScreen() {
-    val hrsViewModel = hiltViewModel<HRSViewModel>()
+internal fun HRSScreen(manager: HRSManager) {
+    val hrsViewModel = hiltViewModel<HRSViewModel, HRSViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
     val hrsServiceData by hrsViewModel.state.collectAsStateWithLifecycle()
     val onClickEvent: (HRSEvent) -> Unit = { hrsViewModel.onEvent(it) }
 

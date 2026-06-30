@@ -19,11 +19,13 @@ import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 private val UART_RX_CHARACTERISTIC_UUID = Uuid.parse("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
 private val UART_TX_CHARACTERISTIC_UUID = Uuid.parse("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
 
-internal class UARTManager(
+class UARTManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(UART_SERVICE_UUID, deviceId, "UART", onReady) {
     override val profile: ServiceType = ServiceType.UART
+
+    val repository = UartRepository()
 
     private lateinit var txCharacteristic: RemoteCharacteristic
     private lateinit var rxCharacteristic: RemoteCharacteristic
@@ -40,13 +42,12 @@ internal class UARTManager(
             .map { String(it) }
             .onEach {
                 Timber.tag("UART").log(Log.Level.APPLICATION, "<- \"$it\"")
-                UartRepository.onNewMessageReceived(deviceId, it)
+                repository.onNewMessageReceived(it)
             }
             .catch { Timber.tag("UART").e(it) }
-            .onCompletion { UartRepository.clear(deviceId) }
+            .onCompletion { repository.clear() }
             .launchIn(this)
 
-        UartRepository.registerManager(deviceId, this@UARTManager)
         onReady(this@UARTManager)
     }
 
@@ -57,7 +58,7 @@ internal class UARTManager(
         } catch (e: Exception) {
             Timber.tag("UART").e(e, "Error sending text")
         } finally {
-            UartRepository.onNewMessageSent(deviceId, message)
+            repository.onNewMessageSent(message)
         }
     }
 }

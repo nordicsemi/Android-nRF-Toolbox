@@ -43,6 +43,7 @@ import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.data.CGMRecordWithSequenceNumber
 import no.nordicsemi.android.toolbox.profile.data.CGMServiceData
+import no.nordicsemi.android.toolbox.profile.manager.CGMManager
 import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMRecord
 import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMStatus
 import no.nordicsemi.android.toolbox.profile.parser.common.WorkingMode
@@ -56,8 +57,11 @@ import no.nordicsemi.android.ui.view.SectionRow
 import java.util.Calendar
 
 @Composable
-internal fun CGMScreen() {
-    val cgmVm = hiltViewModel<CGMSViewModel>()
+internal fun CGMScreen(manager: CGMManager) {
+    val cgmVm = hiltViewModel<CGMSViewModel, CGMSViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
     val serviceData by cgmVm.state.collectAsStateWithLifecycle()
     val onClickEvent: (CGMSEvent) -> Unit = { cgmVm.onEvent(it) }
 

@@ -2,33 +2,33 @@ package no.nordicsemi.android.toolbox.profile.manager.repository
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import no.nordicsemi.android.toolbox.profile.data.CSCServiceData
 import no.nordicsemi.android.toolbox.profile.parser.csc.CSCData
 import no.nordicsemi.android.toolbox.profile.parser.csc.SpeedUnit
 import no.nordicsemi.android.toolbox.profile.parser.csc.WheelSize
 
-object CSCRepository {
-    private val _dataMap = mutableMapOf<String, MutableStateFlow<CSCServiceData>>()
+class CSCRepository {
+    private val _data = MutableStateFlow(CSCServiceData())
+    val data: StateFlow<CSCServiceData> = _data.asStateFlow()
 
-    fun getData(deviceId: String): StateFlow<CSCServiceData> = _dataMap.getOrPut(deviceId) {
-        MutableStateFlow(CSCServiceData())
+    val wheelSize: WheelSize
+        get() = _data.value.data.wheelSize
+
+    fun onCSCDataChanged(cscData: CSCData) {
+        _data.update { it.copy(data = cscData) }
     }
 
-    fun onCSCDataChanged(deviceId: String, cscData: CSCData) {
-        _dataMap[deviceId]?.update { it.copy(data = cscData) }
+    fun setWheelSize(wheelSize: WheelSize) {
+        _data.update { it.copy(data = CSCData(wheelSize = wheelSize)) }
     }
 
-    fun setWheelSize(deviceId: String, wheelSize: WheelSize) {
-        _dataMap[deviceId]?.update { it.copy(data = CSCData(wheelSize = wheelSize)) }
+    fun setSpeedUnit(speedUnit: SpeedUnit) {
+        _data.update { it.copy(speedUnit = speedUnit) }
     }
 
-    fun setSpeedUnit(deviceId: String, speedUnit: SpeedUnit) {
-        _dataMap[deviceId]?.update { it.copy(speedUnit = speedUnit) }
+    fun clear() {
+        _data.value = CSCServiceData()
     }
-
-    fun clear(deviceId: String) {
-        _dataMap.remove(deviceId)
-    }
-
 }

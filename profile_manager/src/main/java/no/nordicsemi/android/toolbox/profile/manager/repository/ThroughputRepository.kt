@@ -2,52 +2,32 @@ package no.nordicsemi.android.toolbox.profile.manager.repository
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import no.nordicsemi.android.toolbox.profile.parser.throughput.ThroughputMetrics
-import no.nordicsemi.android.toolbox.profile.data.ThroughputInputType
 import no.nordicsemi.android.toolbox.profile.data.ThroughputServiceData
 import no.nordicsemi.android.toolbox.profile.data.WritingStatus
-import no.nordicsemi.android.toolbox.profile.manager.ThroughputManager
+import no.nordicsemi.android.toolbox.profile.parser.throughput.ThroughputMetrics
 
-object ThroughputRepository {
-    private val _dataMap = mutableMapOf<String, MutableStateFlow<ThroughputServiceData>>()
-    private val _managers = mutableMapOf<String, ThroughputManager>()
+class ThroughputRepository {
+    private val _data = MutableStateFlow(ThroughputServiceData())
+    val data: StateFlow<ThroughputServiceData> = _data.asStateFlow()
 
-    internal fun registerManager(deviceId: String, manager: ThroughputManager) {
-        _managers[deviceId] = manager
+    val maxWriteValueLength: Int
+        get() = _data.value.maxWriteValueLength ?: 20
+
+    fun updateThroughput(throughputMetrics: ThroughputMetrics) {
+        _data.update { it.copy(throughputData = throughputMetrics) }
     }
 
-    fun getData(deviceId: String): StateFlow<ThroughputServiceData> =
-        _dataMap.getOrPut(deviceId) { MutableStateFlow(ThroughputServiceData()) }
-
-    fun updateThroughput(deviceId: String, throughputMetrics: ThroughputMetrics) {
-        _dataMap[deviceId]?.update {
-            it.copy(throughputData = throughputMetrics)
-        }
+    fun updateWriteStatus(status: WritingStatus) {
+        _data.update { it.copy(writingStatus = status) }
     }
 
-    suspend fun sendDataToDK(
-        deviceId: String,
-        writeDataType: ThroughputInputType,
-    ) {
-        val maxWriteValueLength = _dataMap[deviceId]?.value?.maxWriteValueLength ?: 20
-        _managers[deviceId]?.writeRequest(
-            maxWriteValueLength = maxWriteValueLength,
-            inputType = writeDataType,
-        )
+    fun updateMaxWriteValueLength(mtuSize: Int?) {
+        _data.update { it.copy(maxWriteValueLength = mtuSize) }
     }
 
-    fun updateWriteStatus(deviceId: String, status: WritingStatus) {
-        _dataMap[deviceId]?.update { it.copy(writingStatus = status) }
+    fun clearData() {
+        _data.value = ThroughputServiceData()
     }
-
-    fun updateMaxWriteValueLength(deviceId: String, mtuSize: Int?) {
-        _dataMap[deviceId]?.update { it.copy(maxWriteValueLength = mtuSize) }
-    }
-
-    fun clearData(deviceId: String) {
-        _dataMap.remove(deviceId)
-        _managers.remove(deviceId)
-    }
-
 }

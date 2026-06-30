@@ -39,11 +39,13 @@ private val CGM_STATUS_UUID = Uuid.parse("00002AA9-0000-1000-8000-00805f9b34fb")
 private val CGM_OPS_CONTROL_POINT_UUID = Uuid.parse("00002AAC-0000-1000-8000-00805f9b34fb")
 private val RACP_UUID = Uuid.parse("00002A52-0000-1000-8000-00805f9b34fb")
 
-internal class CGMManager(
+class CGMManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(CGMS_SERVICE_UUID, deviceId, "CGM", onReady) {
     override val profile: ServiceType = ServiceType.CGM
+
+    val repository = CGMRepository()
 
     private lateinit var measurementCharacteristic: RemoteCharacteristic
     private lateinit var racpCharacteristic: RemoteCharacteristic
@@ -80,15 +82,15 @@ internal class CGMManager(
                 cgmRecords.map {
                     val timestamp = sessionStartTime + it.timeOffset * 60000L
                     CGMRecordWithSequenceNumber(it.timeOffset, it, timestamp)
-                }.also { CGMRepository.onMeasurementDataReceived(deviceId, it) }
+                }.also { repository.onMeasurementDataReceived(it) }
             }
-            .onCompletion { CGMRepository.clear(deviceId) }
+            .onCompletion { repository.clear() }
             .catch { Timber.tag("CGMS").e(it) }
             .launchIn(this)
 
         racpCharacteristic.subscribe()
             .mapNotNull { RecordAccessControlPointParser.parse(it) }
-            .onEach { onAccessControlPointDataReceived(deviceId, it, this) }
+            .onEach { onAccessControlPointDataReceived(it, this) }
             .catch { Timber.tag("CGMS").e(it) }
             .launchIn(this)
 
@@ -109,7 +111,7 @@ internal class CGMManager(
                         sessionStartTime = 0
                 }
             }
-            .onCompletion { CGMRepository.clear(deviceId) }
+            .onCompletion { repository.clear() }
             .catch { Timber.tag("CGMS").e(it) }
             .launchIn(this)
 
@@ -148,55 +150,51 @@ internal class CGMManager(
             }
         }
 
-        CGMRepository.registerManager(deviceId, this@CGMManager)
         onReady(this@CGMManager)
     }
 
     private fun onAccessControlPointDataReceived(
-        deviceId: String,
         data: RecordAccessControlPointData,
         scope: CoroutineScope,
     ) {
         scope.launch {
             when (data) {
-                is NumberOfRecordsData -> onNumberOfRecordsReceived(deviceId, data.numberOfRecords)
+                is NumberOfRecordsData -> onNumberOfRecordsReceived(data.numberOfRecords)
                 is ResponseData -> when (data.responseCode) {
                     RACPResponseCode.RACP_RESPONSE_SUCCESS ->
-                        onRecordAccessOperationCompleted(deviceId, data.requestCode)
+                        onRecordAccessOperationCompleted(data.requestCode)
                     RACPResponseCode.RACP_ERROR_NO_RECORDS_FOUND ->
-                        onRecordAccessOperationCompletedWithNoRecordsFound(deviceId)
-                    else -> onRecordAccessOperationError(deviceId, data.responseCode)
+                        onRecordAccessOperationCompletedWithNoRecordsFound()
+                    else -> onRecordAccessOperationError(data.responseCode)
                 }
             }
         }
     }
 
-    private fun onRecordAccessOperationError(deviceId: String, responseCode: RACPResponseCode) {
-        CGMRepository.updateNewRequestStatus(
-            deviceId = deviceId,
-            requestStatus = when (responseCode) {
+    private fun onRecordAccessOperationError(responseCode: RACPResponseCode) {
+        repository.updateNewRequestStatus(
+            when (responseCode) {
                 RACPResponseCode.RACP_ERROR_OP_CODE_NOT_SUPPORTED -> RequestStatus.NOT_SUPPORTED
                 else -> RequestStatus.FAILED
             },
         )
     }
 
-    private fun onRecordAccessOperationCompletedWithNoRecordsFound(deviceId: String) {
-        CGMRepository.updateNewRequestStatus(deviceId = deviceId, requestStatus = RequestStatus.SUCCESS)
+    private fun onRecordAccessOperationCompletedWithNoRecordsFound() {
+        repository.updateNewRequestStatus(RequestStatus.SUCCESS)
     }
 
-    private fun onRecordAccessOperationCompleted(deviceId: String, requestCode: RACPOpCode) {
-        CGMRepository.updateNewRequestStatus(
-            deviceId = deviceId,
-            requestStatus = when (requestCode) {
+    private fun onRecordAccessOperationCompleted(requestCode: RACPOpCode) {
+        repository.updateNewRequestStatus(
+            when (requestCode) {
                 RACPOpCode.RACP_OP_CODE_ABORT_OPERATION -> RequestStatus.ABORTED
                 else -> RequestStatus.SUCCESS
             },
         )
     }
 
-    private suspend fun onNumberOfRecordsReceived(deviceId: String, numberOfRecords: Int) {
-        val state = CGMRepository.getData(deviceId)
+    private suspend fun onNumberOfRecordsReceived(numberOfRecords: Int) {
+        val state = repository.data
         val highestSequenceNumber = state.value.records
             .maxByOrNull { it.sequenceNumber }?.sequenceNumber ?: -1
 
@@ -212,14 +210,17 @@ internal class CGMManager(
                 )
             } catch (e: Exception) {
                 Timber.tag("CGMS").e(e)
-                CGMRepository.updateNewRequestStatus(deviceId, RequestStatus.FAILED)
+                repository.updateNewRequestStatus(RequestStatus.FAILED)
                 return
             }
         }
-        CGMRepository.updateNewRequestStatus(deviceId = deviceId, requestStatus = RequestStatus.SUCCESS)
+        repository.updateNewRequestStatus(RequestStatus.SUCCESS)
     }
 
     suspend fun requestRecord(workingMode: WorkingMode) {
+        repository.clearState()
+        repository.updateNewRequestStatus(RequestStatus.PENDING)
+        repository.updateWorkingMode(workingMode)
         try {
             racpCharacteristic.write(
                 data = when (workingMode) {
@@ -230,7 +231,7 @@ internal class CGMManager(
             )
         } catch (e: Exception) {
             Timber.tag("CGMS").e(e)
-            CGMRepository.updateNewRequestStatus(deviceId, RequestStatus.FAILED)
+            repository.updateNewRequestStatus(RequestStatus.FAILED)
         }
     }
 }

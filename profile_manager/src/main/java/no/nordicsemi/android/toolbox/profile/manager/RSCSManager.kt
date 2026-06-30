@@ -21,11 +21,13 @@ import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 private val RSC_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A53-0000-1000-8000-00805F9B34FB")
 private val RSC_FEATURE_CHARACTERISTIC_UUID = Uuid.parse("00002A54-0000-1000-8000-00805F9B34FB")
 
-internal class RSCSManager(
+class RSCSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(RSCS_SERVICE_UUID, deviceId, "RSCS", onReady) {
     override val profile: ServiceType = ServiceType.RSCS
+
+    val repository = RSCSRepository()
 
     private lateinit var measurementCharacteristic: RemoteCharacteristic
     private var featureCharacteristic: RemoteCharacteristic? = null
@@ -41,10 +43,10 @@ internal class RSCSManager(
             .mapNotNull { RSCSDataParser.parse(it) }
             .onEach {
                 Timber.tag("RSCS").log(Log.Level.APPLICATION, it.toString())
-                RSCSRepository.onRSCSDataChanged(deviceId, it)
+                repository.onRSCSDataChanged(it)
             }
             .catch { Timber.tag("RSCS").e(it) }
-            .onCompletion { RSCSRepository.clear(deviceId) }
+            .onCompletion { repository.clear() }
             .launchIn(this)
 
         featureCharacteristic?.let { char ->
@@ -53,7 +55,7 @@ internal class RSCSManager(
                     Timber.tag("RSCS").v("Reading RSC feature...")
                     RSCSFeatureDataParser.parse(char.read())?.also {
                         Timber.tag("RSCS").log(Log.Level.APPLICATION, "Features: $it")
-                        RSCSRepository.updateRSCSFeatureData(deviceId, it)
+                        repository.updateRSCSFeatureData(it)
                     }
                 } catch (e: Exception) {
                     Timber.tag("RSCS").e(e, "Error reading RSC feature")

@@ -1,23 +1,20 @@
 package no.nordicsemi.android.toolbox.profile.manager.repository
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import no.nordicsemi.android.toolbox.profile.data.BatteryServiceData
 
-object BatteryRepository {
-    private val _dataMap = mutableMapOf<String, MutableStateFlow<BatteryServiceData>>()
+class BatteryRepository {
+    private val _data = MutableStateFlow(BatteryServiceData())
+    val data: StateFlow<BatteryServiceData> = _data.asStateFlow()
 
-    fun getData(deviceId: String): Flow<BatteryServiceData> {
-        return _dataMap.getOrPut(deviceId) { MutableStateFlow(BatteryServiceData()) }
+    fun updateBatteryLevel(level: Int) {
+        _data.update { it.copy(batteryLevel = level) }
     }
 
-    fun updateBatteryLevel(deviceId: String, data: Int) {
-        _dataMap[deviceId]?.update { it.copy(batteryLevel = data) }
+    fun clear() {
+        _data.value = BatteryServiceData()
     }
-
-    fun clear(deviceId: String) {
-        _dataMap.remove(deviceId)
-    }
-
 }

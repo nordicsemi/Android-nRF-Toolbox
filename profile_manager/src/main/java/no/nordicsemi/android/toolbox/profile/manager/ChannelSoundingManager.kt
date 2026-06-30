@@ -12,7 +12,7 @@ import kotlin.uuid.Uuid
 
 private val RAS_FEATURES = Uuid.parse("00002C14-0000-1000-8000-00805F9B34FB")
 
-internal class ChannelSoundingManager(
+class ChannelSoundingManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(RANGING_SERVICE_UUID, deviceId, "Channel Sounding", onReady) {

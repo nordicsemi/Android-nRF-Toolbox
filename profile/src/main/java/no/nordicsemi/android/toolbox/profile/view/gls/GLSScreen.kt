@@ -46,6 +46,7 @@ import no.nordicsemi.android.common.ui.view.ActionOutlinedButton
 import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.data.GLSServiceData
+import no.nordicsemi.android.toolbox.profile.manager.GLSManager
 import no.nordicsemi.android.toolbox.profile.parser.common.WorkingMode
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.Carbohydrate
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.ConcentrationUnit
@@ -71,8 +72,11 @@ import no.nordicsemi.android.ui.view.SectionRow
 import java.util.Calendar
 
 @Composable
-internal fun GLSScreen() {
-    val glsViewModel = hiltViewModel<GLSViewModel>()
+internal fun GLSScreen(manager: GLSManager) {
+    val glsViewModel = hiltViewModel<GLSViewModel, GLSViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
     val glsServiceData by glsViewModel.state.collectAsStateWithLifecycle()
     val onClickEvent: (GLSEvent) -> Unit = { glsViewModel.onEvent(it) }
 

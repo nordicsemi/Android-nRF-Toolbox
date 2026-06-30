@@ -22,13 +22,17 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
+import no.nordicsemi.android.toolbox.profile.manager.LBSManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.LBSEvent
 import no.nordicsemi.android.toolbox.profile.viewmodel.LBSViewModel
 import no.nordicsemi.android.ui.view.ScreenSection
 
 @Composable
-internal fun BlinkyScreen() {
-    val lbsViewModel = hiltViewModel<LBSViewModel>()
+internal fun BlinkyScreen(manager: LBSManager) {
+    val lbsViewModel = hiltViewModel<LBSViewModel, LBSViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
     val onClickEvent: (LBSEvent) -> Unit = { lbsViewModel.onEvent(it) }
     val serviceData by lbsViewModel.state.collectAsStateWithLifecycle()
 

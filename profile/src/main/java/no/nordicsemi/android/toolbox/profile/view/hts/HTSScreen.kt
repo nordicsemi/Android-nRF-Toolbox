@@ -38,6 +38,7 @@ import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.data.HTSServiceData
 import no.nordicsemi.android.toolbox.profile.data.uiMapper.TemperatureUnit
+import no.nordicsemi.android.toolbox.profile.manager.HTSManager
 import no.nordicsemi.android.toolbox.profile.parser.hts.HTSData
 import no.nordicsemi.android.toolbox.profile.parser.hts.HTSMeasurementType
 import no.nordicsemi.android.toolbox.profile.viewmodel.HTSEvent
@@ -50,8 +51,11 @@ import no.nordicsemi.android.ui.view.TextWithAnimatedDots
 import java.util.Calendar
 
 @Composable
-internal fun HTSScreen() {
-    val htsViewModel = hiltViewModel<HTSViewModel>()
+internal fun HTSScreen(manager: HTSManager) {
+    val htsViewModel = hiltViewModel<HTSViewModel, HTSViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
     val onClickEvent: (HTSEvent) -> Unit = { htsViewModel.onEvent(it) }
     val htsServiceData by htsViewModel.state.collectAsStateWithLifecycle()
 

@@ -1,34 +1,31 @@
 package no.nordicsemi.android.toolbox.profile.manager.repository
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import no.nordicsemi.android.toolbox.profile.data.BPSServiceData
 import no.nordicsemi.android.toolbox.profile.parser.bps.BloodPressureFeatureData
 import no.nordicsemi.android.toolbox.profile.parser.bps.BloodPressureMeasurementData
 import no.nordicsemi.android.toolbox.profile.parser.bps.IntermediateCuffPressureData
-import no.nordicsemi.android.toolbox.profile.data.BPSServiceData
 
-object BPSRepository {
-    private val _dataMap = mutableMapOf<String, MutableStateFlow<BPSServiceData>>()
+class BPSRepository {
+    private val _data = MutableStateFlow(BPSServiceData())
+    val data: StateFlow<BPSServiceData> = _data.asStateFlow()
 
-    fun getData(deviceId: String): Flow<BPSServiceData> {
-        return _dataMap.getOrPut(deviceId) { MutableStateFlow(BPSServiceData()) }
+    fun updateBPSData(bpsData: BloodPressureMeasurementData) {
+        _data.update { it.copy(bloodPressureMeasurement = bpsData) }
     }
 
-    fun updateBPSData(deviceId: String, bpsData: BloodPressureMeasurementData) {
-        _dataMap[deviceId]?.update { it.copy(bloodPressureMeasurement = bpsData) }
+    fun updateICPData(icpData: IntermediateCuffPressureData) {
+        _data.update { it.copy(intermediateCuffPressure = icpData) }
     }
 
-    fun clear(deviceId: String) {
-        _dataMap.remove(deviceId)
+    fun updateBPSFeatureData(bpsFeatureData: BloodPressureFeatureData) {
+        _data.update { it.copy(bloodPressureFeature = bpsFeatureData) }
     }
 
-    fun updateICPData(deviceId: String, icpData: IntermediateCuffPressureData) {
-        _dataMap[deviceId]?.update { it.copy(intermediateCuffPressure = icpData) }
+    fun clear() {
+        _data.value = BPSServiceData()
     }
-
-    fun updateBPSFeatureData(deviceId: String, bpsFeatureData: BloodPressureFeatureData) {
-        _dataMap[deviceId]?.update { it.copy(bloodPressureFeature = bpsFeatureData) }
-    }
-
 }

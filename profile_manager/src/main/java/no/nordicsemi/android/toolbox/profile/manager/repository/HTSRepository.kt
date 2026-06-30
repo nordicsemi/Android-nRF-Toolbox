@@ -1,29 +1,26 @@
 package no.nordicsemi.android.toolbox.profile.manager.repository
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import no.nordicsemi.android.toolbox.profile.parser.hts.HTSData
-import no.nordicsemi.android.toolbox.profile.data.uiMapper.TemperatureUnit
 import no.nordicsemi.android.toolbox.profile.data.HTSServiceData
+import no.nordicsemi.android.toolbox.profile.data.uiMapper.TemperatureUnit
+import no.nordicsemi.android.toolbox.profile.parser.hts.HTSData
 
-object HTSRepository {
-    private val _dataMap = mutableMapOf<String, MutableStateFlow<HTSServiceData>>()
+class HTSRepository {
+    private val _data = MutableStateFlow(HTSServiceData())
+    val data: StateFlow<HTSServiceData> = _data.asStateFlow()
 
-    fun getData(deviceId: String): Flow<HTSServiceData> {
-        return _dataMap.getOrPut(deviceId) { MutableStateFlow(HTSServiceData()) }
+    fun updateHTSData(data: HTSData) {
+        _data.update { it.copy(data = data) }
     }
 
-    fun updateHTSData(deviceId: String, data: HTSData) {
-        _dataMap[deviceId]?.update { it.copy(data = data) }
+    fun onTemperatureUnitChange(unit: TemperatureUnit) {
+        _data.update { it.copy(temperatureUnit = unit) }
     }
 
-    fun clear(deviceId: String) {
-        _dataMap.remove(deviceId)
+    fun clear() {
+        _data.value = HTSServiceData()
     }
-
-    fun onTemperatureUnitChange(deviceId: String, unit: TemperatureUnit) {
-        _dataMap[deviceId]?.update { it.copy(temperatureUnit = unit) }
-    }
-
 }

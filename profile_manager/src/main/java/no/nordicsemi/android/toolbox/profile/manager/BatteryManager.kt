@@ -19,11 +19,13 @@ import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
 private val BATTERY_LEVEL_CHARACTERISTIC_UUID: Uuid = Uuid.parse("00002A19-0000-1000-8000-00805f9b34fb")
 
-internal class BatteryManager(
+class BatteryManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(BATTERY_SERVICE_UUID, deviceId, "Battery", onReady) {
     override val profile: ServiceType = ServiceType.BATTERY
+
+    val repository = BatteryRepository()
 
     private lateinit var batteryLevelCharacteristic: RemoteCharacteristic
 
@@ -39,9 +41,9 @@ internal class BatteryManager(
                 .mapNotNull { BatteryLevelParser.parse(it) }
                 .onEach {
                     Timber.tag("Battery Service").log(Log.Level.APPLICATION, "Battery level: $it%")
-                    BatteryRepository.updateBatteryLevel(deviceId, it)
+                    repository.updateBatteryLevel(it)
                 }
-                .onCompletion { BatteryRepository.clear(deviceId) }
+                .onCompletion { repository.clear() }
                 .catch { Timber.tag("Battery Service").e(it) }
                 .launchIn(this)
         }
@@ -52,7 +54,7 @@ internal class BatteryManager(
                     Timber.tag("Battery Service").v("Reading battery level...")
                     BatteryLevelParser.parse(batteryLevelCharacteristic.read())?.let {
                         Timber.tag("Battery Service").log(Log.Level.APPLICATION, "Battery level: $it%")
-                        BatteryRepository.updateBatteryLevel(deviceId, it)
+                        repository.updateBatteryLevel(it)
                     }
                 } catch (e: Exception) {
                     Timber.tag("Battery Service").e(e, "Error reading battery level")

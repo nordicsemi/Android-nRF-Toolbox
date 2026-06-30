@@ -1,37 +1,35 @@
 package no.nordicsemi.android.toolbox.profile.manager.repository
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import no.nordicsemi.android.toolbox.profile.parser.hrs.HRSData
 import no.nordicsemi.android.toolbox.profile.data.HRSServiceData
 import no.nordicsemi.android.toolbox.profile.parser.hrs.BodySensorLocation
+import no.nordicsemi.android.toolbox.profile.parser.hrs.HRSData
 
-object HRSRepository {
-    private val _dataMap = mutableMapOf<String, MutableStateFlow<HRSServiceData>>()
+class HRSRepository {
+    private val _data = MutableStateFlow(HRSServiceData())
+    val data: StateFlow<HRSServiceData> = _data.asStateFlow()
 
-    fun getData(deviceId: String): Flow<HRSServiceData> {
-        return _dataMap.getOrPut(deviceId) { MutableStateFlow(HRSServiceData()) }
-    }
-
-    fun updateHRSData(deviceId: String, data: HRSData) {
-        _dataMap[deviceId]?.update {
+    fun updateHRSData(data: HRSData) {
+        _data.update {
             it.copy(
                 heartRate = data.heartRate,
-                data = it.data + data
+                data = it.data + data,
             )
         }
     }
 
-    fun clear(deviceId: String) {
-        _dataMap.remove(deviceId)
+    fun updateBodySensorLocation(location: BodySensorLocation) {
+        _data.update { it.copy(bodySensorLocation = location) }
     }
 
-    fun updateBodySensorLocation(deviceId: String, location: BodySensorLocation) {
-        _dataMap[deviceId]?.update { it.copy(bodySensorLocation = location) }
+    fun updateZoomIn() {
+        _data.update { it.copy(zoomIn = !it.zoomIn) }
     }
 
-    fun updateZoomIn(deviceId: String) {
-        _dataMap[deviceId]?.update { it.copy(zoomIn = !it.zoomIn) }
+    fun clear() {
+        _data.value = HRSServiceData()
     }
 }
