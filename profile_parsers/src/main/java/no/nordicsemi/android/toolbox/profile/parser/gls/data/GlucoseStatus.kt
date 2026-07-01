@@ -30,12 +30,18 @@ class GlucoseStatus(
         timeFault = value and 0x0800 != 0
     )
 
-    override fun toString(): String {
-        return "GlucoseStatus(deviceBatteryLow=$deviceBatteryLow, sensorMalfunction=$sensorMalfunction, " +
-                "sampleSizeInsufficient=$sampleSizeInsufficient, stripInsertionError=$stripInsertionError, " +
-                "stripTypeIncorrect=$stripTypeIncorrect, sensorResultLowerThenDeviceCanProcess=$sensorResultLowerThenDeviceCanProcess, " +
-                "sensorResultHigherThenDeviceCanProcess=$sensorResultHigherThenDeviceCanProcess, sensorTemperatureTooHigh=$sensorTemperatureTooHigh, " +
-                "sensorTemperatureTooLow=$sensorTemperatureTooLow, sensorReadInterrupted=$sensorReadInterrupted, " +
-                "generalDeviceFault=$generalDeviceFault, timeFault=$timeFault)"
-    }
+    override fun toString() = buildString {
+        if (deviceBatteryLow) append("Device battery low, ")
+        if (sensorMalfunction) append("Sensor malfunction, ")
+        if (sampleSizeInsufficient) append("Sample size insufficient, ")
+        if (stripInsertionError) append("Strip insertion error, ")
+        if (stripTypeIncorrect) append("Strip type incorrect, ")
+        if (sensorResultLowerThenDeviceCanProcess) append("Sensor result lower then device can process, ")
+        if (sensorResultHigherThenDeviceCanProcess) append("Sensor result higher then device can process, ")
+        if (sensorTemperatureTooHigh) append("Sensor temperature too high, ")
+        if (sensorTemperatureTooLow) append("Sensor temperature too low, ")
+        if (sensorReadInterrupted) append("Sensor read interrupted, ")
+        if (generalDeviceFault) append("General device fault, ")
+        if (timeFault) append("Time fault")
+    }.removeSuffix(", ").ifEmpty { "OK" }
 }

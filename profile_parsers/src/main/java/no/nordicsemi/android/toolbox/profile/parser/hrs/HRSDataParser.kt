@@ -6,11 +6,11 @@ import no.nordicsemi.kotlin.data.ByteOrder
 
 object HRSDataParser {
 
-    fun parse(data: ByteArray, byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN): HRSData? {
+    fun parse(data: ByteArray): HRSData? {
         if (data.size < 2) return null
 
         var offset = 0
-        val flag = data.getInt(offset, IntFormat.UINT8, byteOrder)
+        val flag = data.getInt(offset, IntFormat.UINT8, ByteOrder.LITTLE_ENDIAN)
         val heartRateType = if (flag and 0x01 == 0) IntFormat.UINT8 else IntFormat.UINT16
 
         val sensorContactStatus = flag and 0x06 shr 1
@@ -25,14 +25,14 @@ object HRSDataParser {
             return null
         }
         // Prepare data
-        val sensorContact = if (sensorContactSupported) sensorContactDetected else false
+        val sensorContact = if (sensorContactSupported) sensorContactDetected else null
 
-        val heartRate: Int = data.getInt(offset, heartRateType, byteOrder)
+        val heartRate: Int = data.getInt(offset, heartRateType, ByteOrder.LITTLE_ENDIAN)
         offset += heartRateType.length
 
         var energyExpanded: Int? = null
         if (energyExpandedPresent) {
-            energyExpanded = data.getInt(offset, IntFormat.UINT16, byteOrder)
+            energyExpanded = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
             offset += 2
         }
 
@@ -40,7 +40,7 @@ object HRSDataParser {
             val count: Int = (data.size - offset) / 2
             val intervals: MutableList<Int> = ArrayList(count)
             for (i in 0 until count) {
-                intervals.add(data.getInt(offset, IntFormat.UINT16, byteOrder))
+                intervals.add(data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN))
                 offset += 2
             }
             intervals.toList()

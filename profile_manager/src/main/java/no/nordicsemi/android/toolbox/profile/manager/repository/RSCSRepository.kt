@@ -1,34 +1,31 @@
 package no.nordicsemi.android.toolbox.profile.manager.repository
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import no.nordicsemi.android.toolbox.profile.data.RSCSServiceData
 import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCFeatureData
 import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSData
 import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSSettingsUnit
-import no.nordicsemi.android.toolbox.profile.data.RSCSServiceData
 
-object RSCSRepository {
-    private val _dataMap = mutableMapOf<String, MutableStateFlow<RSCSServiceData>>()
+class RSCSRepository {
+    private val _data = MutableStateFlow(RSCSServiceData())
+    val data: StateFlow<RSCSServiceData> = _data.asStateFlow()
 
-    fun getData(deviceId: String): Flow<RSCSServiceData> {
-        return _dataMap.getOrPut(deviceId) { MutableStateFlow(RSCSServiceData()) }
+    fun onRSCSDataChanged(data: RSCSData) {
+        _data.update { it.copy(data = data) }
     }
 
-    fun clear(deviceId: String) {
-        _dataMap.remove(deviceId)
+    fun updateUnitSettings(rscsUnitSettings: RSCSSettingsUnit) {
+        _data.update { it.copy(unit = rscsUnitSettings) }
     }
 
-    fun onRSCSDataChanged(deviceId: String, data: RSCSData) {
-        _dataMap[deviceId]?.update { it.copy(data = data) }
+    fun updateRSCSFeatureData(feature: RSCFeatureData) {
+        _data.update { it.copy(feature = feature) }
     }
 
-    fun updateUnitSettings(deviceId: String, rscsUnitSettings: RSCSSettingsUnit) {
-        _dataMap[deviceId]?.update { it.copy(unit = rscsUnitSettings) }
+    fun clear() {
+        _data.value = RSCSServiceData()
     }
-
-    fun updateRSCSFeatureData(deviceId: String, feature: RSCFeatureData) {
-        _dataMap[deviceId]?.update { it.copy(feature = feature) }
-    }
-
 }

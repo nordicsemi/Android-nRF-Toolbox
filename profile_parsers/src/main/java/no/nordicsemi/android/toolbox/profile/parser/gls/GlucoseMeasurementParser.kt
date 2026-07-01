@@ -15,7 +15,7 @@ import java.util.Calendar
 
 object GlucoseMeasurementParser {
 
-    fun parse(data: ByteArray, byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN): GLSRecord? {
+    fun parse(data: ByteArray): GLSRecord? {
         if (data.size < 10) return null
 
         var offset = 0
@@ -34,14 +34,14 @@ object GlucoseMeasurementParser {
         }
 
         // Required fields
-        val sequenceNumber: Int = data.getInt(offset, IntFormat.UINT16, byteOrder)
+        val sequenceNumber: Int = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
         offset += 2
         val baseTime: Calendar = DateTimeParser.parse(data, 3) ?: return null
         offset += 7
 
         // Optional fields
         if (timeOffsetPresent) {
-            val timeOffset: Int = data.getInt(offset, IntFormat.INT16, byteOrder)
+            val timeOffset: Int = data.getInt(offset, IntFormat.INT16, ByteOrder.LITTLE_ENDIAN)
             offset += 2
             baseTime.add(Calendar.MINUTE, timeOffset)
         }
@@ -51,8 +51,8 @@ object GlucoseMeasurementParser {
         var type: Int? = null
         var sampleLocation: Int? = null
         if (glucoseDataPresent) {
-            glucoseConcentration = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, byteOrder)
-            val typeAndSampleLocation: Int = data.getInt(offset + 2, IntFormat.UINT8, byteOrder)
+            glucoseConcentration = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN)
+            val typeAndSampleLocation: Int = data.getInt(offset + 2, IntFormat.UINT8, ByteOrder.LITTLE_ENDIAN)
             offset += 3
             type = typeAndSampleLocation and 0x0F
             sampleLocation = typeAndSampleLocation shr 4
@@ -61,7 +61,7 @@ object GlucoseMeasurementParser {
 
         var status: GlucoseStatus? = null
         if (sensorStatusAnnunciationPresent) {
-            val value: Int = data.getInt(offset, IntFormat.UINT16, byteOrder)
+            val value: Int = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
             // offset += 2;
             status = GlucoseStatus(value)
         }

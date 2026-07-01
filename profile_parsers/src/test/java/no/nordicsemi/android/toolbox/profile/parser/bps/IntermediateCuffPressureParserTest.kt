@@ -68,7 +68,7 @@ class IntermediateCuffPressureParserTest {
             0x34.toByte() // Incomplete cuff pressure
         )
 
-        val result = IntermediateCuffPressureParser.parse(data, ByteOrder.LITTLE_ENDIAN)
+        val result = IntermediateCuffPressureParser.parse(data)
 
         assertNull(result)
     }
@@ -89,7 +89,7 @@ class IntermediateCuffPressureParserTest {
             0x2D.toByte(),                          // Second: 45
         )
 
-        val result = IntermediateCuffPressureParser.parse(data, ByteOrder.LITTLE_ENDIAN)
+        val result = IntermediateCuffPressureParser.parse(data)
 
         assertNotNull(result)
         assertEquals(81.0f, result?.cuffPressure)
@@ -108,7 +108,7 @@ class IntermediateCuffPressureParserTest {
             0x00.toByte(), 0x00.toByte(),
         )
 
-        val result = IntermediateCuffPressureParser.parse(data, ByteOrder.LITTLE_ENDIAN)
+        val result = IntermediateCuffPressureParser.parse(data)
 
         assertNotNull(result)
         assertEquals(81.0f, result?.cuffPressure)

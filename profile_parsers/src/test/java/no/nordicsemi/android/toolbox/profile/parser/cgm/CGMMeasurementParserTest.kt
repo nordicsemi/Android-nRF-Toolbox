@@ -29,7 +29,7 @@ class CGMMeasurementParserTest {
         data[data.size - 2] = (expectedCrc and 0xFF).toByte()
         data[data.size - 1] = (expectedCrc shr 8).toByte()
 
-        val records = CGMMeasurementParser.parse(data, ByteOrder.LITTLE_ENDIAN)
+        val records = CGMMeasurementParser.parse(data)
         assertNotNull(records)
         assertEquals(1, records!!.size)
 
@@ -54,7 +54,7 @@ class CGMMeasurementParserTest {
             0x1E, 0x00  // Time offset: 30 minutes
         )
 
-        val records = CGMMeasurementParser.parse(data, ByteOrder.LITTLE_ENDIAN)
+        val records = CGMMeasurementParser.parse(data)
         assertNotNull(records)
         assertEquals(1, records!!.size)
 
@@ -76,7 +76,7 @@ class CGMMeasurementParserTest {
             0x1E  // Incomplete time offset
         )
 
-        val records = CGMMeasurementParser.parse(data, ByteOrder.LITTLE_ENDIAN)
+        val records = CGMMeasurementParser.parse(data)
         assertNull(records)
     }
 
@@ -90,14 +90,14 @@ class CGMMeasurementParserTest {
             0x12, 0x34  // CRC: Invalid placeholder
         )
 
-        val records = CGMMeasurementParser.parse(data, ByteOrder.LITTLE_ENDIAN)
+        val records = CGMMeasurementParser.parse(data)
         assertNull(records)
     }
 
     @Test
     fun `test empty data`() {
         val data = byteArrayOf()
-        val records = CGMMeasurementParser.parse(data, ByteOrder.LITTLE_ENDIAN)
+        val records = CGMMeasurementParser.parse(data)
         assertNull(records)
     }
 }

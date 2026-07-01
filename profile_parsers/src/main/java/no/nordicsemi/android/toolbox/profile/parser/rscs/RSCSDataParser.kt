@@ -6,7 +6,7 @@ import no.nordicsemi.kotlin.data.ByteOrder
 
 object RSCSDataParser {
 
-    fun parse(data: ByteArray, byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN): RSCSData? {
+    fun parse(data: ByteArray): RSCSData? {
         if (data.size < 4) return null
 
         var offset = 0
@@ -18,7 +18,7 @@ object RSCSDataParser {
         val statusRunning = flags and 0x04 != 0
 
         // Speed
-        val speed = data.getInt(offset, IntFormat.UINT16, byteOrder)
+        val speed = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
             .toFloat()
             .let {
                 it / 256f // [m/s]
@@ -38,7 +38,7 @@ object RSCSDataParser {
         var strideLength: Int? = null
         if (instantaneousStrideLengthPresent) {
             strideLength =
-                data.getInt(offset, IntFormat.UINT16, byteOrder)
+                data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
                     .also { offset += 2 }
         }
 
@@ -46,7 +46,7 @@ object RSCSDataParser {
         var totalDistance: Long? = null
         if (totalDistancePresent) {
             totalDistance =
-                data.getInt(offset, IntFormat.UINT32, byteOrder).toLong()
+                data.getInt(offset, IntFormat.UINT32, ByteOrder.LITTLE_ENDIAN).toLong()
             // offset += 4;
         }
 

@@ -26,6 +26,8 @@ import no.nordicsemi.android.service.profile.ServiceApi
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
 import no.nordicsemi.android.toolbox.profile.R
+import no.nordicsemi.android.toolbox.profile.argAddress
+import no.nordicsemi.android.toolbox.profile.argName
 import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import no.nordicsemi.android.toolbox.profile.repository.channelSounding.ChannelSoundingManager
 import no.nordicsemi.kotlin.ble.client.android.Peripheral
@@ -43,7 +45,15 @@ internal class ProfileViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle,
 ) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    val address: String = parameterOf(ProfileDestinationId)
+    val address: String
+    val name: String?
+
+    init {
+        val arg = parameterOf(ProfileDestinationId)
+        address = arg.getString(argAddress)!!
+        name = arg.getString(argName)
+    }
+
     var peripheral: Peripheral? = null
     private var serviceApi: ServiceApi? = null
     private val logger: nRFLoggerTree = nRFLoggerTree(context, address, context.getString(R.string.app_name))

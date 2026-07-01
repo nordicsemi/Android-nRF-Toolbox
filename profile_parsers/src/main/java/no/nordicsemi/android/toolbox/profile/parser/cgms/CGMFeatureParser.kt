@@ -2,6 +2,8 @@ package no.nordicsemi.android.toolbox.profile.parser.cgms
 
 import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMFeatures
 import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMFeaturesEnvelope
+import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMLocation
+import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMType
 import no.nordicsemi.android.toolbox.profile.parser.common.CRC16
 import no.nordicsemi.kotlin.data.IntFormat
 import no.nordicsemi.kotlin.data.getInt
@@ -9,15 +11,12 @@ import no.nordicsemi.kotlin.data.ByteOrder
 
 object CGMFeatureParser {
 
-    fun parse(
-        data: ByteArray,
-        byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN
-    ): CGMFeaturesEnvelope? {
+    fun parse(data: ByteArray): CGMFeaturesEnvelope? {
         if (data.size != 6) return null
 
-        val featuresValue = data.getInt(0, IntFormat.UINT24, byteOrder)
+        val featuresValue = data.getInt(0, IntFormat.UINT24, ByteOrder.LITTLE_ENDIAN)
         val typeAndSampleLocation = data.getInt(3, IntFormat.UINT8)
-        val expectedCrc = data.getInt(4, IntFormat.UINT16, byteOrder)
+        val expectedCrc = data.getInt(4, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
 
         val features = CGMFeatures(featuresValue)
         if (features.e2eCrcSupported) {
@@ -29,13 +28,12 @@ object CGMFeatureParser {
         }
 
         val type = typeAndSampleLocation and 0x0F // least significant nibble
-
         val sampleLocation = typeAndSampleLocation shr 4 // most significant nibble
 
         return CGMFeaturesEnvelope(
             features,
-            type,
-            sampleLocation,
+            CGMType.create(type),
+            CGMLocation.create(sampleLocation),
             features.e2eCrcSupported,
             features.e2eCrcSupported
         )

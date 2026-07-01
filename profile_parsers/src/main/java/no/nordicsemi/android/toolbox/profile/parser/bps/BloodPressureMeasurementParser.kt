@@ -10,14 +10,11 @@ import java.util.Calendar
 
 object BloodPressureMeasurementParser {
 
-    fun parse(
-        data: ByteArray,
-        byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN
-    ): BloodPressureMeasurementData? {
+    fun parse(data: ByteArray): BloodPressureMeasurementData? {
         if (data.size < 7) return null
 
         var offset = 0
-        val flags: Int = data.getInt(offset, IntFormat.UINT8, byteOrder)
+        val flags: Int = data.getInt(offset, IntFormat.UINT8, ByteOrder.LITTLE_ENDIAN)
             .also { offset++ }
 
         // See UNIT_* for unit options
@@ -39,11 +36,9 @@ object BloodPressureMeasurementParser {
         }
 
         // Following bytes - systolic, diastolic and mean arterial pressure
-        val systolic: Float = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, byteOrder)
-
-        val diastolic: Float = data.getFloat(offset + 2, FloatFormat.IEEE_11073_16_BIT, byteOrder)
-        val meanArterialPressure: Float =
-            data.getFloat(offset + 4, FloatFormat.IEEE_11073_16_BIT, byteOrder)
+        val systolic = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN)
+        val diastolic = data.getFloat(offset + 2, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN)
+        val meanArterialPressure = data.getFloat(offset + 4, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN)
         offset += 6
 
         // Parse timestamp if present
@@ -56,7 +51,7 @@ object BloodPressureMeasurementParser {
         // Parse pulse rate if present
         var pulseRate: Float? = null
         if (pulseRatePresent) {
-            pulseRate = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, byteOrder)
+            pulseRate = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN)
             offset += 2
         }
 
@@ -70,7 +65,7 @@ object BloodPressureMeasurementParser {
         // Read measurement status if present
         var status: BPMStatus? = null
         if (measurementStatusPresent) {
-            val measurementStatus: Int = data.getInt(offset, IntFormat.UINT16, byteOrder)
+            val measurementStatus: Int = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
             // offset += 2;
             status = BPMStatus(measurementStatus)
         }

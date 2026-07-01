@@ -18,42 +18,34 @@ object RecordAccessControlPointInputParser {
     private const val OPERATOR_FIRST_RECORD: Byte = 5
     private const val OPERATOR_LAST_RECORD: Byte = 6
 
-    fun reportAllStoredRecords(): ByteArray {
-        return create(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS)
-    }
+    fun reportAllStoredRecords(): ByteArray =
+        create(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS)
 
-    fun reportFirstStoredRecord(): ByteArray {
-        return create(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_FIRST_RECORD)
-    }
+    fun reportFirstStoredRecord(): ByteArray =
+        create(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_FIRST_RECORD)
 
-    fun reportLastStoredRecord(): ByteArray {
-        return create(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_LAST_RECORD)
-    }
+    fun reportLastStoredRecord(): ByteArray =
+        create(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_LAST_RECORD)
 
     fun reportStoredRecordsLessThenOrEqualTo(
         filter: FilterType,
         parameter: Short
-    ): ByteArray {
-        return create(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_LESS_THEN_OR_EQUAL, filter, parameter)
-    }
+    ): ByteArray =
+        create(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_LESS_THEN_OR_EQUAL, filter, parameter)
 
     fun reportStoredRecordsGreaterThenOrEqualTo(
         filter: FilterType, parameter: Short
-    ): ByteArray {
-        return create(
-            OP_CODE_REPORT_STORED_RECORDS,
-            OPERATOR_GREATER_THEN_OR_EQUAL,
-            filter,
-            parameter
-        )
-    }
+    ): ByteArray = create(
+        OP_CODE_REPORT_STORED_RECORDS,
+        OPERATOR_GREATER_THEN_OR_EQUAL,
+        filter,
+        parameter
+    )
 
     fun reportStoredRecordsFromRange(
         filter: FilterType,
         start: Short, end: Short
-    ): ByteArray {
-        return create(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_WITHING_RANGE, filter, start, end)
-    }
+    ): ByteArray = create(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_WITHING_RANGE, filter, start, end)
 
     fun reportStoredRecordsLessThenOrEqualTo(@IntRange(from = 0) sequenceNumber: Short): ByteArray {
         return create(
@@ -64,170 +56,141 @@ object RecordAccessControlPointInputParser {
         )
     }
 
-    fun reportStoredRecordsGreaterThenOrEqualTo(@IntRange(from = 0) sequenceNumber: Short): ByteArray {
-        return create(
+    fun reportStoredRecordsGreaterThenOrEqualTo(@IntRange(from = 0) sequenceNumber: Short): ByteArray =
+        create(
             OP_CODE_REPORT_STORED_RECORDS,
             OPERATOR_GREATER_THEN_OR_EQUAL,
             FilterType.SEQUENCE_NUMBER,
             sequenceNumber
         )
-    }
 
     fun reportStoredRecordsFromRange(
         @IntRange(from = 0) startSequenceNumber: Short,
         @IntRange(from = 0) endSequenceNumber: Short
-    ): ByteArray {
-        return create(
-            OP_CODE_REPORT_STORED_RECORDS,
-            OPERATOR_WITHING_RANGE,
-            FilterType.SEQUENCE_NUMBER,
-            startSequenceNumber,
-            endSequenceNumber
-        )
-    }
+    ): ByteArray = create(
+        OP_CODE_REPORT_STORED_RECORDS,
+        OPERATOR_WITHING_RANGE,
+        FilterType.SEQUENCE_NUMBER,
+        startSequenceNumber,
+        endSequenceNumber
+    )
 
-    fun deleteAllStoredRecords(): ByteArray {
-        return create(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_ALL_RECORDS)
-    }
+    fun deleteAllStoredRecords(): ByteArray =
+        create(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_ALL_RECORDS)
 
-    fun deleteFirstStoredRecord(): ByteArray {
-        return create(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_FIRST_RECORD)
-    }
+    fun deleteFirstStoredRecord(): ByteArray =
+        create(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_FIRST_RECORD)
 
-    fun deleteLastStoredRecord(): ByteArray {
-        return create(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_LAST_RECORD)
-    }
+    fun deleteLastStoredRecord(): ByteArray =
+        create(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_LAST_RECORD)
 
     fun deleteStoredRecordsLessThenOrEqualTo(
         filter: FilterType,
         parameter: Short
-    ): ByteArray {
-        return create(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_LESS_THEN_OR_EQUAL, filter, parameter)
-    }
+    ): ByteArray =
+        create(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_LESS_THEN_OR_EQUAL, filter, parameter)
 
     fun deleteStoredRecordsGreaterThenOrEqualTo(
         filter: FilterType,
         parameter: Short
-    ): ByteArray {
-        return create(
-            OP_CODE_DELETE_STORED_RECORDS,
-            OPERATOR_GREATER_THEN_OR_EQUAL,
-            filter,
-            parameter
-        )
-    }
+    ): ByteArray = create(
+        OP_CODE_DELETE_STORED_RECORDS,
+        OPERATOR_GREATER_THEN_OR_EQUAL,
+        filter,
+        parameter
+    )
 
     fun deleteStoredRecordsFromRange(
         filter: FilterType,
         start: Short,
         end: Short
-    ): ByteArray {
-        return create(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_WITHING_RANGE, filter, start, end)
-    }
+    ): ByteArray = create(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_WITHING_RANGE, filter, start, end)
 
-    fun deleteStoredRecordsLessThenOrEqualTo(@IntRange(from = 0) sequenceNumber: Short): ByteArray {
-        return create(
+    fun deleteStoredRecordsLessThenOrEqualTo(@IntRange(from = 0) sequenceNumber: Short): ByteArray =
+        create(
             OP_CODE_DELETE_STORED_RECORDS,
             OPERATOR_LESS_THEN_OR_EQUAL,
             FilterType.SEQUENCE_NUMBER,
             sequenceNumber
         )
-    }
 
-    fun deleteStoredRecordsGreaterThenOrEqualTo(@IntRange(from = 0) sequenceNumber: Short): ByteArray {
-        return create(
+    fun deleteStoredRecordsGreaterThenOrEqualTo(@IntRange(from = 0) sequenceNumber: Short): ByteArray =
+        create(
             OP_CODE_DELETE_STORED_RECORDS,
             OPERATOR_GREATER_THEN_OR_EQUAL,
             FilterType.SEQUENCE_NUMBER,
             sequenceNumber
         )
-    }
 
     fun deleteStoredRecordsFromRange(
         @IntRange(from = 0) startSequenceNumber: Short,
         @IntRange(from = 0) endSequenceNumber: Short
-    ): ByteArray {
-        return create(
-            OP_CODE_DELETE_STORED_RECORDS, OPERATOR_WITHING_RANGE,
-            FilterType.SEQUENCE_NUMBER,
-            startSequenceNumber, endSequenceNumber
-        )
-    }
+    ): ByteArray = create(
+        OP_CODE_DELETE_STORED_RECORDS, OPERATOR_WITHING_RANGE,
+        FilterType.SEQUENCE_NUMBER,
+        startSequenceNumber, endSequenceNumber
+    )
 
-    fun reportNumberOfAllStoredRecords(): ByteArray {
-        return create(OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS)
-    }
+    fun reportNumberOfAllStoredRecords(): ByteArray =
+        create(OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS)
 
     fun reportNumberOfStoredRecordsLessThenOrEqualTo(
         filter: FilterType,
         parameter: Short
-    ): ByteArray {
-        return create(
-            OP_CODE_REPORT_NUMBER_OF_RECORDS,
-            OPERATOR_LESS_THEN_OR_EQUAL,
-            filter,
-            parameter
-        )
-    }
+    ): ByteArray = create(
+        OP_CODE_REPORT_NUMBER_OF_RECORDS,
+        OPERATOR_LESS_THEN_OR_EQUAL,
+        filter,
+        parameter
+    )
 
     fun reportNumberOfStoredRecordsGreaterThenOrEqualTo(
         filter: FilterType,
         parameter: Short
-    ): ByteArray {
-        return create(
-            OP_CODE_REPORT_NUMBER_OF_RECORDS,
-            OPERATOR_GREATER_THEN_OR_EQUAL,
-            filter,
-            parameter
-        )
-    }
+    ): ByteArray = create(
+        OP_CODE_REPORT_NUMBER_OF_RECORDS,
+        OPERATOR_GREATER_THEN_OR_EQUAL,
+        filter,
+        parameter
+    )
 
     fun reportNumberOfStoredRecordsFromRange(
         filter: FilterType,
         start: Short,
         end: Short
-    ): ByteArray {
-        return create(OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_WITHING_RANGE, filter, start, end)
-    }
+    ): ByteArray =
+        create(OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_WITHING_RANGE, filter, start, end)
 
-    fun reportNumberOfStoredRecordsLessThenOrEqualTo(@IntRange(from = 0) sequenceNumber: Short): ByteArray {
-        return create(
+    fun reportNumberOfStoredRecordsLessThenOrEqualTo(@IntRange(from = 0) sequenceNumber: Short): ByteArray =
+        create(
             OP_CODE_REPORT_NUMBER_OF_RECORDS,
             OPERATOR_LESS_THEN_OR_EQUAL,
             FilterType.SEQUENCE_NUMBER,
             sequenceNumber
         )
-    }
 
-    fun reportNumberOfStoredRecordsGreaterThenOrEqualTo(@IntRange(from = 0) sequenceNumber: Short): ByteArray {
-        return create(
+    fun reportNumberOfStoredRecordsGreaterThenOrEqualTo(@IntRange(from = 0) sequenceNumber: Short): ByteArray =
+        create(
             OP_CODE_REPORT_NUMBER_OF_RECORDS,
             OPERATOR_GREATER_THEN_OR_EQUAL,
             FilterType.SEQUENCE_NUMBER,
             sequenceNumber
         )
-    }
 
     fun reportNumberOfStoredRecordsFromRange(
         @IntRange(from = 0) startSequenceNumber: Short,
         @IntRange(from = 0) endSequenceNumber: Short
-    ): ByteArray {
-        return create(
-            OP_CODE_REPORT_NUMBER_OF_RECORDS,
-            OPERATOR_WITHING_RANGE,
-            FilterType.SEQUENCE_NUMBER,
-            startSequenceNumber,
-            endSequenceNumber
-        )
-    }
+    ): ByteArray = create(
+        OP_CODE_REPORT_NUMBER_OF_RECORDS,
+        OPERATOR_WITHING_RANGE,
+        FilterType.SEQUENCE_NUMBER,
+        startSequenceNumber,
+        endSequenceNumber
+    )
 
-    fun abortOperation(): ByteArray {
-        return create(OP_CODE_ABORT_OPERATION, OPERATOR_NULL)
-    }
+    fun abortOperation(): ByteArray = create(OP_CODE_ABORT_OPERATION, OPERATOR_NULL)
 
-    private fun create(opCode: Byte, operator: Byte): ByteArray {
-        return byteArrayOf(opCode, operator)
-    }
+    private fun create(opCode: Byte, operator: Byte): ByteArray = byteArrayOf(opCode, operator)
 
     private fun create(
         opCode: Byte, operator: Byte,

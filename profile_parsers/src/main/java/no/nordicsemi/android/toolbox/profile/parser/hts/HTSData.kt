@@ -45,8 +45,10 @@ data class HTSData(
     val temperature: Float = 0f,
     val unit: TemperatureUnitData = TemperatureUnitData.CELSIUS,
     val timestamp: Calendar? = null,
-    val type: Int? = null
-)
+    val type: HTSMeasurementType? = null
+) {
+    override fun toString() = "$temperature $unit"
+}
 
 /**
  * The temperature unit data class.
@@ -60,6 +62,11 @@ enum class TemperatureUnitData {
             1 -> FAHRENHEIT
             else -> null
         }
+    }
+
+    override fun toString() = when (this) {
+        CELSIUS -> "°C"
+        FAHRENHEIT -> "°F"
     }
 }
 
@@ -80,23 +87,20 @@ enum class HTSMeasurementType(val value: Int) {
     TOE(8),
     TYMPANIC(9);
 
-    override fun toString(): String =
-        when (this) {
-            FUTURE_USE -> "Future Use"
-            ARMPIT -> "Armpit"
-            BODY -> "Body"
-            EAR_LOBE -> "Ear Lobe"
-            FINGER -> "Finger"
-            GASTROINTESTINAL -> "Gastrointestinal"
-            MOUTH -> "Mouth"
-            RECTUM -> "Rectum"
-            TOE -> "Toe"
-            TYMPANIC -> "Tympanic (Ear Drum)"
-        }
+    override fun toString() = when (this) {
+        FUTURE_USE -> "Future Use"
+        ARMPIT -> "Armpit"
+        BODY -> "Body"
+        EAR_LOBE -> "Ear Lobe"
+        FINGER -> "Finger"
+        GASTROINTESTINAL -> "Gastrointestinal"
+        MOUTH -> "Mouth"
+        RECTUM -> "Rectum"
+        TOE -> "Toe"
+        TYMPANIC -> "Tympanic (Ear Drum)"
+    }
 
     companion object {
-        fun fromValue(value: Int): HTSMeasurementType? {
-            return entries.find { it.value == value }
-        }
+        fun fromValue(value: Int): HTSMeasurementType? = entries.find { it.value == value }
     }
 }

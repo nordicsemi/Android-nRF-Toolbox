@@ -14,11 +14,7 @@ object RecordAccessControlPointParser {
     private const val OP_CODE_RESPONSE_CODE = 6
     private const val OPERATOR_NULL = 0
 
-    fun parse(
-        data: ByteArray,
-        byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN
-    ): RecordAccessControlPointData? {
-
+    fun parse(data: ByteArray): RecordAccessControlPointData? {
         if (data.size < 3) return null
 
         val opCode: Int = data.getInt(0, IntFormat.UINT8)
@@ -34,8 +30,8 @@ object RecordAccessControlPointParser {
                 // Field size is defined per service
                 val numberOfRecords: Int = when (data.size - 2) {
                     1 -> data.getInt(2, IntFormat.UINT8)
-                    2 -> data.getInt(2, IntFormat.UINT16, byteOrder)
-                    4 -> data.getInt(2, IntFormat.UINT32, byteOrder)
+                    2 -> data.getInt(2, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
+                    4 -> data.getInt(2, IntFormat.UINT32, ByteOrder.LITTLE_ENDIAN)
                     else -> {
                         // Other field sizes are not supported
                         return null
