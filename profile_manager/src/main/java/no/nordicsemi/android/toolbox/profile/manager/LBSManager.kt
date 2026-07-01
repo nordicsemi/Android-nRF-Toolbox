@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
 import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.LBS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.LBSRepository
@@ -55,11 +54,12 @@ class LBSManager(
             .onCompletion { repository.clear() }
             .launchIn(this)
 
-        launch {
+        if (buttonCharacteristic.isReadable()) {
             try {
                 Timber.tag("LBS").v("Reading initial button state...")
                 val state = ButtonStateParser.parse(buttonCharacteristic.read())
-                Timber.tag("LBS").log(Log.Level.APPLICATION, "Button ${if (state) "pressed" else "released"}")
+                Timber.tag("LBS")
+                    .log(Log.Level.APPLICATION, "Button ${if (state) "pressed" else "released"}")
                 repository.updateButtonState(state)
             } catch (e: Exception) {
                 Timber.tag("LBS").e(e, "Error reading initial button state")
@@ -70,10 +70,9 @@ class LBSManager(
     }
 
     suspend fun writeLED(ledState: Boolean) {
-        val data = byteArrayOf((if (ledState) 0x01 else 0x00).toByte())
         try {
             Timber.tag("LBS").v("Turning LED ${if (ledState) "ON" else "OFF"}...")
-            ledCharacteristic.write(data)
+            ledCharacteristic.write(ledState.encode())
             Timber.tag("LBS").log(Log.Level.APPLICATION, "LED ${if (ledState) "ON" else "OFF"}")
         } catch (e: Exception) {
             Timber.tag("LBS").e(e, "Error writing to LED characteristic")
@@ -81,6 +80,8 @@ class LBSManager(
             repository.updateLedState(ledState)
         }
     }
+
+    private fun Boolean.encode(): ByteArray = byteArrayOf((if (this) 0x01 else 0x00).toByte())
 }
 
 object ButtonStateParser {
