@@ -256,6 +256,17 @@ internal fun HomeView() {
                                                     )
                                                 }
 
+                                                Profile.QUICK_START -> {
+                                                    FeatureButton(
+                                                        icon = painterResource(R.drawable.ic_quick_start),
+                                                        description = stringResource(R.string.quick_start_module_full),
+                                                        deviceName = peripheral.name,
+                                                        deviceAddress = peripheral.address,
+                                                        profileNames = services.map { it.profile.toString() },
+                                                        onClick = onClick,
+                                                    )
+                                                }
+
                                                 Profile.DFU -> {
                                                     FeatureButton(
                                                         icon = painterResource(R.drawable.ic_dfu),

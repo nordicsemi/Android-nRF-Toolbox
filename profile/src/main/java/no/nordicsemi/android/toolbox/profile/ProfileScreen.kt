@@ -55,6 +55,7 @@ import no.nordicsemi.android.toolbox.profile.view.hrs.HRSScreen
 import no.nordicsemi.android.toolbox.profile.view.hts.HTSScreen
 import no.nordicsemi.android.toolbox.profile.view.internal.ProfileAppBar
 import no.nordicsemi.android.toolbox.profile.view.lbs.BlinkyScreen
+import no.nordicsemi.android.toolbox.profile.view.quickstart.QuickStartScreen
 import no.nordicsemi.android.toolbox.profile.view.rscs.RSCSScreen
 import no.nordicsemi.android.toolbox.profile.view.throughput.ThroughputScreen
 import no.nordicsemi.android.toolbox.profile.view.uart.UARTScreen
@@ -207,6 +208,7 @@ internal fun DeviceConnectedView(
                             )
                             Profile.DDFS -> DFSScreen(manager = serviceManager as DDFSManager)
                             Profile.LBS -> BlinkyScreen(manager = serviceManager as LBSManager)
+                            Profile.QUICK_START -> QuickStartScreen()
                             Profile.UART -> UARTScreen(
                                 manager = serviceManager as UARTManager,
                                 maxValueLength = state.maxValueLength,

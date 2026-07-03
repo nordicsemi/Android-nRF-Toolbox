@@ -14,6 +14,7 @@ import no.nordicsemi.android.toolbox.lib.utils.spec.HTS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.LBS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.LEGACY_DFU_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.MDS_SERVICE_UUID
+import no.nordicsemi.android.toolbox.lib.utils.spec.QUICK_START_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.RSCS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.SMP_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.THROUGHPUT_SERVICE_UUID
@@ -41,6 +42,7 @@ object ServiceManagerFactory {
         MDS_SERVICE_UUID,
         LEGACY_DFU_SERVICE_UUID,
         EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID,
+        QUICK_START_SERVICE_UUID,
     )
 
     fun isKnownService(uuid: Uuid): Boolean = uuid in knownServiceUuids
@@ -67,5 +69,6 @@ object ServiceManagerFactory {
         DFUManager(MDS_SERVICE_UUID, deviceId, onReady),
         DFUManager(LEGACY_DFU_SERVICE_UUID, deviceId, onReady),
         DFUManager(EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID, deviceId, onReady),
+        QuickStartManager(deviceId, onReady),
     )
 }

@@ -87,6 +87,8 @@
     <string name="lbs_blinky_module">LBS</string>
     <string name="lbs_blinky_module_full">LED Button</string>
 
+    <string name="quick_start_module_full">Quick Start</string>
+
     <string name="device_not_connected_title">NO DEVICES CONNECTED</string>
     <string name="device_not_connected_message">Tap Connect to begin.</string>
 

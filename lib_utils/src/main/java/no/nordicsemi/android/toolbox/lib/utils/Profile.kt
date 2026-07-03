@@ -1,24 +1,25 @@
 package no.nordicsemi.android.toolbox.lib.utils
 
 enum class Profile {
+    QUICK_START,
     BPS,
     CGM,
     CHANNEL_SOUNDING,
     CSC,
     DDFS,
-    DFU,
     GLS,
     HRS,
     HTS,
     LBS,
     RSCS,
-
     //    PRX, TODO: Proximity is not implemented yet, it will be added in the future.
     BATTERY,
     THROUGHPUT,
-    UART;
+    UART,
+    DFU;
 
     override fun toString(): String = when (this) {
+        QUICK_START -> "Quick Start"
         BPS -> "Blood Pressure"
         CGM -> "Continuous Glucose"
         CHANNEL_SOUNDING -> "Channel Sounding"

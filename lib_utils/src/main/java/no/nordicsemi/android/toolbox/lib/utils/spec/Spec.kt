@@ -72,3 +72,9 @@ val SMP_SERVICE_UUID = Uuid.parse("8D53DC1D-1DB7-4CD3-868B-8A527460AA84")
  * [Documentation](https://nrfconnectdocs.nordicsemi.com/ncs/latest/nrf/libraries/bluetooth/services/mds.html)
  */
 val MDS_SERVICE_UUID = Uuid.parse("54220000-F6A5-4007-A371-722F4EBD8436")
+
+/**
+ * Custom, empty marker service advertised by the "Quick Start" sample for the nRF54L15 DK.
+ * Its presence is used to show onboarding instructions for the sample.
+ */
+val QUICK_START_SERVICE_UUID = Uuid.parse("b2007aaa-c203-43a5-8b6f-a7f3d001a1e0")
