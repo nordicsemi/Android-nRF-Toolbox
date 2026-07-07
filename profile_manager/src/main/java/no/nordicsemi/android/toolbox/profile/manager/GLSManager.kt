@@ -7,11 +7,9 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.toolbox.lib.utils.Profile
-import no.nordicsemi.android.toolbox.lib.utils.logAndReport
-import no.nordicsemi.android.toolbox.lib.utils.tryOrLog
+import no.nordicsemi.android.log.LogContract.Log
+import no.nordicsemi.android.toolbox.lib.utils.spec.GLS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.GLSRepository
-import no.nordicsemi.android.toolbox.profile.manager.repository.GLSRepository.updateNewRequestStatus
 import no.nordicsemi.android.toolbox.profile.parser.common.WorkingMode
 import no.nordicsemi.android.toolbox.profile.parser.gls.GlucoseMeasurementContextParser
 import no.nordicsemi.android.toolbox.profile.parser.gls.GlucoseMeasurementParser
@@ -25,151 +23,154 @@ import no.nordicsemi.android.toolbox.profile.parser.racp.RACPOpCode
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPResponseCode
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import no.nordicsemi.kotlin.ble.core.WriteType
+import timber.log.Timber
 import kotlin.uuid.Uuid
+import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
 private val GLUCOSE_MEASUREMENT_CHARACTERISTIC = Uuid.parse("00002A18-0000-1000-8000-00805f9b34fb")
 private val GLUCOSE_MEASUREMENT_CONTEXT_CHARACTERISTIC = Uuid.parse("00002A34-0000-1000-8000-00805f9b34fb")
 private val GLUCOSE_FEATURE_CHARACTERISTIC = Uuid.parse("00002A51-0000-1000-8000-00805f9b34fb")
 private val RACP_CHARACTERISTIC = Uuid.parse("00002A52-0000-1000-8000-00805f9b34fb")
 
-internal class GLSManager : ServiceManager {
-    override val profile: Profile = Profile.GLS
+class GLSManager(
+    deviceId: String,
+    onReady: (ServiceManager) -> Unit,
+) : ServiceManager(GLS_SERVICE_UUID, deviceId, "GLS", onReady) {
+    override val profile: ServiceType = ServiceType.GLS
 
-    override suspend fun observeServiceInteractions(
-        deviceId: String,
-        remoteService: RemoteService,
-        scope: CoroutineScope
-    ) {
-        remoteService.characteristics
-            .firstOrNull { it.uuid == GLUCOSE_MEASUREMENT_CHARACTERISTIC }
-            ?.subscribe()
-            ?.mapNotNull { GlucoseMeasurementParser.parse(it) }
-            ?.onEach { GLSRepository.updateNewRecord(deviceId, it) }
-            ?.onCompletion { GLSRepository.clear(deviceId) }
-            ?.catch { it.logAndReport() }
-            ?.launchIn(scope)
+    val repository = GLSRepository()
 
-        remoteService.characteristics
-            .firstOrNull { it.uuid == GLUCOSE_MEASUREMENT_CONTEXT_CHARACTERISTIC }
-            ?.subscribe()
+    private lateinit var glucoseMeasurementCharacteristic: RemoteCharacteristic
+    private lateinit var racpCharacteristic: RemoteCharacteristic
+    private var contextCharacteristic: RemoteCharacteristic? = null
+
+    override fun prepare(service: RemoteService) {
+        glucoseMeasurementCharacteristic = service.characteristics.first { it.uuid == GLUCOSE_MEASUREMENT_CHARACTERISTIC }
+        require(glucoseMeasurementCharacteristic.isSubscribable()) { "Glucose measurement characteristic must have NOTIFY or INDICATE" }
+        racpCharacteristic = service.characteristics.first { it.uuid == RACP_CHARACTERISTIC }
+        require(racpCharacteristic.isWritable()) { "RACP characteristic must be writable" }
+        require(racpCharacteristic.isSubscribable()) { "RACP characteristic must be subscribable" }
+        contextCharacteristic = service.characteristics.firstOrNull { it.uuid == GLUCOSE_MEASUREMENT_CONTEXT_CHARACTERISTIC }
+    }
+
+    override suspend fun CoroutineScope.initialize() {
+        glucoseMeasurementCharacteristic.subscribe()
+            .mapNotNull { GlucoseMeasurementParser.parse(it) }
+            .onEach {
+                Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
+                repository.updateNewRecord(it)
+            }
+            .onCompletion { repository.clear() }
+            .catch { Timber.tag("GLS").e(it) }
+            .launchIn(this)
+
+        contextCharacteristic?.subscribe()
             ?.mapNotNull { GlucoseMeasurementContextParser.parse(it) }
-            ?.onEach { GLSRepository.updateWithNewContext(deviceId, it) }
-            ?.onCompletion { GLSRepository.clear(deviceId) }
-            ?.catch { it.logAndReport() }
-            ?.launchIn(scope)
+            ?.onEach {
+                Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
+                repository.updateWithNewContext(it)
+            }
+            ?.onCompletion { repository.clear() }
+            ?.catch { Timber.tag("GLS").e(it) }
+            ?.launchIn(this)
 
-        remoteService.characteristics
-            .firstOrNull { it.uuid == RACP_CHARACTERISTIC }
-            ?.apply { recordAccessControlPointCharacteristic = this }
-            ?.subscribe()
-            ?.mapNotNull { RecordAccessControlPointParser.parse(it) }
-            ?.onEach { onAccessControlPointDataReceived(deviceId, it, scope) }
-            ?.catch { it.logAndReport() }
-            ?.launchIn(scope)
+        racpCharacteristic.subscribe()
+            .mapNotNull { RecordAccessControlPointParser.parse(it) }
+            .onEach {
+                Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
+                onAccessControlPointDataReceived(it, this)
+            }
+            .catch { Timber.tag("GLS").e(it) }
+            .launchIn(this)
+
+        onReady(this@GLSManager)
     }
 
     private fun onAccessControlPointDataReceived(
-        deviceId: String,
         data: RecordAccessControlPointData,
-        scope: CoroutineScope
+        scope: CoroutineScope,
     ) {
         scope.launch {
             when (data) {
-                is NumberOfRecordsData -> onNumberOfRecordsReceived(deviceId, data.numberOfRecords)
-
+                is NumberOfRecordsData -> onNumberOfRecordsReceived(data.numberOfRecords)
                 is ResponseData -> when (data.responseCode) {
-                    RACPResponseCode.RACP_RESPONSE_SUCCESS -> onRecordAccessOperationCompleted(
-                        deviceId,
-                        data.requestCode
-                    )
-
+                    RACPResponseCode.RACP_RESPONSE_SUCCESS ->
+                        onRecordAccessOperationCompleted(data.requestCode)
                     RACPResponseCode.RACP_ERROR_OP_CODE_NOT_SUPPORTED ->
-                        onRecordAccessOperationCompletedWithNoRecordsFound(deviceId)
-
-                    else -> onRecordAccessOperationError(deviceId, data.responseCode)
+                        onRecordAccessOperationCompletedWithNoRecordsFound()
+                    else -> onRecordAccessOperationError(data.responseCode)
                 }
             }
         }
     }
 
-    private fun onRecordAccessOperationError(deviceId: String, responseCode: RACPResponseCode) {
-        updateNewRequestStatus(
-            deviceId,
-            when (responseCode) {
-                RACPResponseCode.RACP_ERROR_OP_CODE_NOT_SUPPORTED -> RequestStatus.NOT_SUPPORTED
-                else -> RequestStatus.FAILED
-            }
+    private fun onRecordAccessOperationError(responseCode: RACPResponseCode) {
+        repository.updateNewRequestStatus(
+            if (responseCode == RACPResponseCode.RACP_ERROR_OP_CODE_NOT_SUPPORTED)
+                RequestStatus.NOT_SUPPORTED
+            else
+                RequestStatus.FAILED,
         )
     }
 
-    private fun onRecordAccessOperationCompleted(deviceId: String, requestCode: RACPOpCode) {
-        updateNewRequestStatus(
-            deviceId,
-            when (requestCode) {
-                RACPOpCode.RACP_OP_CODE_ABORT_OPERATION -> RequestStatus.ABORTED
-                else -> RequestStatus.SUCCESS
-            }
+    private fun onRecordAccessOperationCompleted(requestCode: RACPOpCode) {
+        repository.updateNewRequestStatus(
+            if (requestCode == RACPOpCode.RACP_OP_CODE_ABORT_OPERATION)
+                RequestStatus.ABORTED
+            else
+                RequestStatus.SUCCESS,
         )
     }
 
-    private fun onRecordAccessOperationCompletedWithNoRecordsFound(deviceId: String) {
-        updateNewRequestStatus(deviceId, RequestStatus.SUCCESS)
+    private fun onRecordAccessOperationCompletedWithNoRecordsFound() {
+        repository.updateNewRequestStatus(RequestStatus.SUCCESS)
     }
 
-    private suspend fun onNumberOfRecordsReceived(
-        deviceId: String,
-        numberOfRecords: Int,
-    ) {
-        val state = GLSRepository.getData(deviceId)
-        val highestSequenceNumber = state.value
-            .records
-            .keys
-            .maxByOrNull { it.sequenceNumber }
-            ?.sequenceNumber ?: -1
+    private suspend fun onNumberOfRecordsReceived(numberOfRecords: Int) {
+        val state = repository.data
+        val highestSequenceNumber = state.value.records.keys
+            .maxByOrNull { it.sequenceNumber }?.sequenceNumber ?: -1
 
-        if (numberOfRecords > 0)
-            tryOrLog {
-                recordAccessControlPointCharacteristic
-                    .write(
-                        if (state.value.records.isNotEmpty()) {
-                            RecordAccessControlPointInputParser.reportStoredRecordsGreaterThenOrEqualTo(
-                                highestSequenceNumber.toShort()
-                            )
-                        } else {
-                            RecordAccessControlPointInputParser.reportAllStoredRecords()
-                        },
-                        WriteType.WITH_RESPONSE
+        if (numberOfRecords > 0) {
+            try {
+                if (state.value.records.isNotEmpty()) {
+                    Timber.tag("GLS").v("Requesting GLS records greater or equal to: $highestSequenceNumber...")
+                    racpCharacteristic.write(
+                        RecordAccessControlPointInputParser.reportStoredRecordsGreaterThenOrEqualTo(
+                            highestSequenceNumber.toShort()
+                        ),
                     )
-            }
-        updateNewRequestStatus(deviceId, RequestStatus.SUCCESS)
-    }
-
-    companion object {
-        private lateinit var recordAccessControlPointCharacteristic: RemoteCharacteristic
-
-        suspend fun requestRecord(deviceId: String, workingMode: WorkingMode) {
-            writeOrSetStatusFailed(deviceId) {
-                recordAccessControlPointCharacteristic.write(
-                    when (workingMode) {
-                        WorkingMode.ALL -> RecordAccessControlPointInputParser.reportNumberOfAllStoredRecords()
-                        WorkingMode.LAST -> RecordAccessControlPointInputParser.reportLastStoredRecord()
-                        WorkingMode.FIRST -> RecordAccessControlPointInputParser.reportFirstStoredRecord()
-                    },
-                    WriteType.WITH_RESPONSE
-                )
+                } else {
+                    Timber.tag("GLS").v("Requesting ${WorkingMode.ALL}...")
+                    racpCharacteristic.write(
+                        RecordAccessControlPointInputParser.reportAllStoredRecords(),
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.tag("GLS").e(e)
+                repository.updateNewRequestStatus(RequestStatus.FAILED)
+                return
             }
         }
+        repository.updateNewRequestStatus(RequestStatus.SUCCESS)
+    }
 
-        private suspend fun writeOrSetStatusFailed(
-            deviceId: String,
-            block: suspend () -> Unit
-        ) {
-            try {
-                block()
-            } catch (e: Exception) {
-                updateNewRequestStatus(deviceId, RequestStatus.FAILED)
-            }
+    suspend fun requestRecord(workingMode: WorkingMode) {
+        repository.clearState()
+        repository.updateNewRequestStatus(RequestStatus.PENDING)
+        repository.updateWorkingMode(workingMode)
+        try {
+            Timber.tag("GLS").v("Requesting $workingMode...")
+            racpCharacteristic.write(
+                when (workingMode) {
+                    WorkingMode.ALL -> RecordAccessControlPointInputParser.reportNumberOfAllStoredRecords()
+                    WorkingMode.LAST -> RecordAccessControlPointInputParser.reportLastStoredRecord()
+                    WorkingMode.FIRST -> RecordAccessControlPointInputParser.reportFirstStoredRecord()
+                },
+            )
+        } catch (e: Exception) {
+            Timber.tag("GLS").e(e)
+            repository.updateNewRequestStatus(RequestStatus.FAILED)
         }
     }
 }

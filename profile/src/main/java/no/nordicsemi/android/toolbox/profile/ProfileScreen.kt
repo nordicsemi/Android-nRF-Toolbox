@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -29,6 +30,19 @@ import no.nordicsemi.android.common.permissions.ble.RequireLocation
 import no.nordicsemi.android.common.permissions.notification.RequestNotificationPermission
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.data.displayMessage
+import no.nordicsemi.android.toolbox.profile.manager.BatteryManager
+import no.nordicsemi.android.toolbox.profile.manager.BPSManager
+import no.nordicsemi.android.toolbox.profile.manager.CGMManager
+import no.nordicsemi.android.toolbox.profile.manager.CSCManager
+import no.nordicsemi.android.toolbox.profile.manager.DDFSManager
+import no.nordicsemi.android.toolbox.profile.manager.DFUManager
+import no.nordicsemi.android.toolbox.profile.manager.GLSManager
+import no.nordicsemi.android.toolbox.profile.manager.HRSManager
+import no.nordicsemi.android.toolbox.profile.manager.HTSManager
+import no.nordicsemi.android.toolbox.profile.manager.LBSManager
+import no.nordicsemi.android.toolbox.profile.manager.RSCSManager
+import no.nordicsemi.android.toolbox.profile.manager.ThroughputManager
+import no.nordicsemi.android.toolbox.profile.manager.UARTManager
 import no.nordicsemi.android.toolbox.profile.view.battery.BatteryScreen
 import no.nordicsemi.android.toolbox.profile.view.bps.BPSScreen
 import no.nordicsemi.android.toolbox.profile.view.cgms.CGMScreen
@@ -56,7 +70,6 @@ import no.nordicsemi.android.ui.view.internal.ServiceDiscoveryView
 internal fun ProfileScreen() {
     val profileViewModel: ProfileViewModel = hiltViewModel()
     val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
-    val deviceAddress = profileViewModel.address
 
     // Event handler now sends simpler, context-free events.
     val onEvent: (ConnectionEvent) -> Unit = { event ->
@@ -71,15 +84,9 @@ internal fun ProfileScreen() {
         contentWindowInsets = WindowInsets.displayCutout
             .only(WindowInsetsSides.Horizontal),
         topBar = {
-            // The device name is derived directly from the current state.
-            val deviceName = (uiState as? ProfileUiState.Connected)
-                ?.deviceData?.peripheral?.name
-                ?: deviceAddress
-
             ProfileAppBar(
-                deviceName = deviceName,
-                title = deviceAddress,
-                // The AppBar needs to be updated to accept the new ProfileUiState
+                deviceName = profileViewModel.name,
+                title = profileViewModel.address,
                 connectionState = uiState,
                 navigateUp = { onEvent(ConnectionEvent.NavigateUp) },
                 disconnect = { onEvent(ConnectionEvent.DisconnectEvent) },
@@ -167,42 +174,51 @@ internal fun DeviceConnectedView(
                 }
             }
         } else {
-            // Iterate through the available service managers.
+            // Iterate through all discovered service manager instances.
             state.deviceData.services.forEach { serviceManager ->
-                Column(modifier = Modifier.imePadding()) {
-                    val needsMaxValueLength = serviceManager.profile in listOf(
-                        Profile.CHANNEL_SOUNDING, Profile.UART, Profile.THROUGHPUT
-                    )
-
-                    // Request max value length if needed and not already set.
-                    if (needsMaxValueLength) {
-                        LaunchedEffect(Unit) {
-                            if (state.maxValueLength == null) {
-                                onEvent(ConnectionEvent.RequestMaxValueLength)
-                            }
-                        }
-                    }
-
-                    // Display the appropriate screen for each profile.
-                    when (serviceManager.profile) {
-                        Profile.HTS -> HTSScreen()
-                        Profile.CHANNEL_SOUNDING -> ChannelSoundingScreen(
-                            deviceId = state.deviceData.peripheral.address,
-                            isNotificationPermissionGranted = isNotificationPermissionGranted
+                key(serviceManager.instanceId) {
+                    Column(modifier = Modifier.imePadding()) {
+                        val needsMaxValueLength = serviceManager.profile in listOf(
+                            Profile.CHANNEL_SOUNDING, Profile.UART, Profile.THROUGHPUT
                         )
 
-                        Profile.BPS -> BPSScreen()
-                        Profile.CSC -> CSCScreen()
-                        Profile.CGM -> CGMScreen()
-                        Profile.DFS -> DFSScreen()
-                        Profile.GLS -> GLSScreen()
-                        Profile.HRS -> HRSScreen()
-                        Profile.LBS -> BlinkyScreen()
-                        Profile.RSCS -> RSCSScreen()
-                        Profile.BATTERY -> BatteryScreen()
-                        Profile.THROUGHPUT -> ThroughputScreen(state.maxValueLength)
-                        Profile.UART -> UARTScreen(state.maxValueLength)
-                        Profile.DFU -> DFUScreen { onEvent(ConnectionEvent.DisconnectEvent) }
+                        // Request max value length if needed and not already set.
+                        if (needsMaxValueLength) {
+                            LaunchedEffect(Unit) {
+                                if (state.maxValueLength == null) {
+                                    onEvent(ConnectionEvent.RequestMaxValueLength)
+                                }
+                            }
+                        }
+
+                        // Display the appropriate screen for each service instance.
+                        when (serviceManager.profile) {
+                            Profile.HRS -> HRSScreen(manager = serviceManager as HRSManager)
+                            Profile.HTS -> HTSScreen(manager = serviceManager as HTSManager)
+                            Profile.BPS -> BPSScreen(manager = serviceManager as BPSManager)
+                            Profile.CSC -> CSCScreen(manager = serviceManager as CSCManager)
+                            Profile.CGM -> CGMScreen(manager = serviceManager as CGMManager)
+                            Profile.GLS -> GLSScreen(manager = serviceManager as GLSManager)
+                            Profile.RSCS -> RSCSScreen(manager = serviceManager as RSCSManager)
+                            Profile.BATTERY -> BatteryScreen(manager = serviceManager as BatteryManager)
+                            Profile.CHANNEL_SOUNDING -> ChannelSoundingScreen(
+                                deviceId = state.deviceData.peripheral.address,
+                                isNotificationPermissionGranted = isNotificationPermissionGranted
+                            )
+                            Profile.DDFS -> DFSScreen(manager = serviceManager as DDFSManager)
+                            Profile.LBS -> BlinkyScreen(manager = serviceManager as LBSManager)
+                            Profile.UART -> UARTScreen(
+                                manager = serviceManager as UARTManager,
+                                maxValueLength = state.maxValueLength,
+                            )
+                            Profile.THROUGHPUT -> ThroughputScreen(
+                                manager = serviceManager as ThroughputManager,
+                                maxWriteValueLength = state.maxValueLength,
+                            )
+                            Profile.DFU -> DFUScreen(manager = serviceManager as DFUManager) {
+                                onEvent(ConnectionEvent.DisconnectEvent)
+                            }
+                        }
                     }
                 }
             }

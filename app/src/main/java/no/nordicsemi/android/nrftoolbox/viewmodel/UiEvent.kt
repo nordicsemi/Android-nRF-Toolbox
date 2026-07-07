@@ -11,7 +11,7 @@ sealed interface UiEvent {
     data object OnConnectDeviceClick : UiEvent
 
     /**  OnDeviceClick event is emitted when the user clicks on a connected device. */
-    data class OnDeviceClick(val deviceAddress: String, val profile: Profile) : UiEvent
+    data class OnDeviceClick(val deviceAddress: String, val name: String?, val profile: Profile) : UiEvent
 
     /**
      * OnGitHubClick event is emitted when the user clicks on the GitHub repository option.

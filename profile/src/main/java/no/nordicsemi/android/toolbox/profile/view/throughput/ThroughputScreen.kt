@@ -33,6 +33,7 @@ import no.nordicsemi.android.toolbox.profile.data.NumberOfBytes
 import no.nordicsemi.android.toolbox.profile.data.NumberOfSeconds
 import no.nordicsemi.android.toolbox.profile.data.ThroughputServiceData
 import no.nordicsemi.android.toolbox.profile.data.WritingStatus
+import no.nordicsemi.android.toolbox.profile.manager.ThroughputManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.ThroughputEvent
 import no.nordicsemi.android.toolbox.profile.viewmodel.ThroughputViewModel
 import no.nordicsemi.android.ui.view.AnimatedThreeDots
@@ -44,10 +45,14 @@ import no.nordicsemi.android.ui.view.TextInputField
 
 @Composable
 internal fun ThroughputScreen(
-    maxWriteValueLength: Int?
+    manager: ThroughputManager,
+    maxWriteValueLength: Int?,
 ) {
-    val throughputViewModel = hiltViewModel<ThroughputViewModel>()
-    val serviceData by throughputViewModel.throughputState.collectAsStateWithLifecycle()
+    val throughputViewModel = hiltViewModel<ThroughputViewModel, ThroughputViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
+    val serviceData by throughputViewModel.state.collectAsStateWithLifecycle()
     val onClickEvent: (ThroughputEvent) -> Unit = { throughputViewModel.onEvent(it) }
 
     // Update the max write value length in the ViewModel.

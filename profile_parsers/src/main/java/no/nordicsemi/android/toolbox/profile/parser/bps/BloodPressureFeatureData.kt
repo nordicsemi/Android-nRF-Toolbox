@@ -22,4 +22,16 @@ data class BloodPressureFeatureData(
     val e2eCrc: Boolean,
     val userData: Boolean,
     val userFacingTime: Boolean,
-)
+) {
+    override fun toString(): String = buildString {
+        if (bodyMovementDetection) append("Body Movement Detection, ")
+        if (cuffFitDetection) append("Cuff Fit Detection, ")
+        if (irregularPulseDetection) append("Irregular Pulse Detection, ")
+        if (pulseRateRangeDetection) append("Pulse Rate Range Detection, ")
+        if (measurementPositionDetection) append("Measurement Position Detection, ")
+        if (multipleBonds) append("Multiple Bonds, ")
+        if (e2eCrc) append("E2E CRC, ")
+        if (userData) append("User Data, ")
+        if (userFacingTime) append("User Facing Time")
+    }.removeSuffix(", ")
+}

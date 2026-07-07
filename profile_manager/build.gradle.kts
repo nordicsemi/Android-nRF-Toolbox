@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":profile_parsers"))
 
     implementation(libs.timber)
+    implementation(nordic.log)
     implementation(nordic.blek.client.core.android)
 
 }

@@ -24,6 +24,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
+import no.nordicsemi.android.toolbox.profile.manager.BPSManager
 import no.nordicsemi.android.toolbox.profile.parser.bps.BPMStatus
 import no.nordicsemi.android.toolbox.profile.parser.bps.BloodPressureFeatureData
 import no.nordicsemi.android.toolbox.profile.parser.bps.BloodPressureMeasurementData
@@ -40,9 +41,12 @@ import no.nordicsemi.android.ui.view.SectionRow
 import no.nordicsemi.android.ui.view.StatusColumn
 
 @Composable
-internal fun BPSScreen() {
-    val bpsViewModel = hiltViewModel<BPSViewModel>()
-    val serviceData by bpsViewModel.bpsServiceState.collectAsStateWithLifecycle()
+internal fun BPSScreen(manager: BPSManager) {
+    val bpsViewModel = hiltViewModel<BPSViewModel, BPSViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
+    val serviceData by bpsViewModel.state.collectAsStateWithLifecycle()
 
     serviceData.intermediateCuffPressure?.let {
         IntermediateBloodPressureView(it)

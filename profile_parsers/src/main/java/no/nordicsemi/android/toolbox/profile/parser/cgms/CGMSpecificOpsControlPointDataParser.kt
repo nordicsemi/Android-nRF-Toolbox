@@ -1,4 +1,4 @@
-package no.nordicsemi.android.toolbox.profile.parser.gls
+package no.nordicsemi.android.toolbox.profile.parser.cgms
 
 import no.nordicsemi.android.toolbox.profile.parser.common.CRC16
 import java.nio.ByteBuffer
@@ -47,12 +47,10 @@ object CGMSpecificOpsControlPointDataParser {
     private const val OP_CODE_START_SESSION: Byte = 26
     private const val OP_CODE_STOP_SESSION: Byte = 27
 
-    fun startSession(secure: Boolean): ByteArray {
-        return create(
-            OP_CODE_START_SESSION,
-            secure
-        )
-    }
+    fun startSession(secure: Boolean): ByteArray = create(
+        OP_CODE_START_SESSION,
+        secure
+    )
 
     private fun create(opCode: Byte, secure: Boolean): ByteArray {
         val data = ByteArray(1 + if (secure) 2 else 0)

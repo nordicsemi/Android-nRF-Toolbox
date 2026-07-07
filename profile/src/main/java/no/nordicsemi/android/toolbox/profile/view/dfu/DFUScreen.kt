@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,33 +30,31 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.data.DFUsAvailable
+import no.nordicsemi.android.toolbox.profile.manager.DFUManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.ConnectionEvent
 import no.nordicsemi.android.toolbox.profile.viewmodel.DFUViewModel
-import no.nordicsemi.android.ui.view.ScreenSection
 
 @Composable
-internal fun DFUScreen(onRedirection: (ConnectionEvent.DisconnectEvent) -> Unit) {
-    val dfuViewModel = hiltViewModel<DFUViewModel>()
-    val dfuServiceState by dfuViewModel.dfuServiceState.collectAsStateWithLifecycle()
+internal fun DFUScreen(manager: DFUManager, onRedirection: (ConnectionEvent.DisconnectEvent) -> Unit) {
+    val dfuViewModel = hiltViewModel<DFUViewModel, DFUViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
+    val dfuServiceState by dfuViewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     dfuServiceState.dfuAppName?.let { dfuApp ->
         val intent = context.packageManager.getLaunchIntentForPackage(dfuApp.packageName)
         val description =
             intent?.let {
-                stringResource(
-                    R.string.dfu_description_open,
-                    stringResource(dfuApp.appName)
-                )
+                stringResource(R.string.dfu_description_open, stringResource(dfuApp.appName))
             } ?: stringResource(R.string.dfu_description_download)
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             DFUInstructionsCard(dfuApp)
-
             Spacer(modifier = Modifier.height(16.dp))
-
             DFUActionButton(dfuApp, intent, description, onRedirection)
         }
     }
@@ -117,7 +114,6 @@ private fun DFUActionButton(
         onClick = {
             intent?.let { context.startActivity(it) }
                 ?: uriHandler.openUri(dfuApp.appLink)
-            // Also disconnect from the current device.
             onRedirection(ConnectionEvent.DisconnectEvent)
         }
     ) {
@@ -154,4 +150,3 @@ private fun DFUActionButtonPreview() {
         onRedirection = {},
     )
 }
-

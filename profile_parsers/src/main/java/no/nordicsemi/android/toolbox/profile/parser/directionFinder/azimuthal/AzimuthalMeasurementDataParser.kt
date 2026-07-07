@@ -9,10 +9,7 @@ import no.nordicsemi.kotlin.data.ByteOrder
 
 class AzimuthalMeasurementDataParser {
 
-    fun parse(
-        data: ByteArray,
-        byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN
-    ): AzimuthMeasurementData? {
+    fun parse(data: ByteArray): AzimuthMeasurementData? {
         if (data.size < 10) return null
 
         var offset = 1 // Skip flags
@@ -34,7 +31,7 @@ class AzimuthalMeasurementDataParser {
             .also { offset += 1 }
         val address = PeripheralBluetoothAddress(addressType, addressValue)
 
-        val azimuth = data.getInt(offset, IntFormat.UINT16, byteOrder)
+        val azimuth = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
 
         return AzimuthMeasurementData(qualityIndicator, address, azimuth)
     }

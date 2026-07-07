@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ElevatedCard
@@ -39,6 +38,7 @@ import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.data.HTSServiceData
 import no.nordicsemi.android.toolbox.profile.data.uiMapper.TemperatureUnit
+import no.nordicsemi.android.toolbox.profile.manager.HTSManager
 import no.nordicsemi.android.toolbox.profile.parser.hts.HTSData
 import no.nordicsemi.android.toolbox.profile.parser.hts.HTSMeasurementType
 import no.nordicsemi.android.toolbox.profile.viewmodel.HTSEvent
@@ -51,10 +51,13 @@ import no.nordicsemi.android.ui.view.TextWithAnimatedDots
 import java.util.Calendar
 
 @Composable
-internal fun HTSScreen() {
-    val htsViewModel = hiltViewModel<HTSViewModel>()
+internal fun HTSScreen(manager: HTSManager) {
+    val htsViewModel = hiltViewModel<HTSViewModel, HTSViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
     val onClickEvent: (HTSEvent) -> Unit = { htsViewModel.onEvent(it) }
-    val htsServiceData by htsViewModel.htsServiceState.collectAsStateWithLifecycle()
+    val htsServiceData by htsViewModel.state.collectAsStateWithLifecycle()
 
     HTSContent(htsServiceData, onClickEvent)
 }
@@ -94,9 +97,7 @@ private fun HTSContent(
                 htsServiceData.data?.let { data ->
                     KeyValueColumnReverse(
                         key = stringResource(id = R.string.temp_measurement_location),
-                        value = data.type
-                            ?.let { HTSMeasurementType.fromValue(it).toString() }
-                            ?: "Unknown",
+                        value = data.type?.toString() ?: "Unknown",
                     )
                 }
                 htsServiceData.data?.timestamp?.let {
@@ -204,7 +205,7 @@ private fun HTSContentPreview() {
         htsServiceData = HTSServiceData(
             data = HTSData(
                 temperature = 36.5f,
-                type = HTSMeasurementType.FINGER.value,
+                type = HTSMeasurementType.FINGER,
                 timestamp = Calendar.getInstance()
             ),
             temperatureUnit = TemperatureUnit.CELSIUS

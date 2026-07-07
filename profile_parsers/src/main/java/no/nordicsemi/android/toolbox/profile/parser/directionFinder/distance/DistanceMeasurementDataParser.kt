@@ -10,10 +10,7 @@ import kotlin.experimental.and
 
 class DistanceMeasurementDataParser {
 
-    fun parse(
-        data: ByteArray,
-        byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN
-    ): DistanceMeasurementData? {
+    fun parse(data: ByteArray): DistanceMeasurementData? {
         if (data.size < 10) return null
 
         var offset = 0
@@ -46,15 +43,15 @@ class DistanceMeasurementDataParser {
         // Return data. It can be either one of these, as the type is a union\:
         // https://docs.nordicsemi.com/bundle/nrf-apis-latest/page/structbt_ddfs_distance_measurement.html
         if (isRTTPresent) {
-            val rtt = RTTEstimate(data.getInt(offset, IntFormat.UINT16, byteOrder))
+            val rtt = RTTEstimate(data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN))
             return RttMeasurementData(qualityIndicator, address, rtt)
         }
 
         val mcpd = MCPDEstimate(
-            data.getInt(offset, IntFormat.UINT16, byteOrder).also { offset += 2 },
-            data.getInt(offset, IntFormat.UINT16, byteOrder).also { offset += 2 },
-            data.getInt(offset, IntFormat.UINT16, byteOrder).also { offset += 2 },
-            data.getInt(offset, IntFormat.UINT16, byteOrder).also { offset += 2 },
+            data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN).also { offset += 2 },
+            data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN).also { offset += 2 },
+            data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN).also { offset += 2 },
+            data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN).also { offset += 2 },
         )
         return McpdMeasurementData(qualityIndicator, address, mcpd)
     }

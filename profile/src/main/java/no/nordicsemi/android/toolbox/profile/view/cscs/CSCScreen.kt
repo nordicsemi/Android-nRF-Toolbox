@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.data.CSCServiceData
+import no.nordicsemi.android.toolbox.profile.manager.CSCManager
 import no.nordicsemi.android.toolbox.profile.parser.csc.CSCData
 import no.nordicsemi.android.toolbox.profile.parser.csc.SpeedUnit
 import no.nordicsemi.android.toolbox.profile.parser.csc.WheelSizes
@@ -54,10 +55,13 @@ import no.nordicsemi.android.ui.view.ScreenSection
 import no.nordicsemi.android.ui.view.SectionRow
 
 @Composable
-internal fun CSCScreen() {
-    val csVM = hiltViewModel<CSCViewModel>()
+internal fun CSCScreen(manager: CSCManager) {
+    val csVM = hiltViewModel<CSCViewModel, CSCViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
     val onClickEvent: (CSCEvent) -> Unit = { csVM.onEvent(it) }
-    val serviceData by csVM.cscState.collectAsStateWithLifecycle()
+    val serviceData by csVM.state.collectAsStateWithLifecycle()
 
     CSCView(
         serviceData = serviceData,

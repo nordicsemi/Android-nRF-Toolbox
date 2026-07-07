@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.data.RSCSServiceData
+import no.nordicsemi.android.toolbox.profile.manager.RSCSManager
 import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCFeatureData
 import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSData
 import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSSettingsUnit
@@ -50,9 +51,12 @@ import no.nordicsemi.android.ui.view.ScreenSection
 import no.nordicsemi.android.ui.view.SectionRow
 
 @Composable
-internal fun RSCSScreen() {
-    val rscsViewModel = hiltViewModel<RSCSViewModel>()
-    val serviceData by rscsViewModel.rscsState.collectAsStateWithLifecycle()
+internal fun RSCSScreen(manager: RSCSManager) {
+    val rscsViewModel = hiltViewModel<RSCSViewModel, RSCSViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
+    val serviceData by rscsViewModel.state.collectAsStateWithLifecycle()
     val onClickEvent: (RSCSEvent) -> Unit = { rscsViewModel.onEvent(it) }
 
     Column {

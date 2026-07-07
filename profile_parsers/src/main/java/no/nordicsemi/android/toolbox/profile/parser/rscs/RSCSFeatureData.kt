@@ -14,4 +14,22 @@ data class RSCFeatureData(
     val walkingOrRunningStatusSupported: Boolean,
     val calibrationSupported: Boolean,
     val multipleSensorLocationsSupported: Boolean
-)
+) {
+    override fun toString() = buildString {
+        if (instantaneousStrideLengthMeasurementSupported) {
+            append("Instantaneous stride length measurement supported, ")
+        }
+        if (totalDistanceMeasurementSupported) {
+            append("Total distance measurement supported, ")
+        }
+        if (walkingOrRunningStatusSupported) {
+            append("Walking or running status supported, ")
+        }
+        if (calibrationSupported) {
+            append("Calibration supported, ")
+        }
+        if (multipleSensorLocationsSupported) {
+            append("Multiple sensor locations supported")
+        }
+    }.removeSuffix(", ")
+}

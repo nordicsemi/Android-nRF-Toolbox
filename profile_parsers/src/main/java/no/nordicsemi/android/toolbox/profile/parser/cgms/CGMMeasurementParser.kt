@@ -11,11 +11,7 @@ import no.nordicsemi.kotlin.data.ByteOrder
 
 object CGMMeasurementParser {
 
-    fun parse(
-        data: ByteArray,
-        byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN
-    ): List<CGMRecord>? {
-
+    fun parse(data: ByteArray): List<CGMRecord>? {
         if (data.isEmpty()) return null
 
         var offset = 0
@@ -48,7 +44,7 @@ object CGMMeasurementParser {
             val crcPresent = size == dataSize + 2
 
             if (crcPresent) {
-                val expectedCrc: Int = data.getInt(offset + dataSize, IntFormat.UINT16, byteOrder)
+                val expectedCrc: Int = data.getInt(offset + dataSize, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
                 val actualCrc: Int = CRC16.MCRF4XX(data, offset, dataSize)
                 if (expectedCrc != actualCrc) {
                     continue
@@ -57,11 +53,11 @@ object CGMMeasurementParser {
             offset += 2
 
             // Glucose concentration
-            val glucoseConcentration: Float = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, byteOrder)
+            val glucoseConcentration: Float = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN)
             offset += 2
 
             // Time offset (in minutes since Session Start)
-            val timeOffset: Int = data.getInt(offset, IntFormat.UINT16, byteOrder)
+            val timeOffset: Int = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
             offset += 2
 
             // Sensor Status Annunciation
@@ -89,19 +85,20 @@ object CGMMeasurementParser {
             // CGM Trend Information
             var trend: Float? = null
             if (cgmTrendInformationPresent) {
-                trend = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, byteOrder)
+                trend = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN)
                 offset += 2
             }
 
             // CGM Quality Information
             var quality: Float? = null
             if (cgmQualityInformationPresent) {
-                quality = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, byteOrder)
+                quality = data.getFloat(offset, FloatFormat.IEEE_11073_16_BIT, ByteOrder.LITTLE_ENDIAN)
                 offset += 2
             }
 
             // E2E-CRC
             if (crcPresent) {
+                // TODO Validate CRC
                 offset += 2
             }
             CGMRecord(

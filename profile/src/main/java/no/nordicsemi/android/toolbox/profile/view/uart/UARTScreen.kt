@@ -8,13 +8,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import no.nordicsemi.android.toolbox.profile.manager.UARTManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.UARTEvent
 import no.nordicsemi.android.toolbox.profile.viewmodel.UartViewModel
 
 @Composable
-internal fun UARTScreen(maxValueLength: Int?) {
-    val uartViewModel = hiltViewModel<UartViewModel>()
-    val state by uartViewModel.uartState.collectAsStateWithLifecycle()
+internal fun UARTScreen(manager: UARTManager, maxValueLength: Int?) {
+    val uartViewModel = hiltViewModel<UartViewModel, UartViewModel.Factory>(
+        key = manager.instanceId,
+        creationCallback = { factory -> factory.create(manager) }
+    )
+    val state by uartViewModel.state.collectAsStateWithLifecycle()
     val onEvent: (UARTEvent) -> Unit = { uartViewModel.onEvent(it) }
 
     LaunchedEffect(key1 = maxValueLength != null) {

@@ -13,11 +13,7 @@ object CSCDataParser {
     internal var crankRevolutions: Long = -1
     internal var crankEventTime: Int = -1
 
-    fun parse(
-        data: ByteArray,
-        wheelSize: WheelSize = WheelSizes.default,
-        byteOrder: ByteOrder = ByteOrder.LITTLE_ENDIAN
-    ): CSCData? {
+    fun parse(data: ByteArray, wheelSize: WheelSize = WheelSizes.default): CSCData? {
         if (data.isEmpty()) return null
 
         // Decode the new data
@@ -33,16 +29,16 @@ object CSCDataParser {
 
         if (wheelRevPresent) {
             wheelRevolutions =
-                data.getInt(offset, IntFormat.UINT32, byteOrder).toLong() and 0xFFFFFFFFL
+                data.getInt(offset, IntFormat.UINT32, ByteOrder.LITTLE_ENDIAN).toLong() and 0xFFFFFFFFL
             offset += 4
-            wheelEventTime = data.getInt(offset, IntFormat.UINT16, byteOrder) // 1/1024 s
+            wheelEventTime = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN) // 1/1024 s
             offset += 2
         }
 
         if (crankRevPreset) {
-            crankRevolutions = data.getInt(offset, IntFormat.UINT16, byteOrder).toLong()
+            crankRevolutions = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN).toLong()
             offset += 2
-            crankEventTime = data.getInt(offset, IntFormat.UINT16, byteOrder)
+            crankEventTime = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
             offset += 2
         }
 

@@ -1,6 +1,8 @@
 package no.nordicsemi.android.toolbox.profile.parser.cgm
 
 import no.nordicsemi.android.toolbox.profile.parser.cgms.CGMFeatureParser
+import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMLocation
+import no.nordicsemi.android.toolbox.profile.parser.cgms.data.CGMType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -13,7 +15,7 @@ class CGMFeatureParserTest {
     @Test
     fun `valid input with E2E CRC supported and non-matching CRC`() {
         val data = byteArrayOf(0x01, 0x00, 0x10, 0x12, 0xFF.toByte(), 0xEE.toByte()) // Example data
-        val result = CGMFeatureParser.parse(data, ByteOrder.LITTLE_ENDIAN)
+        val result = CGMFeatureParser.parse(data)
         assertNull(result) // CRC mismatch should return null
     }
 
@@ -21,7 +23,7 @@ class CGMFeatureParserTest {
     @Test
     fun `valid input without E2E CRC and expected CRC as 0xFFFF`() {
         val data = byteArrayOf(0x00, 0x00, 0x10, 0x12, 0xFF.toByte(), 0xFF.toByte())
-        val result = CGMFeatureParser.parse(data, ByteOrder.LITTLE_ENDIAN)
+        val result = CGMFeatureParser.parse(data)
         assertNotNull(result)
         result?.features?.e2eCrcSupported?.let { assertFalse(it) }
     }
@@ -39,8 +41,8 @@ class CGMFeatureParserTest {
         val result = CGMFeatureParser.parse(data)
 
         assertNotNull(result)
-        assertEquals(1, result?.type)
-        assertEquals(2, result?.sampleLocation)
+        assertEquals(CGMType.CAPILLARY_WHOLE_BLOOD, result?.type)
+        assertEquals(CGMLocation.ALTERNATE_SITE_TEST, result?.sampleLocation)
     }
 }
 

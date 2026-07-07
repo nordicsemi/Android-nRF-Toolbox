@@ -14,7 +14,7 @@ class HRSDataParserTest {
         )
         val result = HRSDataParser.parse(rawData)
         assertEquals(100, result?.heartRate)
-        assertEquals(false, result?.sensorContact)
+        assertEquals(null, result?.sensorContact)
         assertEquals(null, result?.energyExpanded)
         assertEquals(emptyList<Int>(), result?.rrIntervals)
     }
@@ -38,13 +38,13 @@ class HRSDataParserTest {
         val rawData = byteArrayOf(
             0x19.toByte(),       // Flags: UINT8 heart rate, energy expanded, RR intervals present
             0x4B.toByte(), 0x00.toByte(),    // Byte array (little-endian) Heart rate: 75
-            0x38.toByte(), 0x04.toByte(), // Byte array (little-endian): 1080
-            0x04.toByte(), 0x04.toByte(), //    Byte array (little-endian): 1028
-            0x38.toByte(), 0x04.toByte()       // RR interval 2 MSB: 1080
+            0x38.toByte(), 0x04.toByte(),    // Byte array (little-endian): 1080
+            0x04.toByte(), 0x04.toByte(),    // Byte array (little-endian): 1028
+            0x38.toByte(), 0x04.toByte()     // RR interval 2 MSB: 1080
         )
         val result = HRSDataParser.parse(rawData)
         assertEquals(75, result?.heartRate)
-        assertEquals(false, result?.sensorContact)
+        assertEquals(null, result?.sensorContact)
         assertEquals(1080, result?.energyExpanded)
         assertEquals(listOf(1028, 1080), result?.rrIntervals)
     }
