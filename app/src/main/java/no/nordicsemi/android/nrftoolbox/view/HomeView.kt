@@ -23,7 +23,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
@@ -60,18 +59,16 @@ internal fun HomeView() {
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { onEvent(UiEvent.OnConnectDeviceClick) },
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                icon = {
                     Icon(
                         imageVector = Icons.Default.Add,
-                        contentDescription = "Connect to device",
+                        contentDescription = null,
                     )
+                },
+                text = {
                     Text(text = stringResource(R.string.connect_device))
                 }
-            }
+            )
         }
     ) { paddingValues ->
         LazyColumn(
