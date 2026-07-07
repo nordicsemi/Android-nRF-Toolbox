@@ -40,6 +40,7 @@ import no.nordicsemi.android.toolbox.profile.manager.GLSManager
 import no.nordicsemi.android.toolbox.profile.manager.HRSManager
 import no.nordicsemi.android.toolbox.profile.manager.HTSManager
 import no.nordicsemi.android.toolbox.profile.manager.LBSManager
+import no.nordicsemi.android.toolbox.profile.manager.MDSManager
 import no.nordicsemi.android.toolbox.profile.manager.RSCSManager
 import no.nordicsemi.android.toolbox.profile.manager.ThroughputManager
 import no.nordicsemi.android.toolbox.profile.manager.UARTManager
@@ -55,6 +56,7 @@ import no.nordicsemi.android.toolbox.profile.view.hrs.HRSScreen
 import no.nordicsemi.android.toolbox.profile.view.hts.HTSScreen
 import no.nordicsemi.android.toolbox.profile.view.internal.ProfileAppBar
 import no.nordicsemi.android.toolbox.profile.view.lbs.BlinkyScreen
+import no.nordicsemi.android.toolbox.profile.view.mds.MDSScreen
 import no.nordicsemi.android.toolbox.profile.view.quickstart.QuickStartScreen
 import no.nordicsemi.android.toolbox.profile.view.rscs.RSCSScreen
 import no.nordicsemi.android.toolbox.profile.view.throughput.ThroughputScreen
@@ -180,7 +182,7 @@ internal fun DeviceConnectedView(
                 key(serviceManager.instanceId) {
                     Column(modifier = Modifier.imePadding()) {
                         val needsMaxValueLength = serviceManager.profile in listOf(
-                            Profile.CHANNEL_SOUNDING, Profile.UART, Profile.THROUGHPUT
+                            Profile.CHANNEL_SOUNDING, Profile.UART, Profile.THROUGHPUT, Profile.MDS
                         )
 
                         // Request max value length if needed and not already set.
@@ -217,6 +219,7 @@ internal fun DeviceConnectedView(
                                 manager = serviceManager as ThroughputManager,
                                 maxWriteValueLength = state.maxValueLength,
                             )
+                            Profile.MDS -> MDSScreen(manager = serviceManager as MDSManager)
                             Profile.DFU -> DFUScreen(manager = serviceManager as DFUManager) {
                                 onEvent(ConnectionEvent.DisconnectEvent)
                             }

@@ -89,7 +89,7 @@ internal class ProfileService : NotificationService() {
 
             // Register all known profiles before connecting. Each activates when its service
             // is discovered; prepare() validates characteristics, initialize() sets up streams.
-            ServiceManagerFactory.createAllManagers(address, onReady)
+            ServiceManagerFactory.createAllManagers(this@ProfileService, address, onReady)
                 .forEach { peripheral.profile(this, it, required = false) }
 
             // Track whether any known service was found after discovery.

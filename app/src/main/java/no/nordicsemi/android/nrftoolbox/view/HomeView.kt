@@ -246,6 +246,17 @@ internal fun HomeView() {
                                     )
                                 }
 
+                                Profile.MDS -> {
+                                    FeatureButton(
+                                        icon = painterResource(R.drawable.ic_mds),
+                                        description = stringResource(R.string.mds_module_full),
+                                        deviceName = peripheral.name,
+                                        deviceAddress = peripheral.address,
+                                        profileNames = services.map { it.profile.toString() },
+                                        onClick = { onClick(serviceManager.profile) },
+                                    )
+                                }
+
                                 Profile.DFU -> {
                                     FeatureButton(
                                         icon = painterResource(R.drawable.ic_dfu),

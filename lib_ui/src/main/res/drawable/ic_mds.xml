@@ -1,0 +1,55 @@
+<!--
+  ~ Copyright (c) 2022, Nordic Semiconductor
+  ~ All rights reserved.
+  ~
+  ~ Redistribution and use in source and binary forms, with or without modification, are
+  ~ permitted provided that the following conditions are met:
+  ~
+  ~ 1. Redistributions of source code must retain the above copyright notice, this list of
+  ~ conditions and the following disclaimer.
+  ~
+  ~ 2. Redistributions in binary form must reproduce the above copyright notice, this list
+  ~ of conditions and the following disclaimer in the documentation and/or other materials
+  ~ provided with the distribution.
+  ~
+  ~ 3. Neither the name of the copyright holder nor the names of its contributors may be
+  ~ used to endorse or promote products derived from this software without specific prior
+  ~ written permission.
+  ~
+  ~ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  ~ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+  ~ TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+  ~ PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  ~ HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  ~ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  ~ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  ~ OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+  ~ OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  ~ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  ~ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  -->
+
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="22dp"
+    android:viewportWidth="24"
+    android:viewportHeight="22">
+    <group
+        android:pivotX="12"
+        android:pivotY="11"
+        android:scaleX="0.9"
+        android:scaleY="0.9">
+        <path
+            android:pathData="M23.29,5.99L13.6,0.39C12.7,-0.12 11.26,-0.12 10.36,0.39L0.67,5.99C-0.22,6.5 -0.22,7.34 0.67,7.85L10.36,13.45C11.26,13.96 12.7,13.96 13.6,13.45L23.29,7.85C24.18,7.34 24.18,6.5 23.29,5.99Z"
+            android:fillColor="#44FFFFFF"/>
+        <path
+            android:pathData="M21.67,8.79L13.6,4.12C12.7,3.61 11.26,3.61 10.36,4.12L2.28,8.79L5.51,10.65L10.36,7.85C11.26,7.34 12.7,7.34 13.6,7.85L18.45,10.65L21.67,8.79Z"
+            android:fillColor="#AAFFFFFF"/>
+        <path
+            android:pathData="M23.29,7.85L21.67,8.79L13.6,4.12C12.7,3.61 11.26,3.61 10.36,4.12L2.29,8.79L0.67,7.85C-0.22,7.34 -0.22,6.5 0.67,5.99L10.36,0.39C11.26,-0.12 12.7,-0.12 13.6,0.39L23.29,5.99C24.18,6.5 24.18,7.34 23.29,7.85Z"
+            android:fillColor="#FFFFFF"/>
+        <path
+            android:pathData="M23.29,15.32L13.6,20.92C12.7,21.43 11.26,21.43 10.36,20.92L0.67,15.32C-0.22,14.81 -0.22,13.96 0.67,13.45L2.29,12.52L10.37,17.19C11.27,17.7 12.71,17.7 13.61,17.19L21.68,12.52L23.3,13.45C24.18,13.96 24.18,14.81 23.29,15.32Z"
+            android:fillColor="#FFFFFF"/>
+    </group>
+</vector>

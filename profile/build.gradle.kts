@@ -30,6 +30,7 @@ dependencies {
     implementation(nordic.logger)
     implementation(nordic.log.timber)
     implementation(nordic.blek.client.core.android)
+    implementation(nordic.mcumgr.observability)
 
     implementation(libs.chart)
     implementation(libs.androidx.lifecycle.service)
