@@ -5,7 +5,7 @@ import kotlin.experimental.and
 class DDFDataParser {
 
     fun parse(data: ByteArray): DDFData? {
-        if (data.size == 1) return null
+        if (data.size != 1) return null
 
         val flags = data[0]
         val isRTTPresent = flags and 0x01 > 0
