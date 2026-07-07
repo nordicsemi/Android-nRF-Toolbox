@@ -69,6 +69,7 @@ private fun LedControlView(
         ) {
             Text(
                 text = stringResource(id = R.string.lbs_led_guide),
+                style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.weight(1f)
             )
             Switch(
@@ -100,9 +101,13 @@ private fun ButtonControlView(
         Row {
             Text(
                 text = stringResource(id = R.string.lbs_button_guide),
+                style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.weight(1f)
             )
-            Text(text = text)
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+            )
         }
     }
 }
