@@ -31,10 +31,7 @@
   -->
 
 <resources>
-    <string name="csc_bonding_failed">Bonding failed.</string>
-    <string name="csc_bonding">Bonding with the device&#8230;</string>
-    <string name="csc_bonded">The device is now bonded.</string>
-    <string name="csc_notification_connected_message">%s is connected.</string>
+    <string name="device_connected_message">%s is connected.</string>
     <string name="channel_connected_devices_title">Background connections</string>
     <string name="channel_connected_devices_description">Shows a notification when a device is connected in background.</string>
 </resources>
