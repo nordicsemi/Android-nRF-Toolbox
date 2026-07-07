@@ -3,7 +3,6 @@ package no.nordicsemi.android.toolbox.profile.view.dfu
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -82,7 +81,7 @@ private fun DFUInstructionsCard(
             Text(
                 text = stringResource(
                     R.string.dfu_not_supported_title,
-                    stringResource(dfuApp.appShortName)
+                    stringResource(dfuApp.serviceName)
                 ),
                 style = MaterialTheme.typography.titleMedium
             )
@@ -90,7 +89,7 @@ private fun DFUInstructionsCard(
             Text(
                 text = stringResource(
                     R.string.dfu_not_supported_text,
-                    stringResource(dfuApp.appShortName),
+                    stringResource(dfuApp.serviceName),
                     stringResource(dfuApp.appName)
                 ),
                 textAlign = TextAlign.Center,
@@ -117,20 +116,17 @@ private fun DFUActionButton(
             onRedirection(ConnectionEvent.DisconnectEvent)
         }
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            val icon = intent?.let { dfuApp.appIcon } ?: R.drawable.google_play_2022_icon
+        val icon = intent?.let { dfuApp.appIcon } ?: R.drawable.google_play_2022_icon
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            modifier = Modifier
+                .size(40.dp)
+                .padding(end = 8.dp),
+            tint = if (intent == null) Color.Unspecified else MaterialTheme.colorScheme.onPrimary
+        )
 
-            Icon(
-                painter = painterResource(icon),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(40.dp)
-                    .padding(end = 8.dp),
-                tint = if (intent == null) Color.Unspecified else MaterialTheme.colorScheme.onPrimary
-            )
-
-            Text(text = title)
-        }
+        Text(text = title)
     }
 }
 
@@ -150,3 +146,51 @@ private fun DFUActionButtonPreview() {
         onRedirection = {},
     )
 }
+
+private const val DFU_PACKAGE_NAME = "no.nordicsemi.android.dfu"
+private const val DFU_APP_LINK =
+    "https://play.google.com/store/apps/details?id=no.nordicsemi.android.dfu"
+
+private const val SMP_PACKAGE_NAME = "no.nordicsemi.android.nrfconnectdevicemanager"
+private const val SMP_APP_LINK =
+    "https://play.google.com/store/apps/details?id=no.nordicsemi.android.nrfconnectdevicemanager"
+
+private val DFUsAvailable.packageName: String
+    get() = when (this) {
+        DFUsAvailable.DFU_SERVICE,
+        DFUsAvailable.LEGACY_DFU_SERVICE,
+        DFUsAvailable.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE -> DFU_PACKAGE_NAME
+        DFUsAvailable.SMP_SERVICE -> SMP_PACKAGE_NAME
+    }
+
+private val DFUsAvailable.appLink: String
+    get() = when (this) {
+        DFUsAvailable.DFU_SERVICE,
+        DFUsAvailable.LEGACY_DFU_SERVICE,
+        DFUsAvailable.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE -> DFU_APP_LINK
+        DFUsAvailable.SMP_SERVICE -> SMP_APP_LINK
+    }
+
+private val DFUsAvailable.appName: Int
+    get() = when (this) {
+        DFUsAvailable.DFU_SERVICE,
+        DFUsAvailable.LEGACY_DFU_SERVICE,
+        DFUsAvailable.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE -> R.string.dfu_app_name
+        DFUsAvailable.SMP_SERVICE -> R.string.smp_app_name
+    }
+
+private val DFUsAvailable.appIcon: Int
+    get() = when (this) {
+        DFUsAvailable.DFU_SERVICE,
+        DFUsAvailable.LEGACY_DFU_SERVICE,
+        DFUsAvailable.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE -> R.drawable.ic_dfu
+        DFUsAvailable.SMP_SERVICE -> R.drawable.ic_device_manager
+    }
+
+private val DFUsAvailable.serviceName: Int
+    get() = when (this) {
+        DFUsAvailable.LEGACY_DFU_SERVICE -> R.string.legacy_dfu_service_name
+        DFUsAvailable.DFU_SERVICE,
+        DFUsAvailable.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE -> R.string.dfu_service_name
+        DFUsAvailable.SMP_SERVICE -> R.string.smp_service_name
+    }
