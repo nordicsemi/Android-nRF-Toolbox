@@ -1,10 +1,12 @@
 package no.nordicsemi.android.nrftoolbox.view
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun SectionTitle(
@@ -13,7 +15,7 @@ fun SectionTitle(
     style: TextStyle = MaterialTheme.typography.labelLarge
 ) {
     Text(
-        modifier = modifier,
+        modifier = modifier.padding(vertical = 8.dp),
         text = title,
         style = style
     )

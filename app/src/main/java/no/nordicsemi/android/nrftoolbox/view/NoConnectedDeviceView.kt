@@ -49,7 +49,7 @@ internal fun NoConnectedDeviceView() {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_notification_icon),
+                painter = painterResource(id = R.drawable.ic_toolbox),
                 contentDescription = null,
                 modifier = Modifier
                     .size(80.dp)
