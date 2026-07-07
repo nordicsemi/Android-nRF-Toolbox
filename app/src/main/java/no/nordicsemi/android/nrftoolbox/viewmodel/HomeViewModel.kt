@@ -2,7 +2,6 @@ package no.nordicsemi.android.nrftoolbox.viewmodel
 
 import android.os.Bundle
 import androidx.core.net.toUri
-import androidx.core.os.bundleOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,11 +40,13 @@ internal class HomeViewModel @Inject constructor(
 
     init {
         // Observe connected devices from the repository
-        deviceRepository.connectedDevices.onEach { devices ->
-            _state.update { currentState ->
-                currentState.copy(connectedDevices = devices)
+        deviceRepository.connectedDevices
+            .onEach { devices ->
+                _state.update { currentState ->
+                    currentState.copy(connectedDevices = devices)
+                }
             }
-        }.launchIn(viewModelScope)
+            .launchIn(viewModelScope)
     }
 
     fun onClickEvent(event: UiEvent) {
