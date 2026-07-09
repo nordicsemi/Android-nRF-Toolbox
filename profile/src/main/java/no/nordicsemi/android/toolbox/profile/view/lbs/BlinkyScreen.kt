@@ -61,14 +61,15 @@ private fun LedControlView(
     ) {
         SectionTitle(
             icon = Icons.Default.Lightbulb,
-            title = stringResource(id = R.string.light),
+            title = stringResource(id = R.string.lbs_led),
             tint = if (ledState) Color.Yellow else MaterialTheme.colorScheme.primary,
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = stringResource(id = R.string.led_guide),
+                text = stringResource(id = R.string.lbs_led_guide),
+                style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.weight(1f)
             )
             Switch(
@@ -85,24 +86,28 @@ private fun ButtonControlView(
     modifier: Modifier = Modifier,
 ) {
     val (text, textColor) = if (buttonState) {
-        stringResource(id = R.string.button_pressed) to MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+        stringResource(id = R.string.lbs_button_pressed) to MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
     } else {
-        stringResource(id = R.string.button_released) to MaterialTheme.colorScheme.primary
+        stringResource(id = R.string.lbs_button_released) to MaterialTheme.colorScheme.primary
     }
     ScreenSection(
         modifier = modifier,
     ) {
         SectionTitle(
             icon = Icons.Default.RadioButtonChecked,
-            title = stringResource(id = R.string.button),
+            title = stringResource(id = R.string.lbs_button),
             tint = textColor,
         )
         Row {
             Text(
-                text = stringResource(id = R.string.button_guide),
+                text = stringResource(id = R.string.lbs_button_guide),
+                style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.weight(1f)
             )
-            Text(text = text)
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+            )
         }
     }
 }

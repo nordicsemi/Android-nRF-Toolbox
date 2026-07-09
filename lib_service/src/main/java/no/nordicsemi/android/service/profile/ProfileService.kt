@@ -82,14 +82,14 @@ internal class ProfileService : NotificationService() {
                 _devices.update { currentMap ->
                     val existingData = currentMap[address] ?: return@update currentMap
                     currentMap + (address to existingData.copy(
-                        services = existingData.services + manager
+                        services = (existingData.services + manager).sortedBy { it.profile.ordinal }
                     ))
                 }
             }
 
             // Register all known profiles before connecting. Each activates when its service
             // is discovered; prepare() validates characteristics, initialize() sets up streams.
-            ServiceManagerFactory.createAllManagers(address, onReady)
+            ServiceManagerFactory.createAllManagers(this@ProfileService, address, onReady)
                 .forEach { peripheral.profile(this, it, required = false) }
 
             // Track whether any known service was found after discovery.

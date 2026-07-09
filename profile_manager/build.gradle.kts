@@ -17,5 +17,5 @@ dependencies {
     implementation(libs.timber)
     implementation(nordic.log)
     implementation(nordic.blek.client.core.android)
-
+    implementation(nordic.mcumgr.observability)
 }

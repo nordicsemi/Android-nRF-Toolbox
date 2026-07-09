@@ -5,4 +5,10 @@
     <string name="dfu_not_supported_title">%s is not supported</string>
     <string name="dfu_not_supported_text">%1s service is not available in the current version of the app. Please use the %2s app from Nordic Semiconductor to update your device’s firmware.</string>
 
+    <string name="dfu_app_name">nRF DFU</string>
+    <string name="dfu_service_name">Secure DFU</string>
+    <string name="legacy_dfu_service_name">Legacy DFU</string>
+
+    <string name="smp_app_name">nRF Connect Device Manager</string>
+    <string name="smp_service_name">SMP</string>
 </resources>

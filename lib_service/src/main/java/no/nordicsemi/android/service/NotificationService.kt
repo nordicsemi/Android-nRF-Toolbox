@@ -73,7 +73,7 @@ abstract class NotificationService : LifecycleService() {
     private fun startForegroundService() {
         // when the activity closes we need to show the notification that user is connected to the peripheral sensor
         // We start the service as a foreground service as Android 8.0 (Oreo) onwards kills any running background services
-        val notification = createNotification(R.string.csc_notification_connected_message)
+        val notification = createNotification(R.string.device_connected_message)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForeground(NOTIFICATION_ID, notification)
         } else {

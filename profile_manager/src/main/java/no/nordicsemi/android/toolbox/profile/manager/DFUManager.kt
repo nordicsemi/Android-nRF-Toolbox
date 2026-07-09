@@ -7,7 +7,6 @@ import timber.log.Timber
 import no.nordicsemi.android.toolbox.lib.utils.spec.DFU_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.LEGACY_DFU_SERVICE_UUID
-import no.nordicsemi.android.toolbox.lib.utils.spec.MDS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.SMP_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.data.DFUsAvailable
 import no.nordicsemi.android.toolbox.profile.manager.repository.DFURepository
@@ -33,7 +32,6 @@ class DFUManager(
             SMP_SERVICE_UUID -> DFUsAvailable.SMP_SERVICE
             LEGACY_DFU_SERVICE_UUID -> DFUsAvailable.LEGACY_DFU_SERVICE
             EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID -> DFUsAvailable.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE
-            MDS_SERVICE_UUID -> DFUsAvailable.MDS_SERVICE
             else -> return
         }
         Timber.tag("DFU").log(Log.Level.APPLICATION, "$dfuType found")

@@ -84,9 +84,24 @@ internal fun FeatureButton(
 private fun FeatureButtonPreview() {
     NordicTheme {
         FeatureButton(
+            icon = painterResource(R.drawable.ic_quick_start),
+            description = stringResource(R.string.quick_start_module_full),
+            profileNames = listOf("Quick Start", "LED Button", "MDS"),
+            deviceName = "Quick Start",
+            deviceAddress = "AA:BB:CC:DD:EE:FF",
+            onClick = {}
+        )
+    }
+}
+
+@Preview(heightDp = 100)
+@Composable
+private fun FeatureButtonPreview_2() {
+    NordicTheme {
+        FeatureButton(
             icon = painterResource(R.drawable.ic_csc),
             description = stringResource(R.string.csc_module_full),
-            profileNames = listOf("Cycling Speed and Cadence", "Battery", "Heart Rate", "Blood Pressure"),
+            profileNames = listOf("Battery", "Heart Rate", "Blood Pressure"),
             deviceName = "Testing peripheral",
             deviceAddress = "AA:BB:CC:DD:EE:FF",
             onClick = {}
@@ -95,35 +110,12 @@ private fun FeatureButtonPreview() {
 }
 
 private fun vibrantColorFromString(input: String): Color {
-    // Hash → 0..360 for hue
-    val hue = (input.hashCode().absoluteValue % 360).toFloat()
+    val hash = input.hashCode() and 0x7FFFFFFF
+    // Using the Golden Ratio conjugate (≈ 0.618) to spread hues uniformly in HSL space.
+    // This ensures that even strings with similar hashes will result in distinct colors.
+    val goldenRatioConjugate = 0.618033988749895
+    val hue = ((1.286 * hash.toDouble() * goldenRatioConjugate) % 1.0).toFloat() * 360f
 
-    val saturation = 0.65f      // vibrant
-    val lightness = 0.45f       // not too dark/light
-
-    return hslToColor(hue, saturation, lightness)
-}
-
-/**
- * HSL → Color conversion for Jetpack Compose.
- */
-private fun hslToColor(h: Float, s: Float, l: Float): Color {
-    val c = (1 - kotlin.math.abs(2 * l - 1)) * s
-    val x = c * (1 - kotlin.math.abs((h / 60) % 2 - 1))
-    val m = l - c / 2
-
-    val (r1, g1, b1) = when {
-        h < 60 -> Triple(c, x, 0f)
-        h < 120 -> Triple(x, c, 0f)
-        h < 180 -> Triple(0f, c, x)
-        h < 240 -> Triple(0f, x, c)
-        h < 300 -> Triple(x, 0f, c)
-        else -> Triple(c, 0f, x)
-    }
-
-    return Color(
-        red = r1 + m,
-        green = g1 + m,
-        blue = b1 + m
-    )
+    // Return a vibrant color with fixed saturation and lightness for consistency and readability.
+    return Color.hsl(hue = hue, saturation = 0.75f, lightness = 0.45f)
 }

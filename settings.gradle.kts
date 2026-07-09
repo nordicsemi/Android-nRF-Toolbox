@@ -56,7 +56,7 @@ dependencyResolutionManagement {
         }
         // Fixed versions for Nordic libraries.
         create("nordic") {
-            from("no.nordicsemi.gradle:nordic-version-catalog:2026.06.02")
+            from("no.nordicsemi.gradle:nordic-version-catalog:2026.07.01")
         }
     }
 }
@@ -80,4 +80,8 @@ include(":profile_parsers")
 //
 //if (file("../Kotlin-BLE-Library").exists()) {
 //    includeBuild("../Kotlin-BLE-Library")
+//}
+//
+//if (file("../Android-nRF-Connect-Device-Manager").exists()) {
+//    includeBuild("../Android-nRF-Connect-Device-Manager")
 //}

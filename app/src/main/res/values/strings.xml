@@ -30,74 +30,34 @@
   -->
 
 <resources>
-    <string name="csc_module">CSC</string>
     <string name="csc_module_full">Cyclic Speed and Cadence</string>
-
-    <string name="hrs_module">HRS</string>
     <string name="hrs_module_full">Heart Rate</string>
-
-    <string name="gls_module">GLS</string>
     <string name="gls_module_full">Glucose</string>
-
-    <string name="hts_module">HTS</string>
     <string name="hts_module_full">Health Thermometer</string>
-
-    <string name="bps_module">BPS</string>
     <string name="bps_module_full">Blood Pressure</string>
-
-    <string name="rscs_module">RSCS</string>
     <string name="rscs_module_full">Running Speed and Cadence</string>
-
-    <string name="prx_module">PRX</string>
     <string name="prx_module_full">Proximity</string>
-
-    <string name="cgm_module">CGMS</string>
     <string name="cgm_module_full">Continuous Glucose</string>
-
-    <string name="uart_module">UART</string>
     <string name="uart_module_full">Universal Asynchronous Receiver/Transmitter (UART)</string>
-
-    <string name="dfu_module">DFU</string>
     <string name="dfu_module_full">Device Firmware Update</string>
-    <string name="dfu_module_info">Open DFU application.</string>
-    <string name="dfu_module_install">Download from Google Play.</string>
-
-    <string name="logger_module">nRF Logger</string>
-    <string name="logger_module_full">nRF Logger</string>
-    <string name="logger_module_info">Open nRF Logger application.</string>
-
-    <string name="direction_module">DF</string>
+    <string name="mds_module_full">Monitoring &amp; Diagnostic Service</string>
     <string name="direction_module_full">Distance Measurement</string>
-
-    <string name="viewmodel_profiles">ViewModel profiles</string>
-    <string name="service_profiles">Service profiles</string>
-    <string name="utils_services">Utils services</string>
-
-    <string name="running_profile_icon">Icon indicating if the profile is running</string>
-
-    <string name="battery_module">BATTERY</string>
     <string name="battery_module_full">Battery</string>
-
-    <string name="channel_sounding_module">CHANNEL SOUNDING</string>
     <string name="channel_sounding_module_full">Channel Sounding</string>
-
-    <string name="throughput_module">Throughput</string>
-    <string name="unknown_device">Unknown Device</string>
-
-    <string name="lbs_blinky_module">LBS</string>
+    <string name="throughput_module_full">Throughput</string>
     <string name="lbs_blinky_module_full">LED Button</string>
+    <string name="quick_start_module_full">Quick Start</string>
 
-    <string name="device_not_connected_title">NO DEVICES CONNECTED</string>
-    <string name="device_not_connected_message">Tap Connect to begin.</string>
+    <string name="device_not_connected_title">No Devices Connected</string>
+    <string name="device_not_connected_message">Tap Connect button below to begin.</string>
 
     <string name="connect_device">Connect</string>
     <string name="connected_devices">Connected devices</string>
+    <string name="unknown_device">Unknown Device</string>
 
+    <string name="links">Links</string>
     <string name="github_repo">Source code</string>
     <string name="github_repo_subtitle">GitHub</string>
     <string name="nordic_dev_zone">Help</string>
     <string name="nordic_dev_zone_subtitle">Nordic DevZone</string>
-
-    <string name="links">Links</string>
-
 </resources>

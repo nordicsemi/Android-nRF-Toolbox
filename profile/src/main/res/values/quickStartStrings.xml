@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="quick_start_title">Quick Start</string>
+    <string name="quick_start_description">Congratulations! You have successfully connected to the Bluetooth Quick Start sample on nRF54L15 DK.</string>
+    <string name="quick_start_lbs_led_tip">Press BTN 0 on the DK to send a notification to the app. Observe the state changing from RELEASED to PRESSED below.</string>
+    <string name="quick_start_lbs_button_tip">Use the switch below to toggle the LED 0 on the DK.</string>
+    <string name="quick_start_crash_tip">Press BTN 1 on the DK to simulate a firmware fault. The core dump will be uploaded to nRF Cloud on the following connection.</string>
+</resources>

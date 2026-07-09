@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="light">LED</string>
-    <string name="led_guide">Switch to toggle the LED</string>
+    <string name="lbs_led">LED</string>
+    <string name="lbs_led_guide">Switch to toggle the LED</string>
 
-
-    <string name="button">Button</string>
-    <string name="button_guide">The button state</string>
-    <string name="button_pressed">PRESSED</string>
-    <string name="button_released">RELEASED</string>
+    <string name="lbs_button">Button</string>
+    <string name="lbs_button_guide">The button state</string>
+    <string name="lbs_button_pressed">PRESSED</string>
+    <string name="lbs_button_released">RELEASED</string>
 </resources>

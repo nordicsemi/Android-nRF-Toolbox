@@ -1,5 +1,6 @@
 package no.nordicsemi.android.toolbox.profile.manager
 
+import android.content.Context
 import no.nordicsemi.android.toolbox.lib.utils.spec.BATTERY_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.BPS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.CGMS_SERVICE_UUID
@@ -14,6 +15,7 @@ import no.nordicsemi.android.toolbox.lib.utils.spec.HTS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.LBS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.LEGACY_DFU_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.MDS_SERVICE_UUID
+import no.nordicsemi.android.toolbox.lib.utils.spec.QUICK_START_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.RSCS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.SMP_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.THROUGHPUT_SERVICE_UUID
@@ -41,11 +43,13 @@ object ServiceManagerFactory {
         MDS_SERVICE_UUID,
         LEGACY_DFU_SERVICE_UUID,
         EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID,
+        QUICK_START_SERVICE_UUID,
     )
 
     fun isKnownService(uuid: Uuid): Boolean = uuid in knownServiceUuids
 
     fun createAllManagers(
+        context: Context,
         deviceId: String,
         onReady: (ServiceManager) -> Unit,
     ): List<ServiceManager> = listOf(
@@ -64,8 +68,9 @@ object ServiceManagerFactory {
         LBSManager(deviceId, onReady),
         DFUManager(DFU_SERVICE_UUID, deviceId, onReady),
         DFUManager(SMP_SERVICE_UUID, deviceId, onReady),
-        DFUManager(MDS_SERVICE_UUID, deviceId, onReady),
         DFUManager(LEGACY_DFU_SERVICE_UUID, deviceId, onReady),
         DFUManager(EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID, deviceId, onReady),
+        MDSManager(context, deviceId, onReady),
+        QuickStartManager(deviceId, onReady),
     )
 }

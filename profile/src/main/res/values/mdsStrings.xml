@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mds_title">Observability</string>
+    <string name="mds_status">Status:</string>
+    <string name="mds_pending">Pending:</string>
+    <string name="mds_sent">Uploaded:</string>
+
+    <plurals name="mds_value">
+        <item quantity="one">%d chunk (%d B)</item>
+        <item quantity="other">%d chunks (%d B)</item>
+    </plurals>
+
+    <string name="mds_connected">Awaiting chunks…</string>
+    <string name="mds_uploading">Uploading…</string>
+    <string name="mds_suspended">Suspended for %ds</string>
+    <string name="mds_connecting">Connecting…</string>
+    <string name="mds_disconnected">Disconnected</string>
+</resources>

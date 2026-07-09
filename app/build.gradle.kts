@@ -37,10 +37,8 @@ plugins {
     alias(libs.plugins.kotlin.parcelize)
 }
 if (getGradle().startParameter.taskRequests.toString().contains("Release")) {
-    plugins {
-        alias(libs.plugins.google.services)
-        alias(libs.plugins.firebase.crashlytics)
-    }
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
 }
 
 android {
