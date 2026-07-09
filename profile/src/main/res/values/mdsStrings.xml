@@ -10,7 +10,7 @@
         <item quantity="other">%d chunks (%d B)</item>
     </plurals>
 
-    <string name="mds_connected">Awaiting for chunks…</string>
+    <string name="mds_connected">Awaiting chunks…</string>
     <string name="mds_uploading">Uploading…</string>
     <string name="mds_suspended">Suspended for %ds</string>
     <string name="mds_connecting">Connecting…</string>

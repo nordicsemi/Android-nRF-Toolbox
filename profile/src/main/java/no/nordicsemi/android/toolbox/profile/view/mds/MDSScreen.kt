@@ -41,6 +41,18 @@ private fun ObservabilityView(
     state: ObservabilityManager.State,
     modifier: Modifier = Modifier,
 ) {
+    val status = when (state.state) {
+        is ChunksSource.State.Disconnected -> stringResource(R.string.mds_disconnected)
+        is ChunksSource.State.Initializing -> stringResource(R.string.mds_connecting)
+        is ChunksSource.State.Connected -> {
+            when (val u = state.uploadingState) {
+                is ChunkManager.State.Idle -> stringResource(R.string.mds_connected)
+                is ChunkManager.State.InProgress -> stringResource(R.string.mds_uploading)
+                is ChunkManager.State.Suspended -> stringResource(R.string.mds_suspended, u.delayInSeconds)
+            }
+        }
+    }
+
     ScreenSection(
         modifier = modifier,
     ) {
@@ -48,23 +60,10 @@ private fun ObservabilityView(
             icon = Icons.Default.DeveloperBoard,
             title = stringResource(id = R.string.mds_title),
         )
-        SectionRow {
-            val status = when (state.state) {
-                is ChunksSource.State.Disconnected -> stringResource(R.string.mds_disconnected)
-                is ChunksSource.State.Initializing -> stringResource(R.string.mds_connecting)
-                is ChunksSource.State.Connected -> {
-                    when (val u = state.uploadingState) {
-                        is ChunkManager.State.Idle -> stringResource(R.string.mds_connected)
-                        is ChunkManager.State.InProgress -> stringResource(R.string.mds_uploading)
-                        is ChunkManager.State.Suspended -> stringResource(R.string.mds_suspended, u.delayInSeconds)
-                    }
-                }
-            }
-            Text(
-                text = status,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        }
+        Text(
+            text = status,
+            style = MaterialTheme.typography.bodyLarge,
+        )
         SectionRow {
             KeyValueColumn(
                 key = stringResource(R.string.mds_pending),
