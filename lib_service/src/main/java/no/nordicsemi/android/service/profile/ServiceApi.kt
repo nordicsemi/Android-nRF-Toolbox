@@ -1,10 +1,11 @@
 package no.nordicsemi.android.service.profile
 
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import no.nordicsemi.android.log.ILogSession
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManager
 import no.nordicsemi.kotlin.ble.client.android.Peripheral
 import no.nordicsemi.kotlin.ble.core.ConnectionState
-import no.nordicsemi.kotlin.ble.core.WriteType
 
 /**
  * Represents the public-facing API for the ProfileService.
@@ -15,13 +16,14 @@ interface ServiceApi {
     data class DeviceData(
         val peripheral: Peripheral,
         val connectionState: ConnectionState = ConnectionState.Connecting,
-        val services: List<ServiceManager> = emptyList()
+        val services: List<ServiceManager> = emptyList(),
+        val notSupported: Boolean? = null
     )
 
     /** A data class to represent a disconnection event. */
     data class DisconnectionEvent(
         val address: String,
-        val reason: ConnectionState.Disconnected.Reason
+        val reason: ConnectionState.Disconnected.Reason = ConnectionState.Disconnected.Reason.Success
     )
 
     /**
@@ -31,15 +33,9 @@ interface ServiceApi {
     val devices: StateFlow<Map<String, DeviceData>>
 
     /**
-     * A flow that emits whether a specific device is missing its required services.
-     * The map key is the device address.
-     */
-    val isMissingServices: StateFlow<Map<String, Boolean>>
-
-    /**
      * A flow that emits the reason for the last disconnection event for any device.
      */
-    val disconnectionEvent: StateFlow<DisconnectionEvent?>
+    val disconnectionEvent: SharedFlow<DisconnectionEvent>
 
     /**
      * Disconnects from a Bluetooth device and stops managing it.
@@ -54,19 +50,12 @@ interface ServiceApi {
      * @param address The device address.
      * @return The [Peripheral] instance, or null if not found.
      */
-    fun getPeripheral(address: String?): Peripheral?
+    fun getPeripheral(address: String): Peripheral
 
     /**
-     * Requests the maximum possible value length for a write operation.
-     *
-     * @param address The device address.
-     * @param writeType The type of write operation.
-     * @return The maximum number of bytes that can be sent in a single write.
+     * Retrieves the log session for a specific device.
      */
-    suspend fun getMaxWriteValue(
-        address: String,
-        writeType: WriteType = WriteType.WITHOUT_RESPONSE
-    ): Int?
+    fun getLogSession(address: String): ILogSession?
 
     /**
      * Initiates and waits for the bonding process to complete with a device.
@@ -74,4 +63,9 @@ interface ServiceApi {
      * @param address The device address.
      */
     suspend fun createBond(address: String)
+
+    /**
+     * Removes the bond information associated with this device.
+     */
+    suspend fun forget(address: String)
 }

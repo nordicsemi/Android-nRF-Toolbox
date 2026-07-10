@@ -11,7 +11,7 @@ internal sealed interface ConnectionEvent {
     data object NavigateUp : ConnectionEvent
     data object DisconnectEvent : ConnectionEvent
     data object OpenLoggerEvent : ConnectionEvent
-    data object RequestMaxValueLength : ConnectionEvent
+    data object OnForgetClicked : ConnectionEvent
 }
 
 /**
@@ -19,11 +19,12 @@ internal sealed interface ConnectionEvent {
  */
 internal sealed interface ProfileUiState {
     data object Loading : ProfileUiState
-    data class Disconnected(val reason: ConnectionState.Disconnected.Reason?) : ProfileUiState
+
+    data class Disconnected(
+        val reason: ConnectionState.Disconnected.Reason
+    ) : ProfileUiState
 
     data class Connected(
         val deviceData: ServiceApi.DeviceData,
-        val isMissingServices: Boolean = false,
-        val maxValueLength: Int? = null,
     ) : ProfileUiState
 }

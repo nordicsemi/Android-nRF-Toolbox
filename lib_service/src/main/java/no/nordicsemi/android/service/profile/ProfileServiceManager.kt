@@ -8,14 +8,15 @@ import android.os.IBinder
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
-import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.resume
 
 const val DEVICE_ADDRESS = "deviceAddress"
+const val DEVICE_NAME = "deviceName"
 
 sealed interface ProfileServiceManager {
     suspend fun bindService(): ServiceApi
     fun unbindService()
-    fun connectToPeripheral(deviceAddress: String)
+    fun connectToPeripheral(deviceAddress: String, deviceName: String?)
 }
 
 internal class ProfileServiceManagerImp @Inject constructor(
@@ -24,33 +25,37 @@ internal class ProfileServiceManagerImp @Inject constructor(
     private var serviceConnection: ServiceConnection? = null
     private var api: ServiceApi? = null
 
-    override suspend fun bindService(): ServiceApi = suspendCancellableCoroutine { continuation ->
-        val intent = Intent(context, ProfileService::class.java)
-        serviceConnection = object : ServiceConnection {
-            override fun onServiceConnected(className: ComponentName, service: IBinder) {
-                api = service as ServiceApi
-                continuation.resume(api!!) { _, _, _ -> }
-            }
+    override suspend fun bindService(): ServiceApi = api ?: suspendCancellableCoroutine { continuation ->
+            val intent = Intent(context, ProfileService::class.java)
 
-            override fun onServiceDisconnected(p0: ComponentName?) {
-                continuation.resumeWithException(Exception("Service disconnected"))
-            }
+            serviceConnection = object : ServiceConnection {
+                override fun onServiceConnected(className: ComponentName, service: IBinder) {
+                    val api = service as ServiceApi
+                    this@ProfileServiceManagerImp.api = api
+                    continuation.resume(api)
+                }
 
-            override fun onBindingDied(p0: ComponentName?) {
-                continuation.resumeWithException(Exception("Service binding died"))
+                override fun onServiceDisconnected(p0: ComponentName?) {
+                    api = null
+                }
+
+                override fun onBindingDied(p0: ComponentName?) {
+                    api = null
+                }
+            }.also { connection ->
+                context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
             }
-        }.apply {
-            context.bindService(intent, this, Context.BIND_AUTO_CREATE)
         }
-    }
 
     override fun unbindService() {
         serviceConnection?.let { context.unbindService(it) }
+        serviceConnection = null
     }
 
-    override fun connectToPeripheral(deviceAddress: String) {
+    override fun connectToPeripheral(deviceAddress: String, deviceName: String?) {
         val intent = Intent(context, ProfileService::class.java)
         intent.putExtra(DEVICE_ADDRESS, deviceAddress)
+        intent.putExtra(DEVICE_NAME, deviceName)
         context.startService(intent)
     }
 }

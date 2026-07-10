@@ -13,10 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
@@ -34,6 +35,7 @@ import no.nordicsemi.android.toolbox.profile.manager.BatteryManager
 import no.nordicsemi.android.toolbox.profile.manager.BPSManager
 import no.nordicsemi.android.toolbox.profile.manager.CGMManager
 import no.nordicsemi.android.toolbox.profile.manager.CSCManager
+import no.nordicsemi.android.toolbox.profile.manager.ChannelSoundingManager
 import no.nordicsemi.android.toolbox.profile.manager.DDFSManager
 import no.nordicsemi.android.toolbox.profile.manager.DFUManager
 import no.nordicsemi.android.toolbox.profile.manager.GLSManager
@@ -68,6 +70,8 @@ import no.nordicsemi.android.ui.view.internal.DeviceConnectingView
 import no.nordicsemi.android.ui.view.internal.DeviceDisconnectedView
 import no.nordicsemi.android.ui.view.internal.DisconnectReason
 import no.nordicsemi.android.ui.view.internal.ServiceDiscoveryView
+import no.nordicsemi.kotlin.ble.core.ConnectionState
+import no.nordicsemi.kotlin.ble.core.WriteType
 
 @Composable
 internal fun ProfileScreen() {
@@ -114,33 +118,70 @@ internal fun ProfileScreen() {
                     ) {
                         // The main content switches based on the UI state.
                         when (val state = uiState) {
-                            is ProfileUiState.Connected -> DeviceConnectedView(
-                                state = state,
-                                isNotificationPermissionGranted = isNotificationPermissionGranted,
-                                onEvent = onEvent
-                            )
+                            // No supported services found?
+                            is ProfileUiState.Connected if state.deviceData.notSupported == true -> {
+                                DeviceDisconnectedView(
+                                    reason = DisconnectReason.MISSING_SERVICE,
+                                )
+                            }
 
-                            is ProfileUiState.Disconnected -> {
-                                if (state.reason == null) {
-                                    // This is the initial state before connection attempt
-                                    // show device connecting view instead.
-                                    DeviceConnectingView()
-                                } else {
-                                    DeviceDisconnectedView(
-                                        disconnectedReason = state.reason.displayMessage(),
-                                        isMissingService = false,
+                            // Service discovery not finished?
+                            is ProfileUiState.Connected if state.deviceData.services.isEmpty() -> {
+                                ServiceDiscoveryView(modifier = Modifier) {
+                                    Button(
+                                        onClick = { onEvent(ConnectionEvent.DisconnectEvent) },
+                                        modifier = Modifier.padding(16.dp)
                                     ) {
+                                        Text(text = stringResource(id = R.string.cancel))
+                                    }
+                                }
+                            }
+
+                            // At least one service found?
+                            is ProfileUiState.Connected -> {
+                                DeviceConnectedView(
+                                    state = state,
+                                    isNotificationPermissionGranted = isNotificationPermissionGranted,
+                                    onEvent = onEvent
+                                )
+                            }
+
+                            // Connection Lost?
+                            is ProfileUiState.Disconnected -> {
+                                DeviceDisconnectedView(
+                                    disconnectedReason = state.reason.displayMessage(),
+                                    isMissingService = false,
+                                ) {
+                                    if (state.reason == ConnectionState.Disconnected.Reason.InsufficientAuthentication) {
+                                        Button(
+                                            modifier = Modifier.padding(16.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.error,
+                                                contentColor = MaterialTheme.colorScheme.onError,
+                                            ),
+                                            onClick = { onEvent(ConnectionEvent.OnForgetClicked) },
+                                        ) {
+                                            Text(text = stringResource(id = R.string.action_forget))
+                                        }
+                                    } else {
                                         Button(
                                             modifier = Modifier.padding(16.dp),
                                             onClick = { onEvent(ConnectionEvent.OnRetryClicked) },
                                         ) {
-                                            Text(text = stringResource(id = R.string.reconnect))
+                                            Text(text = stringResource(id = R.string.action_reconnect))
                                         }
                                     }
                                 }
                             }
 
-                            ProfileUiState.Loading -> DeviceConnectingView()
+                            ProfileUiState.Loading -> DeviceConnectingView {
+                                Button(
+                                    onClick = { onEvent(ConnectionEvent.DisconnectEvent) },
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Text(text = stringResource(id = R.string.cancel))
+                                }
+                            }
                         }
                     }
                 }
@@ -155,75 +196,42 @@ internal fun DeviceConnectedView(
     isNotificationPermissionGranted: Boolean?,
     onEvent: (ConnectionEvent) -> Unit,
 ) {
-    // Check for missing services directly from the state object.
-    if (state.isMissingServices) {
-        DeviceDisconnectedView(
-            reason = DisconnectReason.MISSING_SERVICE,
-        )
-        return
-    }
-
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.imePadding(),
     ) {
-        // Show service discovery view if services are not yet available.
-        if (state.deviceData.services.isEmpty()) {
-            ServiceDiscoveryView(modifier = Modifier) {
-                Button(
-                    onClick = { onEvent(ConnectionEvent.DisconnectEvent) },
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(text = stringResource(id = R.string.cancel))
-                }
-            }
-        } else {
-            // Iterate through all discovered service manager instances.
-            state.deviceData.services.forEach { serviceManager ->
-                key(serviceManager.instanceId) {
-                    Column(modifier = Modifier.imePadding()) {
-                        val needsMaxValueLength = serviceManager.profile in listOf(
-                            Profile.CHANNEL_SOUNDING, Profile.UART, Profile.THROUGHPUT, Profile.MDS
-                        )
-
-                        // Request max value length if needed and not already set.
-                        if (needsMaxValueLength) {
-                            LaunchedEffect(Unit) {
-                                if (state.maxValueLength == null) {
-                                    onEvent(ConnectionEvent.RequestMaxValueLength)
-                                }
-                            }
-                        }
-
-                        // Display the appropriate screen for each service instance.
-                        when (serviceManager.profile) {
-                            Profile.HRS -> HRSScreen(manager = serviceManager as HRSManager)
-                            Profile.HTS -> HTSScreen(manager = serviceManager as HTSManager)
-                            Profile.BPS -> BPSScreen(manager = serviceManager as BPSManager)
-                            Profile.CSC -> CSCScreen(manager = serviceManager as CSCManager)
-                            Profile.CGM -> CGMScreen(manager = serviceManager as CGMManager)
-                            Profile.GLS -> GLSScreen(manager = serviceManager as GLSManager)
-                            Profile.RSCS -> RSCSScreen(manager = serviceManager as RSCSManager)
-                            Profile.BATTERY -> BatteryScreen(manager = serviceManager as BatteryManager)
-                            Profile.CHANNEL_SOUNDING -> ChannelSoundingScreen(
-                                deviceId = state.deviceData.peripheral.address,
-                                isNotificationPermissionGranted = isNotificationPermissionGranted
-                            )
-                            Profile.DDFS -> DFSScreen(manager = serviceManager as DDFSManager)
-                            Profile.LBS -> BlinkyScreen(manager = serviceManager as LBSManager)
-                            Profile.QUICK_START -> QuickStartScreen()
-                            Profile.UART -> UARTScreen(
-                                manager = serviceManager as UARTManager,
-                                maxValueLength = state.maxValueLength,
-                            )
-                            Profile.THROUGHPUT -> ThroughputScreen(
-                                manager = serviceManager as ThroughputManager,
-                                maxWriteValueLength = state.maxValueLength,
-                            )
-                            Profile.MDS -> MDSScreen(manager = serviceManager as MDSManager)
-                            Profile.DFU -> DFUScreen(manager = serviceManager as DFUManager) {
-                                onEvent(ConnectionEvent.DisconnectEvent)
-                            }
-                        }
+        // Iterate through all discovered service manager instances.
+        state.deviceData.services.forEach { serviceManager ->
+            key(serviceManager.instanceId) {
+                // Display the appropriate screen for each service instance.
+                when (serviceManager.profile) {
+                    Profile.HRS -> HRSScreen(manager = serviceManager as HRSManager)
+                    Profile.HTS -> HTSScreen(manager = serviceManager as HTSManager)
+                    Profile.BPS -> BPSScreen(manager = serviceManager as BPSManager)
+                    Profile.CSC -> CSCScreen(manager = serviceManager as CSCManager)
+                    Profile.CGM -> CGMScreen(manager = serviceManager as CGMManager)
+                    Profile.GLS -> GLSScreen(manager = serviceManager as GLSManager)
+                    Profile.RSCS -> RSCSScreen(manager = serviceManager as RSCSManager)
+                    Profile.BATTERY -> BatteryScreen(manager = serviceManager as BatteryManager)
+                    Profile.CHANNEL_SOUNDING -> ChannelSoundingScreen(
+                        manager = serviceManager as ChannelSoundingManager,
+                        deviceId = state.deviceData.peripheral.address,
+                        isNotificationPermissionGranted = isNotificationPermissionGranted
+                    )
+                    Profile.DDFS -> DFSScreen(manager = serviceManager as DDFSManager)
+                    Profile.LBS -> BlinkyScreen(manager = serviceManager as LBSManager)
+                    Profile.QUICK_START -> QuickStartScreen()
+                    Profile.UART -> UARTScreen(
+                        manager = serviceManager as UARTManager,
+                        maxValueLength = state.deviceData.peripheral.maximumWriteValueLength(WriteType.WITHOUT_RESPONSE),
+                    )
+                    Profile.THROUGHPUT -> ThroughputScreen(
+                        manager = serviceManager as ThroughputManager,
+                        maxWriteValueLength = state.deviceData.peripheral.maximumWriteValueLength(WriteType.WITHOUT_RESPONSE),
+                    )
+                    Profile.MDS -> MDSScreen(manager = serviceManager as MDSManager)
+                    Profile.DFU -> DFUScreen(manager = serviceManager as DFUManager) {
+                        onEvent(ConnectionEvent.DisconnectEvent)
                     }
                 }
             }

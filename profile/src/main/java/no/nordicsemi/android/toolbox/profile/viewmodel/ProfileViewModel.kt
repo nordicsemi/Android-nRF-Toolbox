@@ -9,26 +9,24 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import no.nordicsemi.android.analytics.AppAnalytics
 import no.nordicsemi.android.analytics.Link
-import no.nordicsemi.android.analytics.ProfileOpenEvent
+import no.nordicsemi.android.analytics.LinkOpenEvent
 import no.nordicsemi.android.common.logger.LoggerLauncher
 import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewModel
-import no.nordicsemi.android.log.LogSession
-import no.nordicsemi.android.log.timber.nRFLoggerTree
+import no.nordicsemi.android.log.ILogSession
 import no.nordicsemi.android.service.profile.ProfileServiceManager
 import no.nordicsemi.android.service.profile.ServiceApi
 import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
-import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.argName
-import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import no.nordicsemi.android.toolbox.profile.repository.channelSounding.ChannelSoundingManager
 import no.nordicsemi.kotlin.ble.client.android.Peripheral
 import timber.log.Timber
@@ -40,7 +38,6 @@ internal class ProfileViewModel @Inject constructor(
     private val profileServiceManager: ProfileServiceManager,
     private val channelSoundingManager: Provider<ChannelSoundingManager>,
     private val navigator: Navigator,
-    private val deviceRepository: DeviceRepository,
     private val analytics: AppAnalytics,
     @param:ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle,
@@ -54,93 +51,68 @@ internal class ProfileViewModel @Inject constructor(
         name = arg.getString(argName)
     }
 
-    var peripheral: Peripheral? = null
-    private var serviceApi: ServiceApi? = null
-    private val logger: nRFLoggerTree = nRFLoggerTree(context, address, context.getString(R.string.app_name))
-        .apply { setLoggingTagsEnabled(false) }
+    private lateinit var peripheral: Peripheral
+    private lateinit var serviceApi: ServiceApi
+    private var logSession: ILogSession? = null
 
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     init {
-        connectToPeripheral()
-        observeConnectedDevices()
-        Timber.plant(logger)
+        viewModelScope.launch {
+            serviceApi = profileServiceManager.bindService()
+            peripheral = serviceApi.getPeripheral(address)
+            connectToPeripheral()
+            observeConnectedDevices()
+            observerDisconnection()
+        }
     }
 
-    private suspend fun getServiceApi() =
-        profileServiceManager.bindService().also {
-            serviceApi = it
-            peripheral = it.getPeripheral(address)
-        }
-
     private fun observeConnectedDevices() {
-        viewModelScope.launch {
-            // Combine flows from the service to create a single UI state.
-            val api = getServiceApi()
+        val api = serviceApi
 
-            // Combine flows from the service to create a single UI state.
-            combine(
-                api.devices,
-                api.isMissingServices,
-                api.disconnectionEvent
-            ) { devices, missingServicesMap, disconnection ->
-                deviceRepository.updateConnectedDevices(devices)
-                val deviceData = devices[address]
-                val isMissingServices = missingServicesMap[address] ?: false
-                // Determine the UI state based on the service's state
-                if (deviceData != null) {
-                    // Update connected device info in the repository
-                    deviceRepository.updateProfilePeripheralPair(
-                        deviceData.peripheral,
-                        deviceData.services
-                    )
-                    deviceData.services.forEach {
-                        deviceRepository.updateAnalytics(
-                            address,
-                            it.profile
-                        )
-                    }
-                    val currentMaxVal =
-                        (_uiState.value as? ProfileUiState.Connected)?.maxValueLength
-                    ProfileUiState.Connected(deviceData, isMissingServices, currentMaxVal)
-                } else {
-                    // If the device is not in the map, it's disconnected.
-                    // Check if there's a specific disconnection event for this device.
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                        channelSoundingManager.get()?.closeSession(address)
-                    }
-                    val reason =
-                        if (disconnection?.address == address) disconnection.reason else null
-                    deviceRepository.removeLoggedProfile(address)
-                    // Close channel sounding session if active
-                    ProfileUiState.Disconnected(reason)
+        api.devices
+            .mapNotNull { devices -> devices[address] }
+            .onEach { deviceData ->
+                logSession = serviceApi.getLogSession(address)
+
+                // The device may be in Connecting or Connected state.
+                // When in Connecting, the ProfileUiState is Loading.
+                if (deviceData.connectionState.isConnected) {
+                    _uiState.value = ProfileUiState.Connected(deviceData)
                 }
-            }.catch { e ->
-                Timber.e(e, "Error observing profile state")
-                // You could emit a generic error state here if needed
-            }.collect { state ->
-                _uiState.value = state
             }
-        }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observerDisconnection() {
+        val api = serviceApi
+
+        api.disconnectionEvent
+            .filter { it.address == address }
+            .onEach { event ->
+                // If the device is not in the map, it's disconnected.
+                // Check if there's a specific disconnection event for this device.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    channelSoundingManager.get()?.closeSession(address)
+                }
+                // Close channel sounding session if active
+                _uiState.value = ProfileUiState.Disconnected(event.reason)
+            }
+            .launchIn(viewModelScope)
     }
 
     /**
-     * Connect to the peripheral with the given address. Before connecting, the service must be bound.
+     * Connect to the peripheral with the given address.
+     *
+     * Before connecting, the service must be bound.
      * The service will be started if not already running.
      */
     private fun connectToPeripheral() {
-        viewModelScope.launch {
-            // Connect to the peripheral
-            getServiceApi().let {
-                if (it.getPeripheral(address) == null) peripheral = it.getPeripheral(address)
-                if (peripheral?.isConnected != true) {
-                    profileServiceManager.connectToPeripheral(address)
-                }
-            }
+        if (peripheral.isDisconnected) {
+            profileServiceManager.connectToPeripheral(address, name)
         }
     }
-
 
     fun onEvent(event: ConnectionEvent) {
         when (event) {
@@ -158,13 +130,13 @@ internal class ProfileViewModel @Inject constructor(
                         }
                     }
                 }
-                serviceApi?.disconnect(address)
+                serviceApi.disconnect(address)
             }
 
             ConnectionEvent.NavigateUp -> {
                 // Disconnect only if services are missing, otherwise leave connected
-                if ((_uiState.value as? ProfileUiState.Connected)?.isMissingServices == true) {
-                    serviceApi?.disconnect(address)
+                if ((_uiState.value as? ProfileUiState.Connected)?.deviceData?.notSupported == true) {
+                    serviceApi.disconnect(address)
                 }
                 navigator.navigateUp()
             }
@@ -174,28 +146,19 @@ internal class ProfileViewModel @Inject constructor(
                 connectToPeripheral()
             }
 
-            ConnectionEvent.OpenLoggerEvent -> openLogger()
-            ConnectionEvent.RequestMaxValueLength -> requestMaxWriteValue()
-        }
-    }
-
-    private fun requestMaxWriteValue() {
-        viewModelScope.launch {
-            val mtu = serviceApi?.getMaxWriteValue(address)
-            _uiState.update {
-                (it as? ProfileUiState.Connected)?.copy(maxValueLength = mtu) ?: it
+            ConnectionEvent.OnForgetClicked -> {
+                viewModelScope.launch {
+                    serviceApi.forget(address)
+                    connectToPeripheral()
+                }
             }
+
+            ConnectionEvent.OpenLoggerEvent -> openLogger()
         }
     }
 
     private fun openLogger() {
-        analytics.logEvent(ProfileOpenEvent(Link.LOGGER))
-        LoggerLauncher.launch(context, logger.session as? LogSession)
-    }
-
-    override fun onCleared() {
-        Timber.uproot(logger)
-        profileServiceManager.unbindService()
-        serviceApi = null
+        analytics.logEvent(LinkOpenEvent(Link.LOGGER))
+        LoggerLauncher.launch(context, logSession)
     }
 }

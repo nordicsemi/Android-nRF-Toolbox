@@ -7,6 +7,7 @@ import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 import no.nordicsemi.android.toolbox.lib.utils.spec.RANGING_SERVICE_UUID
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
+import no.nordicsemi.kotlin.ble.client.android.Peripheral
 import timber.log.Timber
 import kotlin.uuid.Uuid
 
@@ -17,6 +18,7 @@ class ChannelSoundingManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(RANGING_SERVICE_UUID, deviceId, "Channel Sounding", onReady) {
     override val profile: ServiceType = ServiceType.CHANNEL_SOUNDING
+    lateinit var peripheral: Peripheral
 
     private var rasFeaturesCharacteristic: RemoteCharacteristic? = null
 

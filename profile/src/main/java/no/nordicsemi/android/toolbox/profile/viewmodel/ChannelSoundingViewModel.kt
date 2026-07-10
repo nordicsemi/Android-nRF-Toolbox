@@ -1,8 +1,11 @@
 package no.nordicsemi.android.toolbox.profile.viewmodel
 
 import android.os.Build
-import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,18 +14,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.common.navigation.Navigator
-import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewModel
-import no.nordicsemi.android.toolbox.lib.utils.Profile
-import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
-import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.data.ChannelSoundingServiceData
 import no.nordicsemi.android.toolbox.profile.data.UpdateRate
-import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import no.nordicsemi.android.toolbox.profile.repository.channelSounding.ChannelSoundingManager
 import no.nordicsemi.kotlin.ble.core.BondState
 import timber.log.Timber
-import javax.inject.Inject
+import no.nordicsemi.android.toolbox.profile.manager.ChannelSoundingManager as RASManager
 
 // Channel Sounding Profile Events
 internal sealed interface ChannelSoundingEvent {
@@ -31,14 +28,14 @@ internal sealed interface ChannelSoundingEvent {
     data object RestartRangingSession : ChannelSoundingEvent
 }
 
-@HiltViewModel
-internal class ChannelSoundingViewModel @Inject constructor(
-    private val deviceRepository: DeviceRepository,
-    navigator: Navigator,
-    savedStateHandle: SavedStateHandle,
+@HiltViewModel(assistedFactory = ChannelSoundingViewModel.Factory::class)
+internal class ChannelSoundingViewModel @AssistedInject constructor(
+    @Assisted private val manager: RASManager,
     private val channelSoundingManager: ChannelSoundingManager,
-) : SimpleNavigationViewModel(navigator, savedStateHandle) {
-    private val address = parameterOf(ProfileDestinationId).getString(argAddress)!!
+) : ViewModel() {
+
+    @AssistedFactory
+    interface Factory { fun create(manager: RASManager): ChannelSoundingViewModel }
 
     private val _state =
         MutableStateFlow<Map<String, ChannelSoundingServiceData>>(emptyMap())
@@ -51,45 +48,14 @@ internal class ChannelSoundingViewModel @Inject constructor(
     }
 
     /**
-     * Observes the [DeviceRepository.profileHandlerFlow] from the [deviceRepository] that contains [Profile.CHANNEL_SOUNDING].
+     * Waits until the peripheral gets bonded and starts the Channel Sounding service.
      */
     private fun observeChannelSoundingProfile() {
-        deviceRepository.profileHandlerFlow
-            .onEach { mapOfPeripheralProfiles ->
-                mapOfPeripheralProfiles.forEach { (peripheral, profiles) ->
-                    if (peripheral.address == address) {
-                        profiles.filter { it.profile == Profile.CHANNEL_SOUNDING }
-                            .forEach { _ ->
-                                viewModelScope.launch {
-                                    peripheral.bondState.first { it == BondState.BONDED }
-                                    // Wait until the device is bonded before starting channel sounding
-                                    startChannelSounding(peripheral.address)
-                                }
-                            }
-                    }
-                }
-            }
-            .launchIn(viewModelScope)
-    }
-
-    /**
-     * Ensures we listen to the data updates for a specific device exactly once.
-     */
-    private fun observeDeviceData(deviceAddress: String) {
-        if (collectionJobs.containsKey(deviceAddress)) return // Already observing this device
-
-        collectionJobs[deviceAddress] = channelSoundingManager.getData(deviceAddress)
-            .onEach { incomingData ->
-                val currentMap = _state.value
-                val existingData = currentMap[deviceAddress] ?: ChannelSoundingServiceData()
-                val updatedData = existingData.copy(
-                    profile = incomingData.profile,
-                    updateRate = incomingData.updateRate,
-                    rangingSessionAction = incomingData.rangingSessionAction,
-                )
-                _state.value = currentMap + (deviceAddress to updatedData)
-            }
-            .launchIn(viewModelScope)
+        viewModelScope.launch {
+            // Wait until the device is bonded before starting channel sounding.
+            manager.peripheral.bondState.first { it == BondState.BONDED }
+            startChannelSounding(manager.peripheral.identifier)
+        }
     }
 
     /**
@@ -117,10 +83,30 @@ internal class ChannelSoundingViewModel @Inject constructor(
     }
 
     /**
+     * Ensures we listen to the data updates for a specific device exactly once.
+     */
+    private fun observeDeviceData(deviceAddress: String) {
+        if (collectionJobs.containsKey(deviceAddress)) return // Already observing this device
+
+        collectionJobs[deviceAddress] = channelSoundingManager.getData(deviceAddress)
+            .onEach { incomingData ->
+                val currentMap = _state.value
+                val existingData = currentMap[deviceAddress] ?: ChannelSoundingServiceData()
+                val updatedData = existingData.copy(
+                    profile = incomingData.profile,
+                    updateRate = incomingData.updateRate,
+                    rangingSessionAction = incomingData.rangingSessionAction,
+                )
+                _state.value = currentMap + (deviceAddress to updatedData)
+            }
+            .launchIn(viewModelScope)
+    }
+
+    /**
      * Handles events related to the Channel Sounding profile.
      */
     fun onEvent(event: ChannelSoundingEvent) {
-        val targetAddress = address
+        val targetAddress = manager.peripheral.identifier
 
         when (event) {
             is ChannelSoundingEvent.RangingUpdateRate -> {
