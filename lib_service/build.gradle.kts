@@ -45,6 +45,7 @@ android {
 dependencies {
     implementation(project(":lib_ui"))
     implementation(project(":lib_utils"))
+    implementation(project(":lib_analytics"))
     implementation(project(":profile_manager"))
 
     implementation(nordic.logger)

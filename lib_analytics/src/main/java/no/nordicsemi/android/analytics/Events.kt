@@ -46,29 +46,22 @@ sealed class FirebaseEvent(val eventName: String, val params: Bundle?)
 data object AppOpenEvent : FirebaseEvent("APP_OPEN", null)
 
 /**
- * Represents an event that is logged when profile is opened.
- * This event can be created with a [Profile] or a [Link].
+ * Creates a new instance of [LinkOpenEvent] with the given link.
+ * The link's display name is used as a parameter.
+ *
+ * @param link The link that was opened.
  */
-class ProfileOpenEvent : FirebaseEvent {
+class LinkOpenEvent(link: Link) : FirebaseEvent(
+    eventName = EVENT_NAME,
+    params = createParams(link),
+) {
+    private companion object {
+        const val EVENT_NAME = "LINK_OPEN"
+        const val PARAM_KEY = "LINK"
 
-    /**
-     * Creates a new instance of [ProfileOpenEvent] with the given profile.
-     * The profile's string representation is used as a parameter.
-     *
-     * @param profile The profile that was opened.
-     */
-    constructor(profile: Profile) : super(EVENT_NAME, createBundle(profile.toString()))
-
-    /**
-     * Creates a new instance of [ProfileOpenEvent] with the given link.
-     * The link's display name is used as a parameter.
-     *
-     * @param link The link that was opened.
-     */
-    constructor(link: Link) : super(EVENT_NAME, createBundle(link.displayName))
-
-    companion object {
-        private const val EVENT_NAME = "PROFILE_OPEN"
+        fun createParams(link: Link) = Bundle().apply {
+            putString(PARAM_KEY, link.displayName)
+        }
     }
 }
 
@@ -76,24 +69,19 @@ class ProfileOpenEvent : FirebaseEvent {
  * Represents an event that is logged when a profile is connected.
  * This event can be created with a [Profile] or a [Link].
  */
-class ProfileConnectedEvent(profile: Profile) :
-    FirebaseEvent(EVENT_NAME, createBundle(profile.toString())) {
+class ProfileConnectedEvent(profile: Profile) : FirebaseEvent(
+    eventName = EVENT_NAME,
+    params = createParams(profile),
+) {
 
-    companion object {
-        private const val EVENT_NAME = "PROFILE_CONNECTED"
+    private companion object {
+        const val EVENT_NAME = "PROFILE_CONNECTED"
+        const val PARAM_KEY = "PROFILE_NAME"
+
+        fun createParams(profile: Profile) = Bundle().apply {
+            putString(PARAM_KEY, profile.toString())
+        }
     }
-}
-
-const val PROFILE_PARAM_KEY = "PROFILE_NAME"
-
-/**
- * Creates a [Bundle] with the given profile name.
- *
- * @param name The name of the profile to be included in the bundle.
- * @return A [Bundle] containing the profile name.
- */
-private fun createBundle(name: String): Bundle {
-    return Bundle().apply { putString(PROFILE_PARAM_KEY, name) }
 }
 
 /**
@@ -106,24 +94,39 @@ sealed class UARTAnalyticsEvent(eventName: String, params: Bundle?) :
  * Represents an event that is logged when a UART message is send or received.
  * This event can be created with a [UARTMode].
  */
-class UARTSendAnalyticsEvent(mode: UARTMode) :
-    UARTAnalyticsEvent("UART_SEND_EVENT", createParams(mode)) {
+class UARTSendAnalyticsEvent(mode: UARTMode) : UARTAnalyticsEvent(
+    eventName = EVENT_NAME,
+    params = createParams(mode),
+) {
 
     companion object {
+        const val EVENT_NAME = "UART_SEND_EVENT"
+        const val PARAM_KEY = "MODE"
+
         fun createParams(mode: UARTMode) = Bundle().apply {
-            putString("MODE", mode.displayName)
+            putString(PARAM_KEY, mode.displayName)
         }
     }
 }
 
 /**
  * Represents an event that is logged when a UART preset configuration is created.
- * This event can be created with a [UARTMode].
  */
-class UARTCreateConfiguration : UARTAnalyticsEvent("UART_CREATE_CONF", null)
+class UARTCreateConfiguration : UARTAnalyticsEvent(EVENT_NAME, null) {
+
+    private companion object {
+        const val EVENT_NAME = "UART_CREATE_CONF"
+    }
+}
 
 /**
  * Represents an event that is logged when a UART preset configuration is changed.
+ *
  * This event does not carry any additional parameters.
  */
-class UARTChangeConfiguration : UARTAnalyticsEvent("UART_CHANGE_CONF", null)
+class UARTChangeConfiguration : UARTAnalyticsEvent(EVENT_NAME, null) {
+
+    private companion object {
+        const val EVENT_NAME = "UART_CHANGE_CONF"
+    }
+}

@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import no.nordicsemi.android.analytics.AppAnalytics
 import no.nordicsemi.android.analytics.Link
-import no.nordicsemi.android.analytics.ProfileOpenEvent
+import no.nordicsemi.android.analytics.LinkOpenEvent
 import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.nrftoolbox.ScannerDestinationId
 import no.nordicsemi.android.service.profile.ServiceApi
@@ -26,7 +26,7 @@ internal data class HomeViewState(
     val connectedDevices: Map<String, ServiceApi.DeviceData> = emptyMap(),
 )
 
-private const val GITHUB_REPO_URL = "https://github.com/NordicSemiconductor/Android-nRF-Toolbox.git"
+private const val GITHUB_REPO_URL = "https://github.com/nordicsemi/Android-nRF-Toolbox"
 private const val NORDIC_DEV_ZONE_URL = "https://devzone.nordicsemi.com/"
 
 @HiltViewModel
@@ -53,9 +53,6 @@ internal class HomeViewModel @Inject constructor(
         when (event) {
             UiEvent.OnConnectDeviceClick -> navigator.navigateTo(ScannerDestinationId)
             is UiEvent.OnDeviceClick -> {
-                // Log the event for analytics.
-                analytics.logEvent(ProfileOpenEvent(event.profile))
-
                 val bundle = Bundle().apply {
                     putString(argAddress, event.deviceAddress)
                     putString(argName, event.name)
@@ -65,13 +62,13 @@ internal class HomeViewModel @Inject constructor(
 
             UiEvent.OnGitHubClick -> {
                 // Log the event for analytics.
-                analytics.logEvent(ProfileOpenEvent(Link.GITHUB))
+                analytics.logEvent(LinkOpenEvent(Link.GITHUB))
                 navigator.open(GITHUB_REPO_URL.toUri())
             }
 
             UiEvent.OnNordicDevZoneClick -> {
                 // Log the event for analytics.
-                analytics.logEvent(ProfileOpenEvent(Link.DEV_ACADEMY))
+                analytics.logEvent(LinkOpenEvent(Link.DEV_ZONE))
                 navigator.open(NORDIC_DEV_ZONE_URL.toUri())
             }
         }

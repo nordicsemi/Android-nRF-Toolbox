@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import no.nordicsemi.android.log.timber.nRFLoggerTree
+import no.nordicsemi.android.analytics.AppAnalytics
+import no.nordicsemi.android.analytics.ProfileConnectedEvent
 import no.nordicsemi.android.service.NotificationService
 import no.nordicsemi.android.service.R
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManager
@@ -35,7 +37,8 @@ internal class ProfileService : NotificationService() {
 
     @Inject
     lateinit var centralManager: CentralManager
-    private var logger: nRFLoggerTree? = null
+    @Inject
+    lateinit var analytics: AppAnalytics
 
     private val binder = LocalBinder()
     private val managedConnections = mutableMapOf<String, Job>()
@@ -85,6 +88,7 @@ internal class ProfileService : NotificationService() {
                         services = (existingData.services + manager).sortedBy { it.profile.ordinal }
                     ))
                 }
+                analytics.logEvent(ProfileConnectedEvent(manager.profile))
             }
 
             // Register all known profiles before connecting. Each activates when its service

@@ -95,12 +95,11 @@ internal fun HomeView() {
                     state.connectedDevices[address]?.let { deviceData ->
                         val peripheral = deviceData.peripheral
                         val services = deviceData.services
-                        val onClick: (Profile) -> Unit = { profile ->
+                        val onClick = {
                             onEvent(
                                 UiEvent.OnDeviceClick(
                                     deviceAddress = peripheral.address,
                                     name = peripheral.name,
-                                    profile = profile
                                 )
                             )
                         }
@@ -112,7 +111,7 @@ internal fun HomeView() {
                                 description = stringResource(R.string.battery_module_full),
                                 deviceName = peripheral.name,
                                 deviceAddress = peripheral.address,
-                                onClick = { onClick(Profile.BATTERY) },
+                                onClick = onClick,
                             )
                         }
                         // Case 2: Show the first *non-Battery* profile.
@@ -125,7 +124,7 @@ internal fun HomeView() {
                                     deviceName = peripheral.name,
                                     profileNames = services.map { it.profile.toString() },
                                     deviceAddress = peripheral.address,
-                                    onClick = { onClick(serviceManager.profile) },
+                                    onClick = onClick,
                                 )
 
                                 Profile.HTS -> FeatureButton(
@@ -134,7 +133,7 @@ internal fun HomeView() {
                                     deviceName = peripheral.name,
                                     deviceAddress = peripheral.address,
                                     profileNames = services.map { it.profile.toString() },
-                                    onClick = { onClick(serviceManager.profile) },
+                                    onClick = onClick,
                                 )
 
                                 Profile.BPS -> FeatureButton(
@@ -143,7 +142,7 @@ internal fun HomeView() {
                                     deviceName = peripheral.name,
                                     deviceAddress = peripheral.address,
                                     profileNames = services.map { it.profile.toString() },
-                                    onClick = { onClick(serviceManager.profile) },
+                                    onClick = onClick,
                                 )
 
                                 Profile.GLS -> FeatureButton(
@@ -152,7 +151,7 @@ internal fun HomeView() {
                                     deviceName = peripheral.name,
                                     deviceAddress = peripheral.address,
                                     profileNames = services.map { it.profile.toString() },
-                                    onClick = { onClick(serviceManager.profile) },
+                                    onClick = onClick,
                                 )
 
                                 Profile.CGM -> FeatureButton(
@@ -161,7 +160,7 @@ internal fun HomeView() {
                                     deviceName = peripheral.name,
                                     deviceAddress = peripheral.address,
                                     profileNames = services.map { it.profile.toString() },
-                                    onClick = { onClick(serviceManager.profile) },
+                                    onClick = onClick,
                                 )
 
                                 Profile.RSCS -> FeatureButton(
@@ -170,7 +169,7 @@ internal fun HomeView() {
                                     deviceName = peripheral.name,
                                     deviceAddress = peripheral.address,
                                     profileNames = services.map { it.profile.toString() },
-                                    onClick = { onClick(serviceManager.profile) },
+                                    onClick = onClick,
                                 )
 
                                 Profile.DDFS -> FeatureButton(
@@ -179,7 +178,7 @@ internal fun HomeView() {
                                     deviceName = peripheral.name,
                                     deviceAddress = peripheral.address,
                                     profileNames = services.map { it.profile.toString() },
-                                    onClick = { onClick(serviceManager.profile) },
+                                    onClick = onClick,
                                 )
 
                                 Profile.CSC -> FeatureButton(
@@ -188,7 +187,7 @@ internal fun HomeView() {
                                     deviceName = peripheral.name,
                                     deviceAddress = peripheral.address,
                                     profileNames = services.map { it.profile.toString() },
-                                    onClick = { onClick(serviceManager.profile) },
+                                    onClick = onClick,
                                 )
 
                                 Profile.THROUGHPUT -> {
@@ -198,7 +197,7 @@ internal fun HomeView() {
                                         deviceName = peripheral.name,
                                         deviceAddress = peripheral.address,
                                         profileNames = services.map { it.profile.toString() },
-                                        onClick = { onClick(serviceManager.profile) },
+                                        onClick = onClick,
                                     )
                                 }
 
@@ -209,7 +208,7 @@ internal fun HomeView() {
                                         deviceName = peripheral.name,
                                         deviceAddress = peripheral.address,
                                         profileNames = services.map { it.profile.toString() },
-                                        onClick = { onClick(serviceManager.profile) },
+                                        onClick = onClick,
                                     )
                                 }
 
@@ -220,7 +219,7 @@ internal fun HomeView() {
                                         deviceName = peripheral.name,
                                         deviceAddress = peripheral.address,
                                         profileNames = services.map { it.profile.toString() },
-                                        onClick = { onClick(serviceManager.profile) },
+                                        onClick = onClick,
                                     )
                                 }
 
@@ -231,7 +230,7 @@ internal fun HomeView() {
                                         deviceName = peripheral.name,
                                         deviceAddress = peripheral.address,
                                         profileNames = services.map { it.profile.toString() },
-                                        onClick = { onClick(serviceManager.profile) },
+                                        onClick = onClick,
                                     )
                                 }
 
@@ -242,7 +241,7 @@ internal fun HomeView() {
                                         deviceName = peripheral.name,
                                         deviceAddress = peripheral.address,
                                         profileNames = services.map { it.profile.toString() },
-                                        onClick = { onClick(serviceManager.profile) },
+                                        onClick = onClick,
                                     )
                                 }
 
@@ -253,7 +252,7 @@ internal fun HomeView() {
                                         deviceName = peripheral.name,
                                         deviceAddress = peripheral.address,
                                         profileNames = services.map { it.profile.toString() },
-                                        onClick = { onClick(serviceManager.profile) },
+                                        onClick = onClick,
                                     )
                                 }
 
@@ -264,7 +263,7 @@ internal fun HomeView() {
                                         deviceName = peripheral.name,
                                         deviceAddress = peripheral.address,
                                         profileNames = services.map { it.profile.toString() },
-                                        onClick = { onClick(serviceManager.profile) },
+                                        onClick = onClick,
                                     )
                                 }
 

@@ -1,7 +1,5 @@
 package no.nordicsemi.android.nrftoolbox.viewmodel
 
-import no.nordicsemi.android.toolbox.lib.utils.Profile
-
 /**
  * HomeViewEvent is a sealed interface that represents the events that can be emitted by the Home view.
  */
@@ -11,7 +9,7 @@ sealed interface UiEvent {
     data object OnConnectDeviceClick : UiEvent
 
     /**  OnDeviceClick event is emitted when the user clicks on a connected device. */
-    data class OnDeviceClick(val deviceAddress: String, val name: String?, val profile: Profile) : UiEvent
+    data class OnDeviceClick(val deviceAddress: String, val name: String?) : UiEvent
 
     /**
      * OnGitHubClick event is emitted when the user clicks on the GitHub repository option.
