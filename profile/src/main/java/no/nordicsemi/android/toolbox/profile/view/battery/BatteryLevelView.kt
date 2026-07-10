@@ -58,7 +58,7 @@ import no.nordicsemi.android.common.theme.nordicSun
 import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.manager.BatteryManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.BatteryViewModel
-import no.nordicsemi.android.ui.R
+import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.ui.view.ScreenSection
 
 @Composable
@@ -77,10 +77,10 @@ private fun BatteryView(batteryLevel: Int?) {
     ScreenSection {
         SectionTitle(
             icon = Icons.Default.BatteryChargingFull,
-            title = stringResource(id = R.string.field_battery),
+            title = stringResource(id = R.string.battery_label),
             menu = {
                 batteryLevel?.let { batteryLevel ->
-                    Text(text = "$batteryLevel%")
+                    Text(text = stringResource(R.string.battery_value, batteryLevel))
                     DynamicBatteryStatus(batteryLevel)
                 }
             }

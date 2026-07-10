@@ -34,7 +34,6 @@
     <string name="app_name">nRF Toolbox</string>
 
     <string name="disconnect">Disconnect</string>
-    <string name="field_battery">Battery level</string>
 
     <string name="discovering_services">Discovering services</string>
     <string name="discovering_services_des">Please wait</string>
