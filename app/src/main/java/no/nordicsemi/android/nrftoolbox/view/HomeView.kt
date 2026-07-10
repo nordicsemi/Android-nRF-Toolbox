@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.SocialDistance
@@ -104,8 +105,21 @@ internal fun HomeView() {
                             )
                         }
 
-                        // Case 1: If Battery service is the only one, show it.
-                        if (services.size == 1 && services.first().profile == Profile.BATTERY) {
+                        // Case 1: If Battery and/or Device Information are the only services, show Device Information.
+                        if (services.any { it.profile == Profile.DIS } &&
+                            services.all { it.profile == Profile.BATTERY || it.profile == Profile.DIS }
+                        ) {
+                            FeatureButton(
+                                icon = rememberVectorPainter(Icons.Default.Info),
+                                description = stringResource(R.string.dis_module_full),
+                                deviceName = peripheral.name,
+                                deviceAddress = peripheral.address,
+                                profileNames = services.map { it.profile.toString() },
+                                onClick = onClick,
+                            )
+                        }
+                        // Case 2: If Battery service is the only one, show it.
+                        else if (services.size == 1 && services.first().profile == Profile.BATTERY) {
                             FeatureButton(
                                 icon = painterResource(R.drawable.ic_battery),
                                 description = stringResource(R.string.battery_module_full),
@@ -114,9 +128,9 @@ internal fun HomeView() {
                                 onClick = onClick,
                             )
                         }
-                        // Case 2: Show the first *non-Battery* profile.
+                        // Case 3: Show the first *non-Battery, non-Device-Information* profile.
                         // This ensures only one service is shown per peripheral when multiple services are available.
-                        services.firstOrNull { it.profile != Profile.BATTERY }?.let { serviceManager ->
+                        services.firstOrNull { it.profile != Profile.BATTERY && it.profile != Profile.DIS }?.let { serviceManager ->
                             when (serviceManager.profile) {
                                 Profile.HRS -> FeatureButton(
                                     icon = painterResource(R.drawable.ic_hrs),
@@ -270,6 +284,11 @@ internal fun HomeView() {
                                 Profile.BATTERY -> {
                                     // Battery service is handled above.
                                     // Do not show it if it's not an only service.
+                                }
+
+                                Profile.DIS -> {
+                                    // Device Information service is handled above.
+                                    // Do not show it if it's not an only (with Battery) service.
                                 }
                             }
                         }
