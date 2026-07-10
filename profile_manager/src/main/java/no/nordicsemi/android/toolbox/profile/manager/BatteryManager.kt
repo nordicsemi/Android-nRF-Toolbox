@@ -1,5 +1,6 @@
 package no.nordicsemi.android.toolbox.profile.manager
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -57,8 +58,10 @@ class BatteryManager(
                         Timber.tag(tag).log(Log.Level.APPLICATION, "Battery level: $it%")
                         repository.updateBatteryLevel(it)
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
-                    Timber.tag(tag).e(e, "Error reading battery level")
+                    Timber.tag(tag).e("Reading battery level failed: ${e.message}")
                 }
             }
         }

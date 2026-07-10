@@ -1,5 +1,6 @@
 package no.nordicsemi.android.toolbox.profile.manager
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -7,6 +8,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
 import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.LBS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.LBSRepository
@@ -55,19 +57,20 @@ class LBSManager(
             .onCompletion { repository.clear() }
             .launchIn(this)
 
+        onReady(this@LBSManager)
+
         if (buttonCharacteristic.isReadable()) {
             try {
                 Timber.tag(tag).v("Reading initial button state...")
                 val state = ButtonStateParser.parse(buttonCharacteristic.read())
-                Timber.tag(tag)
-                    .log(Log.Level.APPLICATION, "Button ${if (state) "pressed" else "released"}")
+                Timber.tag(tag).log(Log.Level.APPLICATION, "Button ${if (state) "pressed" else "released"}")
                 repository.updateButtonState(state)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                Timber.tag(tag).e(e, "Error reading initial button state")
+                Timber.tag(tag).e("Error reading initial button state: ${e.message}")
             }
         }
-
-        onReady(this@LBSManager)
     }
 
     suspend fun writeLED(ledState: Boolean) {
