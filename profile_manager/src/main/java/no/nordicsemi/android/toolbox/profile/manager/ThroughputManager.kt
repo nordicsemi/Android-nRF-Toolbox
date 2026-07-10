@@ -24,6 +24,7 @@ class ThroughputManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(THROUGHPUT_SERVICE_UUID, deviceId, "Throughput", onReady) {
     override val profile: ServiceType = ServiceType.THROUGHPUT
+    private val tag = "Throughput ($deviceId)"
 
     val repository = ThroughputRepository()
 
@@ -73,14 +74,14 @@ class ThroughputManager(
 
     private suspend fun readThroughputMetrics() {
         try {
-            Timber.tag("Throughput Service").v("Reading throughput metrics...")
+            Timber.tag(tag).v("Reading throughput metrics...")
             ThroughputDataParser.parse(writeCharacteristic.read())
                 ?.let {
-                    Timber.tag("Throughput Service").log(Log.Level.APPLICATION, it.toString())
+                    Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                     repository.updateThroughput(it)
                 }
         } catch (e: Exception) {
-            Timber.tag("Throughput Service").e(e, "Error reading throughput metrics")
+            Timber.tag(tag).e("Reading throughput metrics failed: ${e.message}")
         }
     }
 }

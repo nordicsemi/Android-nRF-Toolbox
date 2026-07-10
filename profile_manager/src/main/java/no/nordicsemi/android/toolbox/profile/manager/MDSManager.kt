@@ -17,6 +17,7 @@ class MDSManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(MDS_SERVICE_UUID, deviceId, "MDS", onReady) {
     override val profile: ServiceType = ServiceType.MDS
+    private val tag = "MDS ($deviceId)"
 
     val manager: ObservabilityManager = ObservabilityManager.create(context)
 
@@ -27,8 +28,7 @@ class MDSManager(
         public override fun prepare(service: RemoteService) = super.prepare(service)
         suspend fun run(scope: CoroutineScope) = scope.initialize()
     }.apply {
-        logger = Log.Sink { c, _, s, t, messageBuilder ->
-            val tag = if (s != null) "${c.name} ($s)" else c.name
+        logger = Log.Sink { _, _, _, t, messageBuilder ->
             Timber.tag(tag).log(LogContract.Log.Level.APPLICATION, t, messageBuilder())
         }
     }

@@ -26,6 +26,7 @@ class RSCSManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(RSCS_SERVICE_UUID, deviceId, "RSCS", onReady) {
     override val profile: ServiceType = ServiceType.RSCS
+    private val tag = "RSC ($deviceId)"
 
     val repository = RSCSRepository()
 
@@ -42,23 +43,23 @@ class RSCSManager(
         measurementCharacteristic.subscribe()
             .mapNotNull { RSCSDataParser.parse(it) }
             .onEach {
-                Timber.tag("RSCS").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 repository.onRSCSDataChanged(it)
             }
-            .catch { Timber.tag("RSCS").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .onCompletion { repository.clear() }
             .launchIn(this)
 
         featureCharacteristic?.let { char ->
             launch {
                 try {
-                    Timber.tag("RSCS").v("Reading RSC feature...")
+                    Timber.tag(tag).v("Reading RSC feature...")
                     RSCSFeatureDataParser.parse(char.read())?.also {
-                        Timber.tag("RSCS").log(Log.Level.APPLICATION, "Features: $it")
+                        Timber.tag(tag).log(Log.Level.APPLICATION, "Features: $it")
                         repository.updateRSCSFeatureData(it)
                     }
                 } catch (e: Exception) {
-                    Timber.tag("RSCS").e(e, "Error reading RSC feature")
+                    Timber.tag(tag).e(e, "Error reading RSC feature")
                 }
             }
         }

@@ -42,8 +42,9 @@ private val RACP_UUID = Uuid.parse("00002A52-0000-1000-8000-00805f9b34fb")
 class CGMManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(CGMS_SERVICE_UUID, deviceId, "CGM", onReady) {
+) : ServiceManager(CGMS_SERVICE_UUID, deviceId, "CGMS", onReady) {
     override val profile: ServiceType = ServiceType.CGM
+    private val tag = "CGM ($deviceId)"
 
     val repository = CGMRepository()
 
@@ -74,7 +75,7 @@ class CGMManager(
         measurementCharacteristic.subscribe()
             .mapNotNull { CGMMeasurementParser.parse(it) }
             .onEach { cgmRecords ->
-                Timber.tag("CGMS").log(Log.Level.APPLICATION, cgmRecords.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, cgmRecords.toString())
                 if (sessionStartTime == 0L && !recordAccessRequestInProgress) {
                     val timeOffset = cgmRecords.minOf { it.timeOffset }
                     sessionStartTime = System.currentTimeMillis() - timeOffset * 60000L
@@ -85,19 +86,19 @@ class CGMManager(
                 }.also { repository.onMeasurementDataReceived(it) }
             }
             .onCompletion { repository.clear() }
-            .catch { Timber.tag("CGMS").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .launchIn(this)
 
         racpCharacteristic.subscribe()
             .mapNotNull { RecordAccessControlPointParser.parse(it) }
             .onEach { onAccessControlPointDataReceived(it, this) }
-            .catch { Timber.tag("CGMS").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .launchIn(this)
 
         opsControlPointCharacteristic.subscribe()
             .mapNotNull { CGMSpecificOpsControlPointParser.parse(it) }
             .onEach { result ->
-                Timber.tag("CGMS").log(Log.Level.APPLICATION, result.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, result.toString())
                 when {
                     result.isOperationCompleted &&
                             result.requestCode == CGMOpCode.START_SESSION ->
@@ -112,16 +113,16 @@ class CGMManager(
                 }
             }
             .onCompletion { repository.clear() }
-            .catch { Timber.tag("CGMS").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .launchIn(this)
 
         launch {
             featureCharacteristic
                 ?.takeIf { it.isReadable() }
                 ?.let {
-                    Timber.tag("CGMS").v("Reading CGM feature...")
+                    Timber.tag(tag).v("Reading CGM feature...")
                     val envelope = CGMFeatureParser.parse(it.read())
-                    Timber.tag("CGMS").log(Log.Level.APPLICATION, "Features: $envelope")
+                    Timber.tag(tag).log(Log.Level.APPLICATION, "Features: $envelope")
                     val e2eCrcSupported = envelope?.features?.e2eCrcSupported ?: false
                     secured = e2eCrcSupported
                 }
@@ -129,9 +130,9 @@ class CGMManager(
             statusCharacteristic
                 ?.takeIf { it.isReadable() }
                 ?.let { statusData ->
-                    Timber.tag("CGMS").v("Reading CGM status...")
+                    Timber.tag(tag).v("Reading CGM status...")
                     CGMStatusParser.parse(statusData.read())?.let {
-                        Timber.tag("CGMS").log(Log.Level.APPLICATION, "Status: $it")
+                        Timber.tag(tag).log(Log.Level.APPLICATION, "Status: $it")
                         if (!it.status.sessionStopped) {
                             sessionStartTime = System.currentTimeMillis() - it.timeOffset * 60000L
                         }
@@ -140,12 +141,12 @@ class CGMManager(
 
             if (sessionStartTime == 0L) {
                 try {
-                    Timber.tag("CGMS").v("Starting CGM session...")
+                    Timber.tag(tag).v("Starting CGM session...")
                     opsControlPointCharacteristic.write(
                         data = CGMSpecificOpsControlPointDataParser.startSession(secured),
                     )
                 } catch (e: Exception) {
-                    Timber.tag("CGMS").e(e, "Error starting CGM session")
+                    Timber.tag(tag).e(e, "Error starting CGM session")
                 }
             }
         }
@@ -209,7 +210,7 @@ class CGMManager(
                         RecordAccessControlPointInputParser.reportAllStoredRecords(),
                 )
             } catch (e: Exception) {
-                Timber.tag("CGMS").e(e)
+                Timber.tag(tag).e(e)
                 repository.updateNewRequestStatus(RequestStatus.FAILED)
                 return
             }
@@ -230,7 +231,7 @@ class CGMManager(
                 },
             )
         } catch (e: Exception) {
-            Timber.tag("CGMS").e(e)
+            Timber.tag(tag).e(e)
             repository.updateNewRequestStatus(RequestStatus.FAILED)
         }
     }

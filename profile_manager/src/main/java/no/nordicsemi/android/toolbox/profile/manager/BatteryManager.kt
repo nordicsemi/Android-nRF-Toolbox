@@ -24,6 +24,7 @@ class BatteryManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(BATTERY_SERVICE_UUID, deviceId, "Battery", onReady) {
     override val profile: ServiceType = ServiceType.BATTERY
+    private val tag = "Battery ($deviceId)"
 
     val repository = BatteryRepository()
 
@@ -35,29 +36,29 @@ class BatteryManager(
 
     override suspend fun CoroutineScope.initialize() {
         if (batteryLevelCharacteristic.isSubscribable()) {
-            Timber.tag("Battery Service").v("Enabling battery level notifications...")
+            Timber.tag(tag).v("Enabling battery level notifications...")
             batteryLevelCharacteristic
-                .subscribe { Timber.tag("Battery Service").v("Battery level notifications enabled") }
+                .subscribe { Timber.tag(tag).v("Battery level notifications enabled") }
                 .mapNotNull { BatteryLevelParser.parse(it) }
                 .onEach {
-                    Timber.tag("Battery Service").log(Log.Level.APPLICATION, "Battery level: $it%")
+                    Timber.tag(tag).log(Log.Level.APPLICATION, "Battery level: $it%")
                     repository.updateBatteryLevel(it)
                 }
                 .onCompletion { repository.clear() }
-                .catch { Timber.tag("Battery Service").e(it) }
+                .catch { Timber.tag(tag).e(it) }
                 .launchIn(this)
         }
 
         if (batteryLevelCharacteristic.isReadable()) {
             launch {
                 try {
-                    Timber.tag("Battery Service").v("Reading battery level...")
+                    Timber.tag(tag).v("Reading battery level...")
                     BatteryLevelParser.parse(batteryLevelCharacteristic.read())?.let {
-                        Timber.tag("Battery Service").log(Log.Level.APPLICATION, "Battery level: $it%")
+                        Timber.tag(tag).log(Log.Level.APPLICATION, "Battery level: $it%")
                         repository.updateBatteryLevel(it)
                     }
                 } catch (e: Exception) {
-                    Timber.tag("Battery Service").e(e, "Error reading battery level")
+                    Timber.tag(tag).e(e, "Error reading battery level")
                 }
             }
         }

@@ -38,6 +38,7 @@ class DDFSManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(DDF_SERVICE_UUID, deviceId, "DDFS", onReady) {
     override val profile: ServiceType = ServiceType.DDFS
+    private val tag = "DDFS ($deviceId)"
 
     val repository = DFSRepository()
 
@@ -60,42 +61,42 @@ class DDFSManager(
         azimuthCharacteristic?.subscribe()
             ?.mapNotNull { AzimuthalMeasurementDataParser().parse(it) }
             ?.onEach {
-                Timber.tag("DDFS").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 repository.addNewAzimuth(it)
             }
-            ?.catch { Timber.tag("DDFS").e(it) }
+            ?.catch { Timber.tag(tag).e(it) }
             ?.onCompletion { repository.clear() }
             ?.launchIn(this)
 
         distanceCharacteristic?.subscribe()
             ?.mapNotNull { DistanceMeasurementDataParser().parse(it) }
             ?.onEach {
-                Timber.tag("DDFS").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 repository.addNewDistance(it)
             }
-            ?.catch { Timber.tag("DDFS").e(it) }
+            ?.catch { Timber.tag(tag).e(it) }
             ?.onCompletion { repository.clear() }
             ?.launchIn(this)
 
         elevationCharacteristic?.subscribe()
             ?.mapNotNull { ElevationMeasurementDataParser().parse(it) }
             ?.onEach {
-                Timber.tag("DDFS").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 repository.addNewElevation(it)
             }
-            ?.catch { Timber.tag("DDFS").e(it) }
+            ?.catch { Timber.tag(tag).e(it) }
             ?.onCompletion { repository.clear() }
             ?.launchIn(this)
 
         controlPointCharacteristic.subscribe()
             .mapNotNull { ControlPointDataParser().parse(it) }
             .onEach { result ->
-                Timber.tag("DDFS").log(Log.Level.APPLICATION, result.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, result.toString())
                 repository.onControlPointDataReceived(result, this) {
                     checkForCurrentDistanceMode()
                 }
             }
-            .catch { Timber.tag("DDFS").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .onCompletion { repository.clear() }
             .launchIn(this)
 
@@ -103,7 +104,7 @@ class DDFSManager(
             launch {
                 try {
                     if (char.isReadable()) {
-                        Timber.tag("DDFS").v("Reading DDF features...")
+                        Timber.tag(tag).v("Reading DDF features...")
                         DDFDataParser().parse(char.read())
                             ?.also {
                                 Timber.log(Log.Level.APPLICATION, it.toString())
@@ -111,7 +112,7 @@ class DDFSManager(
                             }
                     }
                 } catch (e: Exception) {
-                    Timber.tag("DDFS").e(e, "Error reading DDF features")
+                    Timber.tag(tag).e(e, "Error reading DDF features")
                 }
             }
         }
@@ -126,23 +127,23 @@ class DDFSManager(
             ControlPointMode.RTT -> RTT_ENABLED_BYTES
         }
         try {
-            Timber.tag("DDFS").v("Enabling distance mode: $mode")
+            Timber.tag(tag).v("Enabling distance mode: $mode")
             controlPointCharacteristic.write(data)
-            Timber.tag("DDFS").log(Log.Level.APPLICATION, "$mode enabled")
+            Timber.tag(tag).log(Log.Level.APPLICATION, "$mode enabled")
             repository.updateNewRequestStatus(RequestStatus.SUCCESS)
         } catch (e: Exception) {
-            Timber.tag("DDFS").e(e, "Failed to enable $mode mode")
+            Timber.tag(tag).e(e, "Failed to enable $mode mode")
             repository.updateNewRequestStatus(RequestStatus.FAILED)
         }
     }
 
     suspend fun checkForCurrentDistanceMode() {
         try {
-            Timber.tag("DDFS").v("Checking current distance mode...")
+            Timber.tag(tag).v("Checking current distance mode...")
             controlPointCharacteristic.write(CHECK_CONFIG_BYTES)
             repository.updateNewRequestStatus(RequestStatus.SUCCESS)
         } catch (e: Exception) {
-            Timber.tag("DDFS").e(e, "Failed to check current distance mode")
+            Timber.tag(tag).e(e, "Failed to check current distance mode")
             repository.updateNewRequestStatus(RequestStatus.FAILED)
         }
     }
@@ -152,13 +153,13 @@ class DDFSManager(
         val char = ddfFeatureCharacteristic ?: return
         if (char.isReadable()) {
             try {
-                Timber.tag("DDFS").v("Reading DDF features...")
+                Timber.tag(tag).v("Reading DDF features...")
                 DDFDataParser().parse(char.read())?.let {
                     Timber.log(Log.Level.APPLICATION, "Features: $it")
                     repository.setAvailableDistanceModes(it)
                 }
             } catch (e: Exception) {
-                Timber.tag("DDFS").e(e, "Error checking available features")
+                Timber.tag(tag).e(e, "Error checking available features")
             }
         }
     }
