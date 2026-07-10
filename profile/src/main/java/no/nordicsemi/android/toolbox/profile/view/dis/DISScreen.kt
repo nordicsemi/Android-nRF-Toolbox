@@ -36,15 +36,22 @@ internal fun DISScreen(manager: DISManager) {
     )
     val disServiceData by disViewModel.state.collectAsStateWithLifecycle()
 
-    DISView(disServiceData)
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    DISView(
+        data = disServiceData,
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+    )
 }
 
 @Composable
-private fun DISView(data: DISServiceData) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-
+private fun DISView(
+    data: DISServiceData,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+) {
     ScreenSection(
-        modifier = Modifier.clickable { expanded = !expanded },
+        modifier = Modifier.clickable { onExpandedChange(!expanded) },
     ) {
         SectionTitle(
             icon = Icons.Default.Info,
@@ -90,13 +97,30 @@ private fun DISView(data: DISServiceData) {
 
 @Preview
 @Composable
-private fun DISPreview() {
+private fun DISPreview_expanded() {
     DISView(
-        DISServiceData(
-            manufacturerName = "Nordic Semiconductor ASA",
-            modelNumber = "nRF52840 DK",
+        data = DISServiceData(
+            manufacturerName = "Nordic Semiconductor",
+            modelNumber = "nRF54L15 DK",
             firmwareRevision = "1.0.0+3",
             systemId = "00:11:22:33:44:55:66:77",
-        )
+        ),
+        expanded = true,
+        onExpandedChange = {},
+    )
+}
+
+@Preview
+@Composable
+private fun DISPreview_collapsed() {
+    DISView(
+        data = DISServiceData(
+            manufacturerName = "Nordic Semiconductor",
+            modelNumber = "nRF54L15 DK",
+            firmwareRevision = "1.0.0+3",
+            systemId = "00:11:22:33:44:55:66:77",
+        ),
+        expanded = false,
+        onExpandedChange = {},
     )
 }
