@@ -89,7 +89,7 @@ internal fun ProfileScreen() {
         topBar = {
             ProfileAppBar(
                 deviceName = profileViewModel.name,
-                title = profileViewModel.address,
+                deviceAddress = profileViewModel.address,
                 connectionState = uiState,
                 navigateUp = { onEvent(ConnectionEvent.NavigateUp) },
                 disconnect = { onEvent(ConnectionEvent.DisconnectEvent) },
