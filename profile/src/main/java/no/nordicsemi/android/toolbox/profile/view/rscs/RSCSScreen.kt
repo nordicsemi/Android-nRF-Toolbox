@@ -106,26 +106,17 @@ private fun RSCSView(
                 key = stringResource(R.string.rscs_speed),
                 value = serviceData.displaySpeed() ?: "-"
             )
-            serviceData.displayStrideLength()?.let {
-                KeyValueColumnReverse(
-                    key = stringResource(id = R.string.stride_length),
-                    value = it
-                )
-            } ?: serviceData.displayNumberOfSteps()?.let {
-                KeyValueColumnReverse(
-                    key = stringResource(id = R.string.rscs_number_of_steps),
-                    value = it
-                )
-            }
-        }
-        serviceData.data.totalDistance?.let {
-            KeyValueColumn(
-                key = stringResource(R.string.rscs_distance),
-                value = serviceData.data.displayDistance(
-                    serviceData.unit ?: RSCSSettingsUnit.UNIT_METRIC
-                )
+            KeyValueColumnReverse(
+                key = stringResource(id = R.string.rscs_stride_length),
+                value = serviceData.displayStrideLength()
             )
         }
+        KeyValueColumn(
+            key = stringResource(R.string.rscs_distance),
+            value = serviceData.data.displayDistance(
+                serviceData.unit
+            )
+        )
     }
 }
 
