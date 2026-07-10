@@ -15,9 +15,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.observability.ObservabilityManager
 import no.nordicsemi.android.observability.data.Chunk
-import no.nordicsemi.android.observability.data.ChunksSource
+import no.nordicsemi.android.observability.data.ChunksEmitter
 import no.nordicsemi.android.observability.data.ChunksConfig
-import no.nordicsemi.android.observability.internet.ChunkManager
+import no.nordicsemi.android.observability.internet.ChunksUploader
 import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.manager.MDSManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.MDSViewModel
@@ -42,13 +42,13 @@ private fun ObservabilityView(
     modifier: Modifier = Modifier,
 ) {
     val status = when (state.state) {
-        is ChunksSource.State.Disconnected -> stringResource(R.string.mds_disconnected)
-        is ChunksSource.State.Initializing -> stringResource(R.string.mds_connecting)
-        is ChunksSource.State.Connected -> {
+        is ChunksEmitter.State.Disconnected -> stringResource(R.string.mds_disconnected)
+        is ChunksEmitter.State.Initializing -> stringResource(R.string.mds_connecting)
+        is ChunksEmitter.State.Ready -> {
             when (val u = state.uploadingState) {
-                is ChunkManager.State.Idle -> stringResource(R.string.mds_connected)
-                is ChunkManager.State.InProgress -> stringResource(R.string.mds_uploading)
-                is ChunkManager.State.Suspended -> stringResource(R.string.mds_suspended, u.delayInSeconds)
+                is ChunksUploader.State.Idle -> stringResource(R.string.mds_connected)
+                is ChunksUploader.State.InProgress -> stringResource(R.string.mds_uploading)
+                is ChunksUploader.State.Suspended -> stringResource(R.string.mds_suspended, u.delayInSeconds)
             }
         }
     }
@@ -82,14 +82,14 @@ private fun ObservabilityView(
 private fun ObservabilityViewPreview() {
     ObservabilityView(
         state = ObservabilityManager.State(
-            state = ChunksSource.State.Connected(
+            state = ChunksEmitter.State.Ready(
                 config = ChunksConfig(
                     authorisationToken = "token",
                     url = "url",
                     deviceId = "deviceId",
                 ),
             ),
-            uploadingState = ChunkManager.State.InProgress,
+            uploadingState = ChunksUploader.State.InProgress,
             chunks = listOf(
                 Chunk(0, byteArrayOf(1, 2, 3), "A", false),
                 Chunk(1, byteArrayOf(1, 2, 3), "A", false),
