@@ -55,20 +55,20 @@ class DISManager(
     }
 
     override suspend fun CoroutineScope.initialize() {
-        readInto(manufacturerNameCharacteristic, "manufacturer name", DeviceInformationParser::parseString, repository::updateManufacturerName)
-        readInto(modelNumberCharacteristic, "model number", DeviceInformationParser::parseString, repository::updateModelNumber)
-        readInto(serialNumberCharacteristic, "serial number", DeviceInformationParser::parseString, repository::updateSerialNumber)
-        readInto(hardwareRevisionCharacteristic, "hardware revision", DeviceInformationParser::parseString, repository::updateHardwareRevision)
-        readInto(firmwareRevisionCharacteristic, "firmware revision", DeviceInformationParser::parseString, repository::updateFirmwareRevision)
-        readInto(softwareRevisionCharacteristic, "software revision", DeviceInformationParser::parseString, repository::updateSoftwareRevision)
-        readInto(systemIdCharacteristic, "system ID", DeviceInformationParser::parseSystemId, repository::updateSystemId)
-        readInto(ieeeCertificationDataCharacteristic, "IEEE certification data", DeviceInformationParser::parseIeeeCertificationData, repository::updateIeeeCertificationData)
-        readInto(pnpIdCharacteristic, "PnP ID", DeviceInformationParser::parsePnpId, repository::updatePnpId)
-
         onReady(this@DISManager)
+
+        readInto(manufacturerNameCharacteristic, "Manufacturer Name", DeviceInformationParser::parseString, repository::updateManufacturerName)
+        readInto(modelNumberCharacteristic, "Model Number", DeviceInformationParser::parseString, repository::updateModelNumber)
+        readInto(serialNumberCharacteristic, "Serial Number", DeviceInformationParser::parseString, repository::updateSerialNumber)
+        readInto(hardwareRevisionCharacteristic, "Hardware Revision", DeviceInformationParser::parseString, repository::updateHardwareRevision)
+        readInto(firmwareRevisionCharacteristic, "Firmware Revision", DeviceInformationParser::parseString, repository::updateFirmwareRevision)
+        readInto(softwareRevisionCharacteristic, "Software Revision", DeviceInformationParser::parseString, repository::updateSoftwareRevision)
+        readInto(systemIdCharacteristic, "System ID", DeviceInformationParser::parseSystemId, repository::updateSystemId)
+        readInto(ieeeCertificationDataCharacteristic, "IEEE Certification Data", DeviceInformationParser::parseIeeeCertificationData, repository::updateIeeeCertificationData)
+        readInto(pnpIdCharacteristic, "PnP ID", DeviceInformationParser::parsePnpId, repository::updatePnpId)
     }
 
-    private fun CoroutineScope.readInto(
+    private suspend fun readInto(
         characteristic: RemoteCharacteristic?,
         label: String,
         parse: (ByteArray) -> String?,
@@ -76,16 +76,14 @@ class DISManager(
     ) {
         val char = characteristic ?: return
         if (!char.isReadable()) return
-        launch {
-            try {
-                Timber.tag(tag).v("Reading $label...")
-                parse(char.read())?.let {
-                    Timber.tag(tag).log(Log.Level.APPLICATION, "$label: $it")
-                    onResult(it)
-                }
-            } catch (e: Exception) {
-                Timber.tag(tag).e(e, "Error reading $label")
+        try {
+            Timber.tag(tag).v("Reading $label...")
+            parse(char.read())?.let {
+                Timber.tag(tag).log(Log.Level.APPLICATION, "$label: $it")
+                onResult(it)
             }
+        } catch (e: Exception) {
+            Timber.tag(tag).e(e, "Error reading $label")
         }
     }
 }

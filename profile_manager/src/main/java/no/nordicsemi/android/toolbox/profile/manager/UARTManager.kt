@@ -1,5 +1,6 @@
 package no.nordicsemi.android.toolbox.profile.manager
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -58,8 +59,10 @@ class UARTManager(
                 rxCharacteristic.write(it)
                 Timber.tag(tag).log(Log.Level.APPLICATION, "-> \"${String(it)}\" (${it.size} bytes)")
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            Timber.tag(tag).e(e, "Error sending text")
+            Timber.tag(tag).e("Sending text failed: ${e.message}")
         } finally {
             repository.onNewMessageSent(message)
         }

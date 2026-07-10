@@ -23,14 +23,11 @@ object DeviceInformationParser {
         val vendorId = (data[1].toInt() and 0xFF) or ((data[2].toInt() and 0xFF) shl 8)
         val productId = (data[3].toInt() and 0xFF) or ((data[4].toInt() and 0xFF) shl 8)
         val productVersion = (data[5].toInt() and 0xFF) or ((data[6].toInt() and 0xFF) shl 8)
-        return "Vendor ID Source: $vendorIdSource, Vendor ID: 0x%04X, Product ID: 0x%04X, Product Version: 0x%04X"
+        return "Vendor ID Source: $vendorIdSource,\nVendor ID: 0x%04X,\nProduct ID: 0x%04X,\nProduct Version: 0x%04X"
             .format(vendorId, productId, productVersion)
     }
 
     /** IEEE 11073-20601 Regulatory Certification Data List: opaque binary blob, shown as hex. */
     fun parseIeeeCertificationData(data: ByteArray): String? =
-        data.takeIf { it.isNotEmpty() }?.toHexString()
-
-    private fun ByteArray.toHexString(): String =
-        joinToString(":") { "%02X".format(it.toInt() and 0xFF) }
+        data.takeIf { it.isNotEmpty() }?.let { "0x${it.toHexString()}" }
 }

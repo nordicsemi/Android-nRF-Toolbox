@@ -1,5 +1,6 @@
 package no.nordicsemi.android.toolbox.profile.manager
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -120,22 +121,35 @@ class CGMManager(
             featureCharacteristic
                 ?.takeIf { it.isReadable() }
                 ?.let {
-                    Timber.tag(tag).v("Reading CGM feature...")
-                    val envelope = CGMFeatureParser.parse(it.read())
-                    Timber.tag(tag).log(Log.Level.APPLICATION, "Features: $envelope")
-                    val e2eCrcSupported = envelope?.features?.e2eCrcSupported ?: false
-                    secured = e2eCrcSupported
+                    try {
+                        Timber.tag(tag).v("Reading CGM feature...")
+                        val envelope = CGMFeatureParser.parse(it.read())
+                        Timber.tag(tag).log(Log.Level.APPLICATION, "Features: $envelope")
+                        val e2eCrcSupported = envelope?.features?.e2eCrcSupported ?: false
+                        secured = e2eCrcSupported
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.tag(tag).e("Error reading CGM feature: ${e.message}")
+                    }
                 }
 
             statusCharacteristic
                 ?.takeIf { it.isReadable() }
                 ?.let { statusData ->
-                    Timber.tag(tag).v("Reading CGM status...")
-                    CGMStatusParser.parse(statusData.read())?.let {
-                        Timber.tag(tag).log(Log.Level.APPLICATION, "Status: $it")
-                        if (!it.status.sessionStopped) {
-                            sessionStartTime = System.currentTimeMillis() - it.timeOffset * 60000L
+                    try {
+                        Timber.tag(tag).v("Reading CGM status...")
+                        CGMStatusParser.parse(statusData.read())?.let {
+                            Timber.tag(tag).log(Log.Level.APPLICATION, "Status: $it")
+                            if (!it.status.sessionStopped) {
+                                sessionStartTime =
+                                    System.currentTimeMillis() - it.timeOffset * 60000L
+                            }
                         }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.tag(tag).e("Error reading CGM status: ${e.message}")
                     }
                 }
 
@@ -145,8 +159,10 @@ class CGMManager(
                     opsControlPointCharacteristic.write(
                         data = CGMSpecificOpsControlPointDataParser.startSession(secured),
                     )
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
-                    Timber.tag(tag).e(e, "Error starting CGM session")
+                    Timber.tag(tag).e("Error starting CGM session: ${e.message}")
                 }
             }
         }
@@ -209,6 +225,8 @@ class CGMManager(
                     else
                         RecordAccessControlPointInputParser.reportAllStoredRecords(),
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Timber.tag(tag).e(e)
                 repository.updateNewRequestStatus(RequestStatus.FAILED)
@@ -230,6 +248,8 @@ class CGMManager(
                     WorkingMode.FIRST -> RecordAccessControlPointInputParser.reportFirstStoredRecord()
                 },
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.tag(tag).e(e)
             repository.updateNewRequestStatus(RequestStatus.FAILED)

@@ -137,7 +137,7 @@ class GLSManager(
             try {
                 if (state.value.records.isNotEmpty()) {
                     Timber.tag(tag)
-                        .v("Requesting GLS records greater or equal to: $highestSequenceNumber...")
+                        .v("Requesting records greater or equal to: $highestSequenceNumber...")
                     racpCharacteristic.write(
                         RecordAccessControlPointInputParser.reportStoredRecordsGreaterThenOrEqualTo(
                             highestSequenceNumber.toShort()
@@ -152,7 +152,7 @@ class GLSManager(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Timber.tag(tag).e(e)
+                Timber.tag(tag).e("Request failed: ${e.message}")
                 repository.updateNewRequestStatus(RequestStatus.FAILED)
                 return
             }
@@ -180,7 +180,7 @@ class GLSManager(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Timber.tag(tag).e(e)
+            Timber.tag(tag).e("Request failed: ${e.message}")
             repository.updateNewRequestStatus(RequestStatus.FAILED)
         }
     }

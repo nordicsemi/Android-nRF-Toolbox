@@ -1,5 +1,6 @@
 package no.nordicsemi.android.toolbox.profile.manager
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -77,8 +78,10 @@ class BPSManager(
                         Timber.tag(tag).log(Log.Level.APPLICATION, "Features: $it")
                         repository.updateBPSFeatureData(it)
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
-                    Timber.tag(tag).e(e, "Error reading blood pressure feature")
+                    Timber.tag(tag).e("Reading blood pressure feature failed: ${e.message}")
                 }
             }
         }
