@@ -1,5 +1,6 @@
 package no.nordicsemi.android.toolbox.profile.manager
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -135,7 +136,8 @@ class GLSManager(
         if (numberOfRecords > 0) {
             try {
                 if (state.value.records.isNotEmpty()) {
-                    Timber.tag(tag).v("Requesting GLS records greater or equal to: $highestSequenceNumber...")
+                    Timber.tag(tag)
+                        .v("Requesting GLS records greater or equal to: $highestSequenceNumber...")
                     racpCharacteristic.write(
                         RecordAccessControlPointInputParser.reportStoredRecordsGreaterThenOrEqualTo(
                             highestSequenceNumber.toShort()
@@ -147,6 +149,8 @@ class GLSManager(
                         RecordAccessControlPointInputParser.reportAllStoredRecords(),
                     )
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Timber.tag(tag).e(e)
                 repository.updateNewRequestStatus(RequestStatus.FAILED)
@@ -161,7 +165,11 @@ class GLSManager(
         repository.updateNewRequestStatus(RequestStatus.PENDING)
         repository.updateWorkingMode(workingMode)
         try {
-            Timber.tag(tag).v("Requesting $workingMode...")
+            if (workingMode == WorkingMode.ALL) {
+                Timber.tag(tag).v("Requesting number of stored records...")
+            } else {
+                Timber.tag(tag).v("Requesting $workingMode...")
+            }
             racpCharacteristic.write(
                 when (workingMode) {
                     WorkingMode.ALL -> RecordAccessControlPointInputParser.reportNumberOfAllStoredRecords()
@@ -169,6 +177,8 @@ class GLSManager(
                     WorkingMode.FIRST -> RecordAccessControlPointInputParser.reportFirstStoredRecord()
                 },
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.tag(tag).e(e)
             repository.updateNewRequestStatus(RequestStatus.FAILED)
