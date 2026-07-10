@@ -35,7 +35,7 @@ abstract class CentralManagerModule {
             environment: NativeAndroidEnvironment,
             scope: CoroutineScope
         ): CentralManager = CentralManager.native(environment, scope)
-            .apply { logger = Log.Sink.Timber { _, _ -> true} }
+            .apply { logger = Log.Sink.Timber { _, _ -> true } }
     }
 
     @Binds

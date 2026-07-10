@@ -63,7 +63,7 @@ fun TextInputField(
     )
     OutlinedTextField(
         value = input,
-        onValueChange = { onUpdate(it) },
+        onValueChange = onUpdate,
         visualTransformation = if (input.isEmpty())
             PlaceholderTransformation(placeholder) else VisualTransformation.None,
         modifier = modifier.fillMaxWidth(),
