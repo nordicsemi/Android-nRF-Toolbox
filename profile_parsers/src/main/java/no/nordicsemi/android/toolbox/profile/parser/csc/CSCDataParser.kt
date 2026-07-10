@@ -3,6 +3,7 @@ package no.nordicsemi.android.toolbox.profile.parser.csc
 import no.nordicsemi.kotlin.data.IntFormat
 import no.nordicsemi.kotlin.data.getInt
 import no.nordicsemi.kotlin.data.ByteOrder
+import no.nordicsemi.kotlin.data.getUInt
 import kotlin.experimental.and
 
 object CSCDataParser {
@@ -36,7 +37,7 @@ object CSCDataParser {
         }
 
         if (crankRevPreset) {
-            crankRevolutions = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN).toLong()
+            crankRevolutions = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN).toLong() and 0xFFFFFFFFL
             offset += 2
             crankEventTime = data.getInt(offset, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
             offset += 2
@@ -50,7 +51,7 @@ object CSCDataParser {
         val wheelCircumference = wheelSize.value.toFloat()
 
         return CSCData(
-            totalDistance = getTotalDistance(wheelSize.value.toFloat()),
+            totalDistance = getTotalDistance(wheelCircumference),
             distance = getDistance(wheelCircumference, previousData),
             speed = getSpeed(wheelCircumference, previousData),
             wheelSize = wheelSize,
@@ -67,7 +68,7 @@ object CSCDataParser {
     }
 
     private fun getTotalDistance(wheelCircumference: Float): Float {
-        if (wheelRevolutions < 0) {
+        if (wheelRevolutions <= 0) {
             return 0.0f
         }
         return wheelRevolutions.toFloat() * wheelCircumference / 1000.0f // [m]
