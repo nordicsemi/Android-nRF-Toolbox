@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="reconnect">Reconnect</string>
+    <string name="action_forget">Forget &amp; Reconnect</string>
+    <string name="action_reconnect">Reconnect</string>
 </resources>

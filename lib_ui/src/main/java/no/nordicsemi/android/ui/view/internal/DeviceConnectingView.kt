@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.automirrored.filled.BluetoothSearching
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
@@ -20,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import no.nordicsemi.android.common.ui.view.CircularIcon
 import no.nordicsemi.android.ui.R
 import no.nordicsemi.android.ui.view.TextWithAnimatedDots
 
@@ -46,7 +47,14 @@ fun DeviceConnectingView(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                CircularIcon(imageVector = Icons.Default.HourglassTop)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Default.BluetoothSearching,
+                    // Note: This 8dp is to center teh B icon, to match its exact position
+                    //       like in ServiceDIscoveryView and DeviceDisconnectedView.
+                    modifier = Modifier.padding(start = 8.dp).size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                    contentDescription = null,
+                )
 
                 TextWithAnimatedDots(
                     text = stringResource(id = R.string.device_connecting),
@@ -68,7 +76,9 @@ fun DeviceConnectingView(
 @Composable
 private fun DeviceConnectingView_Preview() {
     MaterialTheme {
-        DeviceConnectingView { padding ->
+        DeviceConnectingView(
+            modifier = Modifier.padding(16.dp)
+        ) { padding ->
             Button(
                 onClick = {},
                 modifier = Modifier.padding(padding)

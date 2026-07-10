@@ -4,15 +4,15 @@ import no.nordicsemi.kotlin.ble.core.ConnectionState.Disconnected.Reason
 
 fun Reason.displayMessage(): String =
     when (this) {
+        Reason.Success -> "Device disconnected successfully."
         Reason.Cancelled -> "Connection was cancelled."
         Reason.LinkLoss -> "The device got out of range or has turned off."
-        Reason.Success -> "Device disconnected successfully."
-        Reason.TerminateLocalHost -> "Device disconnected by the local host."
-        Reason.TerminatePeerUser -> "Device disconnected by the peer user."
+        Reason.TerminateLocalHost -> "Connection terminated by the local host."
+        Reason.TerminatePeerUser -> "Connection terminated by the peer."
         Reason.RequiredServiceNotFound -> "Required service not found." // This should not happen in nRF Toolbox, not service is required.
-        is Reason.Timeout -> "Connection attempt timed out with ${this.duration}."
-        is Reason.Unknown -> "Oops...! Connection went on a coffee break."
-        Reason.UnsupportedAddress -> "Device disconnected due to unsupported address."
-        Reason.InsufficientAuthentication -> "Device disconnected due to insufficient authentication."
-        Reason.UnsupportedConfiguration -> "Connection attempt was aborted due PHY negotiations failure."
+        is Reason.Timeout -> "Connection attempt timed out after ${this.duration}."
+        is Reason.Unknown -> "Error code: $status"
+        Reason.UnsupportedAddress -> "Unsupported address type."
+        Reason.InsufficientAuthentication -> "Insufficient authentication.\nBond information was removed on peer."
+        Reason.UnsupportedConfiguration -> "PHY negotiations might have failed."
     }
