@@ -50,15 +50,11 @@ internal fun BPSScreen(manager: BPSManager) {
 
     serviceData.intermediateCuffPressure?.let {
         IntermediateBloodPressureView(it)
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
 
     BloodPressureView(serviceData.bloodPressureMeasurement)
 
     serviceData.bloodPressureFeature?.let {
-        Spacer(modifier = Modifier.height(16.dp))
-
         BloodPressureFeatureView(it)
     }
 }
