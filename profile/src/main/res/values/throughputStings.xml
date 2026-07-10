@@ -4,18 +4,15 @@
 
     <string name="throughput_write">Start test</string>
 
-    <string name="total_bytes_received">Data</string>
-    <string name="gatt_write_number">Number of packets sent</string>
-    <string name="max_write_value">MTU</string>
-    <string name="measured_throughput">Speed</string>
+    <string name="total_bytes_received">Bytes sent</string>
+    <string name="gatt_write_number">Packets</string>
+    <string name="max_write_value">Packets × Size</string>
 
     <string name="throughput_bytes">Test size (in kB)</string>
-    <string name="throughput_bytes_description">Enter the number of kB to be sent in the throughput test.</string>
-    <string name="throughput_bytes_error">Test size (in kB) </string>
+    <string name="throughput_bytes_error">Size is invalid</string>
 
     <string name="throughput_time">Test in time (seconds)</string>
-    <string name="throughput_time_description">Enter the number of seconds to run the throughput test.</string>
-    <string name="throughput_time_error">Test in time (seconds)</string>
+    <string name="throughput_time_error">Number is invalid</string>
 
     <string name="throughput_start">Run</string>
 
