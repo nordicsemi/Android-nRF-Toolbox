@@ -38,6 +38,7 @@ import no.nordicsemi.android.toolbox.profile.manager.CSCManager
 import no.nordicsemi.android.toolbox.profile.manager.ChannelSoundingManager
 import no.nordicsemi.android.toolbox.profile.manager.DDFSManager
 import no.nordicsemi.android.toolbox.profile.manager.DFUManager
+import no.nordicsemi.android.toolbox.profile.manager.DISManager
 import no.nordicsemi.android.toolbox.profile.manager.GLSManager
 import no.nordicsemi.android.toolbox.profile.manager.HRSManager
 import no.nordicsemi.android.toolbox.profile.manager.HTSManager
@@ -52,6 +53,7 @@ import no.nordicsemi.android.toolbox.profile.view.cgms.CGMScreen
 import no.nordicsemi.android.toolbox.profile.view.channelSounding.ChannelSoundingScreen
 import no.nordicsemi.android.toolbox.profile.view.cscs.CSCScreen
 import no.nordicsemi.android.toolbox.profile.view.dfu.DFUScreen
+import no.nordicsemi.android.toolbox.profile.view.dis.DISScreen
 import no.nordicsemi.android.toolbox.profile.view.directionFinder.DFSScreen
 import no.nordicsemi.android.toolbox.profile.view.gls.GLSScreen
 import no.nordicsemi.android.toolbox.profile.view.hrs.HRSScreen
@@ -233,6 +235,7 @@ internal fun DeviceConnectedView(
                     Profile.DFU -> DFUScreen(manager = serviceManager as DFUManager) {
                         onEvent(ConnectionEvent.DisconnectEvent)
                     }
+                    Profile.DIS -> DISScreen(manager = serviceManager as DISManager)
                 }
             }
         }

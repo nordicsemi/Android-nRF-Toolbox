@@ -8,6 +8,7 @@ import no.nordicsemi.android.toolbox.lib.utils.spec.RANGING_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.CSC_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.DFU_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.DDF_SERVICE_UUID
+import no.nordicsemi.android.toolbox.lib.utils.spec.DIS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.GLS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.HRS_SERVICE_UUID
@@ -44,6 +45,7 @@ object ServiceManagerFactory {
         LEGACY_DFU_SERVICE_UUID,
         EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID,
         QUICK_START_SERVICE_UUID,
+        DIS_SERVICE_UUID,
     )
 
     fun isKnownService(uuid: Uuid): Boolean = uuid in knownServiceUuids
@@ -72,5 +74,6 @@ object ServiceManagerFactory {
         DFUManager(EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID, deviceId, onReady),
         MDSManager(context, deviceId, onReady),
         QuickStartManager(deviceId, onReady),
+        DISManager(deviceId, onReady),
     )
 }

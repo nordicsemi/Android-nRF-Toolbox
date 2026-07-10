@@ -17,6 +17,7 @@ enum class Profile {
     THROUGHPUT,
     UART,
     MDS,
+    DIS,
     DFU;
 
     override fun toString(): String = when (this) {
@@ -35,6 +36,7 @@ enum class Profile {
         THROUGHPUT -> "Throughput"
         UART -> "UART"
         MDS -> "MDS"
+        DIS -> "Device Information"
         DFU -> "DFU"
     }
 }

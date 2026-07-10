@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dis_label">Device Information</string>
+    <string name="dis_manufacturer_name">Manufacturer Name</string>
+    <string name="dis_model_number">Model Number</string>
+    <string name="dis_serial_number">Serial Number</string>
+    <string name="dis_hardware_revision">Hardware Revision</string>
+    <string name="dis_firmware_revision">Firmware Revision</string>
+    <string name="dis_software_revision">Software Revision</string>
+    <string name="dis_system_id">System ID</string>
+    <string name="dis_ieee_certification_data">IEEE Certification Data</string>
+</resources>
