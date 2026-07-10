@@ -20,6 +20,8 @@ data class NumberOfBytes(
         private const val DISPLAY_NAME = "Test in size (in kB) "
         fun getString(): String = DISPLAY_NAME
     }
+
+    override fun toString() = "$numberOfBytes bytes"
 }
 
 data class NumberOfSeconds(
@@ -30,6 +32,8 @@ data class NumberOfSeconds(
         private const val DISPLAY_NAME = "Test in time (seconds)"
         fun getString(): String = DISPLAY_NAME
     }
+
+    override fun toString() = "$numberOfSeconds seconds"
 }
 
 enum class WritingStatus {
