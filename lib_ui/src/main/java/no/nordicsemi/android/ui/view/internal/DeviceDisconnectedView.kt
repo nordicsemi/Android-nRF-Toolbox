@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DeveloperBoardOff
+import androidx.compose.material.icons.filled.BluetoothDisabled
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 enum class DisconnectReason {
-    USER, UNKNOWN, LINK_LOSS, MISSING_SERVICE, BLUETOOTH_OFF
+    USER, LINK_LOSS, MISSING_SERVICE, BLUETOOTH_OFF
 }
 
 @Composable
@@ -35,7 +35,6 @@ fun DeviceDisconnectedView(
 ) {
     val disconnectedReason = when (reason) {
         DisconnectReason.USER -> "Device disconnected successfully."
-        DisconnectReason.UNKNOWN -> "Oops...! Connection went on a coffee break."
         DisconnectReason.LINK_LOSS -> "Device signal has been lost."
         DisconnectReason.MISSING_SERVICE -> "The peripheral has services that aren't supported in the nRF Toolbox."
         DisconnectReason.BLUETOOTH_OFF -> "Bluetooth adapter is turned off."
@@ -74,10 +73,10 @@ fun DeviceDisconnectedView(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Icon(
-                    imageVector = Icons.Default.DeveloperBoardOff,
+                    imageVector = Icons.Default.BluetoothDisabled,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(48.dp)
                 )
 
                 Text(
@@ -102,15 +101,15 @@ fun DeviceDisconnectedView(
 private fun DeviceDisconnectedViewPreview() {
     MaterialTheme {
         DeviceDisconnectedView(
-            reason = DisconnectReason.UNKNOWN,
-            content = { padding ->
-                Button(
-                    onClick = {},
-                    modifier = Modifier.padding(padding)
-                ) {
-                    Text(text = "Retry")
-                }
+            reason = DisconnectReason.LINK_LOSS,
+            modifier = Modifier.padding(16.dp),
+        ) { padding ->
+            Button(
+                onClick = {},
+                modifier = Modifier.padding(padding)
+            ) {
+                Text(text = "Retry")
             }
-        )
+        }
     }
 }

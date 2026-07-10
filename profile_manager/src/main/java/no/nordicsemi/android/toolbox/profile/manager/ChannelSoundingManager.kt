@@ -7,6 +7,7 @@ import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 import no.nordicsemi.android.toolbox.lib.utils.spec.RANGING_SERVICE_UUID
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
+import no.nordicsemi.kotlin.ble.client.android.Peripheral
 import timber.log.Timber
 import kotlin.uuid.Uuid
 
@@ -17,10 +18,14 @@ class ChannelSoundingManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(RANGING_SERVICE_UUID, deviceId, "Channel Sounding", onReady) {
     override val profile: ServiceType = ServiceType.CHANNEL_SOUNDING
+    private val tag = "CS ($deviceId)"
+
+    lateinit var peripheral: Peripheral
 
     private var rasFeaturesCharacteristic: RemoteCharacteristic? = null
 
     override fun prepare(service: RemoteService) {
+        peripheral = requireNotNull(service.owner as? Peripheral)
         rasFeaturesCharacteristic = service.characteristics.firstOrNull { it.uuid == RAS_FEATURES }
     }
 
@@ -28,11 +33,11 @@ class ChannelSoundingManager(
         rasFeaturesCharacteristic?.let { char ->
             launch {
                 try {
-                    Timber.tag("RAS").v("Reading RAS features...")
+                    Timber.tag(tag).v("Reading RAS features...")
                     val rasFeature = RasFeatureParser.parse(char.read())
-                    Timber.tag("RAS").log(Log.Level.APPLICATION, "Features: $rasFeature")
+                    Timber.tag(tag).log(Log.Level.APPLICATION, "Features: $rasFeature")
                 } catch (e: Exception) {
-                    Timber.tag("RAS").e(e, "Error reading RAS features")
+                    Timber.tag(tag).e(e, "Error reading RAS features")
                 }
             }
         }

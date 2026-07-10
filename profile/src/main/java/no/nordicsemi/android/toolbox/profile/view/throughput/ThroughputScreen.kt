@@ -1,20 +1,29 @@
 package no.nordicsemi.android.toolbox.profile.view.throughput
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
+import androidx.compose.material.icons.filled.DeveloperBoard
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -34,6 +43,7 @@ import no.nordicsemi.android.toolbox.profile.data.NumberOfSeconds
 import no.nordicsemi.android.toolbox.profile.data.ThroughputServiceData
 import no.nordicsemi.android.toolbox.profile.data.WritingStatus
 import no.nordicsemi.android.toolbox.profile.manager.ThroughputManager
+import no.nordicsemi.android.toolbox.profile.parser.throughput.ThroughputMetrics
 import no.nordicsemi.android.toolbox.profile.viewmodel.ThroughputEvent
 import no.nordicsemi.android.toolbox.profile.viewmodel.ThroughputViewModel
 import no.nordicsemi.android.ui.view.AnimatedThreeDots
@@ -82,9 +92,7 @@ private fun ThroughputContent(
         // Show throughput data.
         when (serviceData.writingStatus) {
             WritingStatus.IN_PROGRESS ->
-                ThroughputInProgress(serviceData.maxWriteValueLength) {
-                    AnimatedThreeDots()
-                }
+                ThroughputInProgress(serviceData.maxWriteValueLength)
             else -> ThroughputData(serviceData)
         }
     }
@@ -118,55 +126,89 @@ private fun WorkingModeDropDown(
 @Composable
 fun ThroughputInProgress(
     maxWriteValueLength: Int?,
-    animatedThreeDots: @Composable () -> Unit
 ) {
-    SectionRow {
-        KeyValueColumn(
-            key = stringResource(id = R.string.total_bytes_received),
-        ) { animatedThreeDots() }
-        KeyValueColumnReverse(
-            key = stringResource(id = R.string.gatt_write_number)
-        ) { animatedThreeDots() }
+    Row(
+        modifier = Modifier.height(36.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AnimatedThreeDots(
+            dotSize = 10.dp,
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Icon(
+            imageVector = Icons.Default.PhoneAndroid,
+            contentDescription = null,
+        )
+        AnimatedThreeDots(
+            modifier = Modifier.width(48.dp),
+            dotSize = 4.dp,
+        )
+        Icon(
+            imageVector = Icons.Default.DeveloperBoard,
+            contentDescription = null,
+        )
     }
     SectionRow {
         KeyValueColumn(
-            key = stringResource(id = R.string.measured_throughput)
-        ) { animatedThreeDots() }
-        // Show mtu size
+            key = stringResource(id = R.string.total_bytes_received),
+        ) { AnimatedThreeDots(modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)) }
         maxWriteValueLength?.let { mtu ->
             KeyValueColumnReverse(
                 key = stringResource(id = R.string.max_write_value),
-                value = "${mtu + 3}"
-            )
-        }
+            ) { AnimatedThreeDots(modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)) }
+        } ?: KeyValueColumnReverse(
+            key = stringResource(id = R.string.gatt_write_number),
+        ) { AnimatedThreeDots(modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)) }
     }
 }
 
 @Composable
 private fun ThroughputData(serviceData: ThroughputServiceData) {
     serviceData.throughputData.let {
+        Row(
+            modifier = Modifier.height(36.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = it.displayThroughput(),
+                modifier = Modifier.alignByBaseline(),
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            Spacer(modifier = Modifier.size(size = 8.dp))
+            Text(
+                text = "kB/s",
+                modifier = Modifier.alignByBaseline(),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                imageVector = Icons.Default.PhoneAndroid,
+                contentDescription = null,
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowRightAlt,
+                contentDescription = null,
+                modifier = Modifier.width(48.dp),
+            )
+            Icon(
+                imageVector = Icons.Default.DeveloperBoard,
+                contentDescription = null,
+            )
+        }
         SectionRow {
             KeyValueColumn(
                 key = stringResource(id = R.string.total_bytes_received),
                 value = it.throughputDataReceived()
             )
-            KeyValueColumnReverse(
+            serviceData.maxWriteValueLength?.let { length ->
+                KeyValueColumnReverse(
+                    key = stringResource(id = R.string.max_write_value),
+                    value = "${it.gattWritesReceived} × $length"
+                )
+            } ?: KeyValueColumnReverse(
                 key = stringResource(id = R.string.gatt_write_number),
                 value = it.gattWritesReceived.toString()
             )
-        }
-        SectionRow {
-            KeyValueColumn(
-                key = stringResource(id = R.string.measured_throughput),
-                value = it.displayThroughput()
-            )
-            // Show mtu size
-            serviceData.maxWriteValueLength?.let { mtu ->
-                KeyValueColumnReverse(
-                    key = stringResource(id = R.string.max_write_value),
-                    value = "${mtu + 3}"
-                )
-            }
         }
     }
 }
@@ -177,7 +219,7 @@ private fun WriteDropdown(
     onDismiss: () -> Unit,
     onClickEvent: (ThroughputEvent) -> Unit
 ) {
-    var number by rememberSaveable { mutableIntStateOf(0) }
+    var number by rememberSaveable { mutableStateOf("") }
     var writeDataType by rememberSaveable { mutableStateOf("") }
 
     DropdownMenu(
@@ -189,12 +231,12 @@ private fun WriteDropdown(
             NumberOfBytes.getString() -> {
                 // Show bytes input
                 TextInputField(
-                    input = number.toString(),
+                    input = number,
                     label = stringResource(id = R.string.throughput_bytes),
-                    placeholder = stringResource(id = R.string.throughput_bytes_description),
-                    errorState = number < 0,
+                    placeholder = stringResource(id = R.string.throughput_bytes),
+                    errorState = number.isNotEmpty() && number.toIntOrNull() == null,
                     errorMessage = stringResource(id = R.string.throughput_bytes_error),
-                    onUpdate = { number = it.toIntOrNull() ?: 0 },
+                    onUpdate = { number = it },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                 )
             }
@@ -202,26 +244,26 @@ private fun WriteDropdown(
             NumberOfSeconds.getString() -> {
                 // Show time input
                 TextInputField(
-                    input = number.toString(),
+                    input = number,
                     label = stringResource(id = R.string.throughput_time),
-                    placeholder = stringResource(id = R.string.throughput_time_description),
-                    errorState = number < 0,
+                    placeholder = stringResource(id = R.string.throughput_time),
+                    errorState = number.isNotEmpty() && number.toIntOrNull() == null,
                     errorMessage = stringResource(id = R.string.throughput_time_error),
-                    onUpdate = {number = it.toIntOrNull() ?: 0 },
+                    onUpdate = { number = it },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                 )
             }
 
             else -> {
                 // Show throughput input type
-                getThroughputInputTypes().forEach {
+                getThroughputInputTypes().forEach { value ->
                     DropdownMenuItem(
-                        text = { Text(it) },
+                        text = { Text(value) },
                         onClick = {
-                            writeDataType = it
-                            when (it) {
-                                NumberOfBytes.getString() -> number = 100
-                                NumberOfSeconds.getString() -> number = 20
+                            writeDataType = value
+                            when (value) {
+                                NumberOfBytes.getString() -> number = "500"
+                                NumberOfSeconds.getString() -> number = "10"
                             }
                         }
                     )
@@ -229,18 +271,19 @@ private fun WriteDropdown(
             }
         }
         // Run button.
-        if (writeDataType.isNotEmpty() && number > 0) {
+        if (writeDataType.isNotEmpty()) {
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center,
             ) {
                 Button(
                     onClick = {
+                        val n = number.toIntOrNull() ?: return@Button
                         onClickEvent(
                             ThroughputEvent.OnWriteData(
                                 when (writeDataType) {
-                                    NumberOfBytes.getString() -> NumberOfBytes(number * 1024)
-                                    NumberOfSeconds.getString() -> NumberOfSeconds(number)
+                                    NumberOfBytes.getString() -> NumberOfBytes(n * 1024)
+                                    NumberOfSeconds.getString() -> NumberOfSeconds(n)
                                     else -> throw IllegalArgumentException("Invalid throughput input type")
                                 }
                             )
@@ -259,7 +302,26 @@ private fun WriteDropdown(
 @Composable
 private fun ThroughputScreenPreview() {
     ThroughputContent(
-        serviceData = ThroughputServiceData(),
+        serviceData = ThroughputServiceData(
+            throughputData = ThroughputMetrics(
+                gattWritesReceived = 1527,
+                totalBytesReceived = 755865,
+                throughputBitsPerSecond = 355331,
+            ),
+            maxWriteValueLength = 495,
+        ),
+        onClickEvent = {}
+    )
+}
+
+@Preview
+@Composable
+private fun ThroughputScreenPreview_InProgress() {
+    ThroughputContent(
+        serviceData = ThroughputServiceData(
+            writingStatus = WritingStatus.IN_PROGRESS,
+            maxWriteValueLength = 495,
+        ),
         onClickEvent = {}
     )
 }

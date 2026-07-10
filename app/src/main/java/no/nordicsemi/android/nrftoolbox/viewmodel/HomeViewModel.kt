@@ -10,52 +10,54 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import no.nordicsemi.android.analytics.AppAnalytics
 import no.nordicsemi.android.analytics.Link
-import no.nordicsemi.android.analytics.ProfileOpenEvent
+import no.nordicsemi.android.analytics.LinkOpenEvent
 import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.nrftoolbox.ScannerDestinationId
+import no.nordicsemi.android.service.profile.ProfileServiceManager
 import no.nordicsemi.android.service.profile.ServiceApi
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
 import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.argName
-import no.nordicsemi.android.toolbox.profile.repository.DeviceRepository
 import javax.inject.Inject
 
 internal data class HomeViewState(
     val connectedDevices: Map<String, ServiceApi.DeviceData> = emptyMap(),
 )
 
-private const val GITHUB_REPO_URL = "https://github.com/NordicSemiconductor/Android-nRF-Toolbox.git"
+private const val GITHUB_REPO_URL = "https://github.com/nordicsemi/Android-nRF-Toolbox"
 private const val NORDIC_DEV_ZONE_URL = "https://devzone.nordicsemi.com/"
 
 @HiltViewModel
 internal class HomeViewModel @Inject constructor(
     private val navigator: Navigator,
-    deviceRepository: DeviceRepository,
+    private val profileServiceManager: ProfileServiceManager,
     private val analytics: AppAnalytics,
 ) : ViewModel() {
     private val _state = MutableStateFlow(HomeViewState())
     val state = _state.asStateFlow()
 
     init {
-        // Observe connected devices from the repository
-        deviceRepository.connectedDevices
-            .onEach { devices ->
-                _state.update { currentState ->
-                    currentState.copy(connectedDevices = devices)
+        viewModelScope.launch {
+            val api = profileServiceManager.bindService()
+
+            // Observe connected devices from the repository
+            api.devices
+                .onEach { devices ->
+                    _state.update { currentState ->
+                        currentState.copy(connectedDevices = devices)
+                    }
                 }
-            }
-            .launchIn(viewModelScope)
+                .launchIn(viewModelScope)
+        }
     }
 
     fun onClickEvent(event: UiEvent) {
         when (event) {
             UiEvent.OnConnectDeviceClick -> navigator.navigateTo(ScannerDestinationId)
             is UiEvent.OnDeviceClick -> {
-                // Log the event for analytics.
-                analytics.logEvent(ProfileOpenEvent(event.profile))
-
                 val bundle = Bundle().apply {
                     putString(argAddress, event.deviceAddress)
                     putString(argName, event.name)
@@ -65,16 +67,20 @@ internal class HomeViewModel @Inject constructor(
 
             UiEvent.OnGitHubClick -> {
                 // Log the event for analytics.
-                analytics.logEvent(ProfileOpenEvent(Link.GITHUB))
+                analytics.logEvent(LinkOpenEvent(Link.GITHUB))
                 navigator.open(GITHUB_REPO_URL.toUri())
             }
 
             UiEvent.OnNordicDevZoneClick -> {
                 // Log the event for analytics.
-                analytics.logEvent(ProfileOpenEvent(Link.DEV_ACADEMY))
+                analytics.logEvent(LinkOpenEvent(Link.DEV_ZONE))
                 navigator.open(NORDIC_DEV_ZONE_URL.toUri())
             }
         }
+    }
+
+    override fun onCleared() {
+        profileServiceManager.unbindService()
     }
 
 }

@@ -32,7 +32,7 @@ enum class Profile {
         LBS -> "LED Button"
         RSCS -> "Running Speed and Cadence"
         BATTERY -> "Battery"
-        THROUGHPUT -> "Throughput Service"
+        THROUGHPUT -> "Throughput"
         UART -> "UART"
         MDS -> "MDS"
         DFU -> "DFU"

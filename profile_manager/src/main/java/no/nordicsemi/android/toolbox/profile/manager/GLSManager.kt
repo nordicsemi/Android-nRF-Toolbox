@@ -1,5 +1,6 @@
 package no.nordicsemi.android.toolbox.profile.manager
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -37,6 +38,7 @@ class GLSManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(GLS_SERVICE_UUID, deviceId, "GLS", onReady) {
     override val profile: ServiceType = ServiceType.GLS
+    private val tag = "GLS ($deviceId)"
 
     val repository = GLSRepository()
 
@@ -57,30 +59,30 @@ class GLSManager(
         glucoseMeasurementCharacteristic.subscribe()
             .mapNotNull { GlucoseMeasurementParser.parse(it) }
             .onEach {
-                Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 repository.updateNewRecord(it)
             }
             .onCompletion { repository.clear() }
-            .catch { Timber.tag("GLS").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .launchIn(this)
 
         contextCharacteristic?.subscribe()
             ?.mapNotNull { GlucoseMeasurementContextParser.parse(it) }
             ?.onEach {
-                Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 repository.updateWithNewContext(it)
             }
             ?.onCompletion { repository.clear() }
-            ?.catch { Timber.tag("GLS").e(it) }
+            ?.catch { Timber.tag(tag).e(it) }
             ?.launchIn(this)
 
         racpCharacteristic.subscribe()
             .mapNotNull { RecordAccessControlPointParser.parse(it) }
             .onEach {
-                Timber.tag("GLS").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 onAccessControlPointDataReceived(it, this)
             }
-            .catch { Timber.tag("GLS").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .launchIn(this)
 
         onReady(this@GLSManager)
@@ -134,20 +136,23 @@ class GLSManager(
         if (numberOfRecords > 0) {
             try {
                 if (state.value.records.isNotEmpty()) {
-                    Timber.tag("GLS").v("Requesting GLS records greater or equal to: $highestSequenceNumber...")
+                    Timber.tag(tag)
+                        .v("Requesting GLS records greater or equal to: $highestSequenceNumber...")
                     racpCharacteristic.write(
                         RecordAccessControlPointInputParser.reportStoredRecordsGreaterThenOrEqualTo(
                             highestSequenceNumber.toShort()
                         ),
                     )
                 } else {
-                    Timber.tag("GLS").v("Requesting ${WorkingMode.ALL}...")
+                    Timber.tag(tag).v("Requesting ${WorkingMode.ALL}...")
                     racpCharacteristic.write(
                         RecordAccessControlPointInputParser.reportAllStoredRecords(),
                     )
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                Timber.tag("GLS").e(e)
+                Timber.tag(tag).e(e)
                 repository.updateNewRequestStatus(RequestStatus.FAILED)
                 return
             }
@@ -160,7 +165,11 @@ class GLSManager(
         repository.updateNewRequestStatus(RequestStatus.PENDING)
         repository.updateWorkingMode(workingMode)
         try {
-            Timber.tag("GLS").v("Requesting $workingMode...")
+            if (workingMode == WorkingMode.ALL) {
+                Timber.tag(tag).v("Requesting number of stored records...")
+            } else {
+                Timber.tag(tag).v("Requesting $workingMode...")
+            }
             racpCharacteristic.write(
                 when (workingMode) {
                     WorkingMode.ALL -> RecordAccessControlPointInputParser.reportNumberOfAllStoredRecords()
@@ -168,8 +177,10 @@ class GLSManager(
                     WorkingMode.FIRST -> RecordAccessControlPointInputParser.reportFirstStoredRecord()
                 },
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            Timber.tag("GLS").e(e)
+            Timber.tag(tag).e(e)
             repository.updateNewRequestStatus(RequestStatus.FAILED)
         }
     }

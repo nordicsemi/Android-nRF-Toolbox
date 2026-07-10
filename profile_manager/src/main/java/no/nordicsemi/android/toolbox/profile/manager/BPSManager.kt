@@ -28,6 +28,7 @@ class BPSManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(BPS_SERVICE_UUID, deviceId, "BPS", onReady) {
     override val profile: ServiceType = ServiceType.BPS
+    private val tag = "BPS ($deviceId)"
 
     val repository = BPSRepository()
 
@@ -52,32 +53,32 @@ class BPSManager(
         bpmCharacteristic.subscribe()
             .mapNotNull { BloodPressureMeasurementParser.parse(it) }
             .onEach {
-                Timber.tag("BPS").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 repository.updateBPSData(it)
             }
             .onCompletion { repository.clear() }
-            .catch { Timber.tag("BPS").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .launchIn(this)
 
         icpCharacteristic?.subscribe()
             ?.mapNotNull { IntermediateCuffPressureParser.parse(it) }
             ?.onEach {
-                Timber.tag("BPS").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 repository.updateICPData(it)
             }
             ?.onCompletion { repository.clear() }
-            ?.catch { Timber.tag("BPS").e(it) }
+            ?.catch { Timber.tag(tag).e(it) }
             ?.launchIn(this)
 
         bpfCharacteristic?.let { char ->
             launch {
                 try {
                     BloodPressureFeatureParser.parse(char.read())?.let {
-                        Timber.tag("BPS").log(Log.Level.APPLICATION, "Features: $it")
+                        Timber.tag(tag).log(Log.Level.APPLICATION, "Features: $it")
                         repository.updateBPSFeatureData(it)
                     }
                 } catch (e: Exception) {
-                    Timber.tag("BPS").e(e, "Error reading blood pressure feature")
+                    Timber.tag(tag).e(e, "Error reading blood pressure feature")
                 }
             }
         }

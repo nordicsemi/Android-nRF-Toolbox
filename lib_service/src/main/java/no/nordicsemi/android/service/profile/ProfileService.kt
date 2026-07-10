@@ -6,18 +6,23 @@ import android.os.Binder
 import android.os.IBinder
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import no.nordicsemi.android.log.timber.nRFLoggerTree
+import no.nordicsemi.android.analytics.AppAnalytics
+import no.nordicsemi.android.analytics.ProfileConnectedEvent
 import no.nordicsemi.android.service.NotificationService
-import no.nordicsemi.android.service.R
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManager
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManagerFactory
 import no.nordicsemi.kotlin.ble.client.RemoteServices
@@ -26,7 +31,6 @@ import no.nordicsemi.kotlin.ble.client.android.CentralManager.ConnectionOptions
 import no.nordicsemi.kotlin.ble.client.android.Peripheral
 import no.nordicsemi.kotlin.ble.core.BondState
 import no.nordicsemi.kotlin.ble.core.ConnectionState
-import no.nordicsemi.kotlin.ble.core.WriteType
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -35,14 +39,15 @@ internal class ProfileService : NotificationService() {
 
     @Inject
     lateinit var centralManager: CentralManager
-    private var logger: nRFLoggerTree? = null
+    @Inject
+    lateinit var analytics: AppAnalytics
 
     private val binder = LocalBinder()
     private val managedConnections = mutableMapOf<String, Job>()
+    private val loggers = mutableMapOf<String, nRFLoggerTree>()
 
     private val _devices = MutableStateFlow<Map<String, ServiceApi.DeviceData>>(emptyMap())
-    private val _isMissingServices = MutableStateFlow<Map<String, Boolean>>(emptyMap())
-    private val _disconnectionEvent = MutableStateFlow<ServiceApi.DisconnectionEvent?>(null)
+    private val _disconnectionEvent = MutableSharedFlow<ServiceApi.DisconnectionEvent>()
 
     override fun onBind(intent: Intent): IBinder {
         super.onBind(intent)
@@ -51,7 +56,11 @@ internal class ProfileService : NotificationService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        intent?.getStringExtra(DEVICE_ADDRESS)?.let { address ->
+
+        val address = intent?.getStringExtra(DEVICE_ADDRESS)
+        val name = intent?.getStringExtra(DEVICE_NAME)
+        address?.let { address ->
+            initLogger(address, name)
             connect(address)
         }
         return START_REDELIVER_INTENT
@@ -59,7 +68,7 @@ internal class ProfileService : NotificationService() {
 
     override fun onDestroy() {
         managedConnections.values.forEach { it.cancel() }
-        uprootLogger()
+        loggers.values.forEach { Timber.uproot(it) }
         super.onDestroy()
     }
 
@@ -69,10 +78,8 @@ internal class ProfileService : NotificationService() {
     private fun connect(address: String) {
         if (managedConnections.containsKey(address)) return
 
-        initLogger(address)
-
         val peripheral = centralManager.getPeripheralById(address) ?: run {
-            Timber.w("Peripheral with address $address not found.")
+            Timber.tag(address).w("Peripheral with address $address not found.")
             return
         }
 
@@ -82,9 +89,11 @@ internal class ProfileService : NotificationService() {
                 _devices.update { currentMap ->
                     val existingData = currentMap[address] ?: return@update currentMap
                     currentMap + (address to existingData.copy(
-                        services = (existingData.services + manager).sortedBy { it.profile.ordinal }
+                        services = (existingData.services + manager).sortedBy { it.profile.ordinal },
+                        notSupported = false,
                     ))
                 }
+                analytics.logEvent(ProfileConnectedEvent(manager.profile))
             }
 
             // Register all known profiles before connecting. Each activates when its service
@@ -100,16 +109,18 @@ internal class ProfileService : NotificationService() {
                             _devices.update { currentMap ->
                                 val existingData = currentMap[address] ?: return@update currentMap
                                 currentMap + (address to existingData.copy(
-                                    services = emptyList()
+                                    services = emptyList(),
+                                    notSupported = null,
                                 ))
                             }
                         }
                         is RemoteServices.Discovered -> {
                             val list = services.services
-                            if (list.any { ServiceManagerFactory.isKnownService(it.uuid) }) {
-                                _isMissingServices.update { it - address }
-                            } else {
-                                _isMissingServices.update { it + (address to true) }
+                            if (list.none { ServiceManagerFactory.isKnownService(it.uuid) }) {
+                                _devices.update { currentMap ->
+                                    val existingData = currentMap[address] ?: return@update currentMap
+                                    currentMap + (address to existingData.copy(notSupported = true))
+                                }
                             }
                         }
                         else -> {}
@@ -117,13 +128,17 @@ internal class ProfileService : NotificationService() {
                 }
                 .launchIn(this)
 
-            try {
-                centralManager.connect(peripheral, options = ConnectionOptions.Direct())
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to connect to $address")
-            }
-
             observeConnectionState(peripheral)
+
+            try {
+                centralManager.connect(peripheral, options = ConnectionOptions.Direct(
+                    automaticallyRequestHighestValueLength = true,
+                ))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.tag(address).e(e, "Failed to connect to $address")
+            }
         }
 
         managedConnections[address] = job
@@ -135,21 +150,24 @@ internal class ProfileService : NotificationService() {
     private fun CoroutineScope.observeConnectionState(peripheral: Peripheral) {
         peripheral.state
             .onEach { state ->
-                _devices.update {
-                    it + (peripheral.address to (it[peripheral.address]?.copy(connectionState = state)
-                        ?: ServiceApi.DeviceData(peripheral, state)))
-                }
-
                 when (state) {
-                    is ConnectionState.Disconnected -> {
-                        val reason = state.reason ?: ConnectionState.Disconnected.Reason.Success
-                        _disconnectionEvent.value =
-                            ServiceApi.DisconnectionEvent(peripheral.address, reason)
-                        _devices.update { it - peripheral.address }
+                    is ConnectionState.Disconnecting -> {
+                        _disconnectionEvent.emit(ServiceApi.DisconnectionEvent(peripheral.address))
                         handleDisconnection(peripheral.address)
                     }
 
-                    else -> {}
+                    is ConnectionState.Disconnected -> {
+                        val reason = state.reason ?: ConnectionState.Disconnected.Reason.Success
+                        _disconnectionEvent.emit(ServiceApi.DisconnectionEvent(peripheral.address, reason))
+                        handleDisconnection(peripheral.address)
+                    }
+
+                    else -> {
+                        _devices.update {
+                            it + (peripheral.address to (it[peripheral.address]?.copy(connectionState = state)
+                                ?: ServiceApi.DeviceData(peripheral, state)))
+                        }
+                    }
                 }
             }
             .launchIn(this)
@@ -165,18 +183,18 @@ internal class ProfileService : NotificationService() {
                 try {
                     peripheral.disconnect()
                 } catch (e: Exception) {
-                    Timber.e(e, "Failed to disconnect from $address")
-                    handleDisconnection(address)
+                    Timber.tag(address).e(e, "Failed to disconnect from $address")
                 }
+                handleDisconnection(address)
             }
         }
     }
 
     private fun handleDisconnection(address: String) {
         _devices.update { it - address }
-        _isMissingServices.update { it - address }
         managedConnections[address]?.cancel()
         managedConnections.remove(address)
+        uprootLogger(address)
         stopServiceIfNoDevices()
     }
 
@@ -190,18 +208,32 @@ internal class ProfileService : NotificationService() {
     /**
      * Initializes the logger if not already initialized.
      */
-    private fun initLogger(deviceAddress: String) {
-        if (logger != null) return
-        logger = nRFLoggerTree(this, getString(R.string.app_name), deviceAddress)
-            .also { Timber.plant(it) }
+    private fun initLogger(deviceAddress: String, deviceName: String?) {
+        if (loggers.contains(deviceAddress)) return
+
+        val logger = object : nRFLoggerTree(this, deviceAddress, deviceName) {
+            init {
+                // Disable logging tags in nRF Logger.
+                setLoggingTagsEnabled(false)
+            }
+
+            override fun isLoggable(tag: String?, priority: Int): Boolean {
+                // Log general events or sent by the device with given address.
+                val hasSession = super.isLoggable(tag, priority)
+                val genericTag = tag == null || !tag.contains(":")
+                val thisDevice = tag?.contains(deviceAddress) ?: false
+                return hasSession && (genericTag || thisDevice)
+            }
+        }
+        loggers[deviceAddress] = logger.also { Timber.plant(it) }
     }
 
     /**
-     * Uproots and clears the logger.
+     * Uproots and clears the logger for the given device.
      */
-    private fun uprootLogger() {
-        logger?.let { Timber.uproot(it) }
-        logger = null
+    private fun uprootLogger(deviceAddress: String) {
+        loggers[deviceAddress]?.let { Timber.uproot(it) }
+        loggers.remove(deviceAddress)
     }
 
     // The Binder providing the public API.
@@ -209,32 +241,21 @@ internal class ProfileService : NotificationService() {
         override val devices: StateFlow<Map<String, ServiceApi.DeviceData>>
             get() = _devices.asStateFlow()
 
-        override val isMissingServices: StateFlow<Map<String, Boolean>>
-            get() = _isMissingServices.asStateFlow()
-
-        override val disconnectionEvent: StateFlow<ServiceApi.DisconnectionEvent?>
-            get() = _disconnectionEvent.asStateFlow()
+        override val disconnectionEvent: SharedFlow<ServiceApi.DisconnectionEvent>
+            get() = _disconnectionEvent.asSharedFlow()
 
         override fun disconnect(address: String) = this@ProfileService.disconnect(address)
 
-        override fun getPeripheral(address: String?): Peripheral? =
-            address?.let { centralManager.getPeripheralById(it) }
+        override fun getPeripheral(address: String) = centralManager.getPeripheralById(address)!!
 
-        override suspend fun getMaxWriteValue(address: String, writeType: WriteType): Int? {
-            val peripheral = getPeripheral(address) ?: return null
-            if (!peripheral.isConnected) return null
-
-            return try {
-                peripheral.requestHighestValueLength()
-                peripheral.maximumWriteValueLength(writeType)
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to configure MTU for $address")
-                null
-            }
-        }
+        override fun getLogSession(address: String) = loggers[address]?.session
 
         override suspend fun createBond(address: String) {
-            getPeripheral(address)?.ensureBonded()
+            getPeripheral(address).ensureBonded()
+        }
+
+        override suspend fun forget(address: String) {
+            getPeripheral(address).removeBond()
         }
     }
 

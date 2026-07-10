@@ -26,6 +26,7 @@ class HRSManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(HRS_SERVICE_UUID, deviceId, "HRS", onReady) {
     override val profile: ServiceType = ServiceType.HRS
+    private val tag = "HRS ($deviceId)"
 
     val repository = HRSRepository()
 
@@ -42,23 +43,23 @@ class HRSManager(
         hrMeasurementCharacteristic.subscribe()
             .mapNotNull { HRSDataParser.parse(it) }
             .onEach {
-                Timber.tag("HRS").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 repository.updateHRSData(it)
             }
             .onCompletion { repository.clear() }
-            .catch { Timber.tag("HRS").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .launchIn(this)
 
         bodySensorLocationCharacteristic?.let { char ->
             launch {
                 try {
-                    Timber.tag("HRS").v("Reading body sensor location...")
+                    Timber.tag(tag).v("Reading body sensor location...")
                     BodySensorLocationParser.parse(char.read())?.let {
-                        Timber.tag("HRS").log(Log.Level.APPLICATION, "Body sensor location: $it")
+                        Timber.tag(tag).log(Log.Level.APPLICATION, "Body sensor location: $it")
                         repository.updateBodySensorLocation(it)
                     }
                 } catch (e: Exception) {
-                    Timber.tag("HRS").e(e, "Error reading body sensor location")
+                    Timber.tag(tag).e(e, "Error reading body sensor location")
                 }
             }
         }

@@ -33,16 +33,7 @@
 <resources>
     <string name="app_name">nRF Toolbox</string>
 
-    <string name="cancel">Cancel</string>
-
-    <string name="go_up">Back</string>
-
-    <string name="close_app">Close the application.</string>
-    <string name="back_screen">Close the current screen.</string>
-    <string name="open_logger">Open logger application.</string>
-
     <string name="disconnect">Disconnect</string>
-    <string name="field_battery">Battery level</string>
 
     <string name="discovering_services">Discovering services</string>
     <string name="discovering_services_des">Please wait</string>

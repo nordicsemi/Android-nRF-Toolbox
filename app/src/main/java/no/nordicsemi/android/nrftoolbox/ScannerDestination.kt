@@ -1,6 +1,9 @@
 package no.nordicsemi.android.nrftoolbox
 
 import android.os.Bundle
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import no.nordicsemi.android.common.navigation.createDestination
 import no.nordicsemi.android.common.navigation.defineDestination
@@ -19,6 +22,7 @@ val ScannerDestination = defineDestination(ScannerDestinationId) {
     val navigationVM = hiltViewModel<SimpleNavigationViewModel>()
 
     ScannerScreen(
+        modifier = Modifier.background(MaterialTheme.colorScheme.background),
         cancellable = true,
         onResultSelected = {
             when (it) {

@@ -16,16 +16,6 @@ fun RSCSServiceData.displayActivity(): String =
 fun RSCSServiceData.displayPace(): String =
     stringResource(id = R.string.rscs_rpm, data.instantaneousCadence)
 
-
-@Composable
-fun RSCSServiceData.displayNumberOfSteps(): String? {
-    if (data.totalDistance == null || data.strideLength == null) {
-        return null
-    }
-    val numberOfSteps = data.totalDistance!! / data.strideLength!!.toLong()
-    return numberOfSteps.toString()
-}
-
 internal fun RSCSData.speedWithSpeedUnit(speedUnit: RSCSSettingsUnit): Float {
     return when (speedUnit) {
         RSCSSettingsUnit.UNIT_METRIC -> instantaneousSpeed
@@ -34,11 +24,10 @@ internal fun RSCSData.speedWithSpeedUnit(speedUnit: RSCSSettingsUnit): Float {
 }
 
 internal fun RSCSServiceData.displaySpeed(): String? {
-    val speedWithUnit = unit?.let { data.speedWithSpeedUnit(it) }
+    val speedWithUnit = unit.let { data.speedWithSpeedUnit(it) }
     return when (unit) {
         RSCSSettingsUnit.UNIT_METRIC -> String.format(Locale.US, "%.1f m/s", speedWithUnit)
         RSCSSettingsUnit.UNIT_IMPERIAL -> String.format(Locale.US, "%.1f mph", speedWithUnit)
-        null -> null
     }
 }
 
@@ -49,7 +38,7 @@ internal fun RSCSServiceData.displaySpeed(): String? {
  * @return A formatted string representing the total distance.
  */
 internal fun RSCSData.displayDistance(speedUnit: RSCSSettingsUnit): String {
-    if (totalDistance == null) return ""
+    if (totalDistance == null) return "-"
     return when (speedUnit) {
         RSCSSettingsUnit.UNIT_METRIC -> String.format(
             Locale.US,
@@ -66,8 +55,8 @@ internal fun RSCSData.displayDistance(speedUnit: RSCSSettingsUnit): String {
 }
 
 @Composable
-internal fun RSCSServiceData.displayStrideLength(): String? {
-    if (data.strideLength == null) return null
+internal fun RSCSServiceData.displayStrideLength(): String {
+    if (data.strideLength == null) return "-"
     return when (unit) {
         RSCSSettingsUnit.UNIT_METRIC -> String.format(
             Locale.US,
@@ -80,8 +69,6 @@ internal fun RSCSServiceData.displayStrideLength(): String? {
             "%.2f ft",
             (data.strideLength!!.toFloat() / 100) * 3.28084f
         )
-
-        null -> null
     }
 }
 

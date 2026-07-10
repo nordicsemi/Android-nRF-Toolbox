@@ -21,8 +21,9 @@ private val CSC_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A5B-0000-1000
 class CSCManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(CSC_SERVICE_UUID, deviceId, "CSC", onReady) {
+) : ServiceManager(CSC_SERVICE_UUID, deviceId, "CSCS", onReady) {
     override val profile: ServiceType = ServiceType.CSC
+    private val tag = "CSC ($deviceId)"
 
     val repository = CSCRepository()
 
@@ -37,10 +38,10 @@ class CSCManager(
         measurementCharacteristic.subscribe()
             .mapNotNull { CSCDataParser.parse(it, repository.wheelSize) }
             .onEach {
-                Timber.tag("CSC").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 repository.onCSCDataChanged(it)
             }
-            .catch { Timber.tag("CSC").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .onCompletion { repository.clear() }
             .launchIn(this)
 

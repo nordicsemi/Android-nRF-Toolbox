@@ -49,6 +49,7 @@ import no.nordicsemi.android.toolbox.profile.data.RangingSessionFailedReason
 import no.nordicsemi.android.toolbox.profile.data.RangingTechnology
 import no.nordicsemi.android.toolbox.profile.data.SessionClosedReason
 import no.nordicsemi.android.toolbox.profile.data.UpdateRate
+import no.nordicsemi.android.toolbox.profile.manager.ChannelSoundingManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.ChannelSoundingEvent
 import no.nordicsemi.android.toolbox.profile.viewmodel.ChannelSoundingViewModel
 import no.nordicsemi.android.ui.view.AnimatedThreeDots
@@ -58,6 +59,7 @@ import no.nordicsemi.android.ui.view.internal.LoadingView
 
 @Composable
 internal fun ChannelSoundingScreen(
+    manager: ChannelSoundingManager,
     deviceId: String,
     isNotificationPermissionGranted: Boolean?,
 ) {
@@ -65,7 +67,10 @@ internal fun ChannelSoundingScreen(
     // performance are provided from Android 16 (API 36, minor version 1) and later.
     if (Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1 && isNotificationPermissionGranted != null) {
         RequestRangingPermission {
-            val channelSoundingViewModel = hiltViewModel<ChannelSoundingViewModel>()
+            val channelSoundingViewModel = hiltViewModel<ChannelSoundingViewModel, ChannelSoundingViewModel.Factory>(
+                key = manager.instanceId,
+                creationCallback = { factory -> factory.create(manager) }
+            )
             val channelSoundingMapState by channelSoundingViewModel.state.collectAsStateWithLifecycle()
             val channelSoundingState =
                 channelSoundingMapState[deviceId] ?: ChannelSoundingServiceData()
@@ -270,7 +275,7 @@ private fun SessionClosed(
             Button(
                 onClick = { onClickEvent(ChannelSoundingEvent.RestartRangingSession) },
             ) {
-                Text(text = stringResource(id = R.string.reconnect))
+                Text(text = stringResource(id = R.string.action_reconnect))
             }
         }
     }
@@ -325,7 +330,7 @@ private fun SessionError(
             Button(
                 onClick = { onClickEvent(ChannelSoundingEvent.RestartRangingSession) },
             ) {
-                Text(text = stringResource(id = R.string.reconnect))
+                Text(text = stringResource(id = R.string.action_reconnect))
             }
         }
     }

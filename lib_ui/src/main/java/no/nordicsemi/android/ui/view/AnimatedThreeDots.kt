@@ -52,14 +52,15 @@ fun AnimatedThreeDots(
 
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.Center
     ) {
         dotAlphas.forEach { alpha ->
             Box(
                 modifier = Modifier
+                    .padding(1.dp)
                     .size(dotSize)
                     .clip(CircleShape)
-                    .background(Color.Gray.copy(alpha = alpha.value))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = alpha.value))
             )
         }
     }

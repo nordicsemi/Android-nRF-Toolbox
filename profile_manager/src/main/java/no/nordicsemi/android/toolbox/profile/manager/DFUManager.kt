@@ -19,6 +19,7 @@ class DFUManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(serviceUuid, deviceId, "DFU", onReady) {
     override val profile: ServiceType = ServiceType.DFU
+    private val tag = "DFU ($deviceId)"
 
     val repository = DFURepository()
 
@@ -34,7 +35,7 @@ class DFUManager(
             EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID -> DFUsAvailable.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE
             else -> return
         }
-        Timber.tag("DFU").log(Log.Level.APPLICATION, "$dfuType found")
+        Timber.tag(tag).log(Log.Level.APPLICATION, "$dfuType found")
         try {
             repository.updateAppName(dfuType)
         } catch (_: Exception) {

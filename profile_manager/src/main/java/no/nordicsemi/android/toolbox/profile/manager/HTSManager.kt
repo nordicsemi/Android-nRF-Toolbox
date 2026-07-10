@@ -23,6 +23,7 @@ class HTSManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(HTS_SERVICE_UUID, deviceId, "HTS", onReady) {
     override val profile: ServiceType = ServiceType.HTS
+    private val tag = "HTS ($deviceId)"
 
     val repository = HTSRepository()
 
@@ -37,11 +38,11 @@ class HTSManager(
         measurementCharacteristic.subscribe()
             .mapNotNull { HTSDataParser.parse(it) }
             .onEach {
-                Timber.tag("HTS").log(Log.Level.APPLICATION, it.toString())
+                Timber.tag(tag).log(Log.Level.APPLICATION, it.toString())
                 repository.updateHTSData(it)
             }
             .onCompletion { repository.clear() }
-            .catch { Timber.tag("HTS").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .launchIn(this)
 
         onReady(this@HTSManager)

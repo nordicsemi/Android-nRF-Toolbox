@@ -29,7 +29,6 @@ data class GLSRecord(
                 append(", ")
             }
             if (sampleLocation != null) {
-                append("sample location: ")
                 append(sampleLocation)
             }
             append(")")

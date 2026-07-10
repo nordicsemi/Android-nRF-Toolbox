@@ -24,6 +24,7 @@ class UARTManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(UART_SERVICE_UUID, deviceId, "UART", onReady) {
     override val profile: ServiceType = ServiceType.UART
+    private val tag = "UART ($deviceId)"
 
     val repository = UartRepository()
 
@@ -39,12 +40,12 @@ class UARTManager(
 
     override suspend fun CoroutineScope.initialize() {
         txCharacteristic.subscribe()
-            .map { String(it) }
-            .onEach {
-                Timber.tag("UART").log(Log.Level.APPLICATION, "<- \"$it\"")
-                repository.onNewMessageReceived(it)
+            .map { String(it) to it }
+            .onEach { (text, bytes) ->
+                Timber.tag(tag).log(Log.Level.APPLICATION, "<- \"$text\" (${bytes.size} bytes)")
+                repository.onNewMessageReceived(text)
             }
-            .catch { Timber.tag("UART").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .onCompletion { repository.clear() }
             .launchIn(this)
 
@@ -53,10 +54,12 @@ class UARTManager(
 
     suspend fun sendText(message: String, maxWriteLength: Int) {
         try {
-            Timber.tag("UART").v("-> \"$message\"")
-            message.toByteArray().chunked(maxWriteLength).forEach { rxCharacteristic.write(it) }
+            message.toByteArray().chunked(maxWriteLength).forEach {
+                rxCharacteristic.write(it)
+                Timber.tag(tag).log(Log.Level.APPLICATION, "-> \"${String(it)}\" (${it.size} bytes)")
+            }
         } catch (e: Exception) {
-            Timber.tag("UART").e(e, "Error sending text")
+            Timber.tag(tag).e(e, "Error sending text")
         } finally {
             repository.onNewMessageSent(message)
         }

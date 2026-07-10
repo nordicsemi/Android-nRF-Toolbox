@@ -2,21 +2,19 @@
 <resources>
     <string name="rscs_title">Running speed &amp; cadence</string>
 
-    <string name="rscs_activity">Activity</string>
-    <string name="rscs_pace">Pace</string>
     <string name="rscs_cadence">Cadence</string>
+    <string name="rscs_rpm">%d RPM</string>
     <string name="rscs_speed">Speed</string>
     <string name="rscs_distance">Total distance</string>
-    <string name="rscs_features">Supported features</string>
-    <string name="rscs_number_of_steps">Number of steps</string>
+    <string name="rscs_stride_length"> Stride length</string>
 
+    <string name="rscs_activity">Activity</string>
     <string name="rscs_walking">Walking</string>
     <string name="rscs_running">Running</string>
-    <string name="rscs_rpm">%d RPM</string>
-    <string name="stride_length"> Stride length</string>
 
     <string name="rscs_settings_unit_title">Select unit</string>
 
+    <string name="rscs_features">Supported features</string>
     <string name="supported_feature">Supported features</string>
     <string name="instantaneous_stride_length_measurement">Instantaneous stride length measurement</string>
     <string name="total_distance_measurement">Total distance measurement</string>

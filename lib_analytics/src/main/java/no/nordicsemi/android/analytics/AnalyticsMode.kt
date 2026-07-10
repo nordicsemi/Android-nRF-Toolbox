@@ -37,7 +37,7 @@ package no.nordicsemi.android.analytics
 enum class Link(val displayName: String) {
     LOGGER("LOGGER"),
     GITHUB("GITHUB"),
-    DEV_ACADEMY("DEV_ACADEMY"),
+    DEV_ZONE("DEV_ZONE"),
 }
 
 /**

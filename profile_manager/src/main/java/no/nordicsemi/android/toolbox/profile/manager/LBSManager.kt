@@ -24,6 +24,7 @@ class LBSManager(
     onReady: (ServiceManager) -> Unit,
 ) : ServiceManager(LBS_SERVICE_UUID, deviceId, "LBS", onReady) {
     override val profile: ServiceType = ServiceType.LBS
+    private val tag = "LBS ($deviceId)"
 
     val repository = LBSRepository()
 
@@ -40,29 +41,29 @@ class LBSManager(
     override suspend fun CoroutineScope.initialize() {
         buttonCharacteristic
             .subscribe {
-                Timber.tag("LBS").log(Log.Level.APPLICATION, "Button notifications enabled")
+                Timber.tag(tag).log(Log.Level.APPLICATION, "Button notifications enabled")
             }
             .onStart {
-                Timber.tag("LBS").v("Enabling Button notifications...")
+                Timber.tag(tag).v("Enabling Button notifications...")
             }
             .map { ButtonStateParser.parse(it) }
             .onEach {
-                Timber.tag("LBS").log(Log.Level.APPLICATION, "Button ${if (it) "pressed" else "released"}")
+                Timber.tag(tag).log(Log.Level.APPLICATION, "Button ${if (it) "pressed" else "released"}")
                 repository.updateButtonState(it)
             }
-            .catch { Timber.tag("LBS").e(it) }
+            .catch { Timber.tag(tag).e(it) }
             .onCompletion { repository.clear() }
             .launchIn(this)
 
         if (buttonCharacteristic.isReadable()) {
             try {
-                Timber.tag("LBS").v("Reading initial button state...")
+                Timber.tag(tag).v("Reading initial button state...")
                 val state = ButtonStateParser.parse(buttonCharacteristic.read())
-                Timber.tag("LBS")
+                Timber.tag(tag)
                     .log(Log.Level.APPLICATION, "Button ${if (state) "pressed" else "released"}")
                 repository.updateButtonState(state)
             } catch (e: Exception) {
-                Timber.tag("LBS").e(e, "Error reading initial button state")
+                Timber.tag(tag).e(e, "Error reading initial button state")
             }
         }
 
@@ -71,11 +72,11 @@ class LBSManager(
 
     suspend fun writeLED(ledState: Boolean) {
         try {
-            Timber.tag("LBS").v("Turning LED ${if (ledState) "ON" else "OFF"}...")
+            Timber.tag(tag).v("Turning LED ${if (ledState) "ON" else "OFF"}...")
             ledCharacteristic.write(ledState.encode())
-            Timber.tag("LBS").log(Log.Level.APPLICATION, "LED ${if (ledState) "ON" else "OFF"}")
+            Timber.tag(tag).log(Log.Level.APPLICATION, "LED ${if (ledState) "ON" else "OFF"}")
         } catch (e: Exception) {
-            Timber.tag("LBS").e(e, "Error writing to LED characteristic")
+            Timber.tag(tag).e(e, "Error writing to LED characteristic")
         } finally {
             repository.updateLedState(ledState)
         }
