@@ -15,4 +15,5 @@
     <string name="mds_suspended">Suspended for %ds</string>
     <string name="mds_connecting">Connecting…</string>
     <string name="mds_disconnected">Disconnected</string>
+    <string name="mds_unauthorized">Unauthorized: Invalid Project Key</string>
 </resources>

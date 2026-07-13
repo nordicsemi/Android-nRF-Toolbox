@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,12 +43,18 @@ private fun ObservabilityView(
     modifier: Modifier = Modifier,
 ) {
     val status = when (state.state) {
-        is ChunksEmitter.State.Disconnected -> stringResource(R.string.mds_disconnected)
+        is ChunksEmitter.State.Disconnected ->  {
+            when (state.uploadingState) {
+                is ChunksUploader.State.Unauthorized -> stringResource(R.string.mds_unauthorized)
+                else -> stringResource(R.string.mds_disconnected)
+            }
+        }
         is ChunksEmitter.State.Initializing -> stringResource(R.string.mds_connecting)
         is ChunksEmitter.State.Ready -> {
             when (val u = state.uploadingState) {
                 is ChunksUploader.State.Idle -> stringResource(R.string.mds_connected)
                 is ChunksUploader.State.InProgress -> stringResource(R.string.mds_uploading)
+                is ChunksUploader.State.Unauthorized -> stringResource(R.string.mds_unauthorized)
                 is ChunksUploader.State.Suspended -> stringResource(R.string.mds_suspended, u.delayInSeconds)
             }
         }
@@ -59,10 +66,14 @@ private fun ObservabilityView(
         SectionTitle(
             icon = Icons.Default.DeveloperBoard,
             title = stringResource(id = R.string.mds_title),
+            tint = if (state.uploadingState is ChunksUploader.State.Unauthorized)
+                MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
         )
         Text(
             text = status,
             style = MaterialTheme.typography.bodyLarge,
+            fontWeight = if (state.uploadingState is ChunksUploader.State.Unauthorized) FontWeight.Bold else FontWeight.Normal,
+            color = if (state.uploadingState is ChunksUploader.State.Unauthorized) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
         )
         SectionRow {
             KeyValueColumn(
