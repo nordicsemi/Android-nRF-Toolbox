@@ -20,6 +20,16 @@ class MDSManager(
     private val tag = "MDS ($deviceId)"
 
     val manager: ObservabilityManager = ObservabilityManager.create(context)
+        .apply {
+            logger = Log.Sink { _, l, _, t, messageBuilder ->
+                when (l) {
+                    Log.Level.WARN -> Timber.tag(tag).w(messageBuilder())
+                    Log.Level.ERROR -> Timber.tag(tag).e(messageBuilder())
+                    Log.Level.ASSERT -> Timber.tag(tag).wtf(messageBuilder())
+                    else -> Timber.tag(tag).log(LogContract.Log.Level.APPLICATION, t, messageBuilder())
+                }
+            }
+        }
 
     // MonitoringAndDiagnosticsProfile is a class, so MDSManager can't extend it.
     // Instead, let's just all  `prepare` and `initialize` protected methods from this profile.
@@ -27,10 +37,6 @@ class MDSManager(
     private val impl = object : MonitoringAndDiagnosticsProfile() {
         public override fun prepare(service: RemoteService) = super.prepare(service)
         suspend fun run(scope: CoroutineScope) = scope.initialize()
-    }.apply {
-        logger = Log.Sink { _, _, _, t, messageBuilder ->
-            Timber.tag(tag).log(LogContract.Log.Level.APPLICATION, t, messageBuilder())
-        }
     }
 
     override fun prepare(service: RemoteService) {
