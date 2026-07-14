@@ -68,10 +68,13 @@ internal class ProfileViewModel @Inject constructor(
         }
     }
 
-    private fun observeConnectedDevices() {
-        val api = serviceApi
+    override fun onCleared() {
+        super.onCleared()
+        profileServiceManager.unbindService()
+    }
 
-        api.devices
+    private fun observeConnectedDevices() {
+        serviceApi.devices
             .mapNotNull { devices -> devices[address] }
             .onEach { deviceData ->
                 logSession = serviceApi.getLogSession(address)
@@ -86,9 +89,7 @@ internal class ProfileViewModel @Inject constructor(
     }
 
     private fun observerDisconnection() {
-        val api = serviceApi
-
-        api.disconnectionEvent
+        serviceApi.disconnectionEvent
             .filter { it.address == address }
             .onEach { event ->
                 // If the device is not in the map, it's disconnected.
