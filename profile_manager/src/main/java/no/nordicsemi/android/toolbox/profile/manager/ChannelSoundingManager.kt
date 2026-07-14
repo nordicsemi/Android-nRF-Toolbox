@@ -189,6 +189,7 @@ class ChannelSoundingManager(
             UpdateRate.NORMAL -> RawRangingDevice.UPDATE_RATE_NORMAL
             UpdateRate.INFREQUENT -> RawRangingDevice.UPDATE_RATE_INFREQUENT
         }
+
         val rangingDevice = RangingDevice.Builder()
             .setUuid(UUID.nameUUIDFromBytes(deviceId.toByteArray()))
             .build()
@@ -238,7 +239,7 @@ class ChannelSoundingManager(
                     repository.updateSessionAction(RangingSessionAction.OnError(SessionClosedReason.MISSING_PERMISSION))
                 }
 
-                else -> openRangingSession(rangingManager, rawRangingDeviceConfig, rangingPreference)
+                else -> openRangingSession(rangingManager, rangingPreference)
             }
         }
         capabilitiesCallback = newCapabilitiesCallback
@@ -250,7 +251,6 @@ class ChannelSoundingManager(
     @SuppressLint("MissingPermission")
     private fun openRangingSession(
         rangingManager: RangingManager,
-        rawRangingDeviceConfig: RawInitiatorRangingConfig,
         rangingPreference: RangingPreference,
     ) {
         val session = rangingManager.createRangingSession(context.mainExecutor, createRangingSessionCallback())
@@ -259,13 +259,7 @@ class ChannelSoundingManager(
             return
         }
         activeSession = session
-        try {
-            session.addDeviceToRangingSession(rawRangingDeviceConfig)
-        } catch (e: Exception) {
-            Timber.tag(tag).e(e, "Failed to add device to ranging session")
-        } finally {
-            session.start(rangingPreference)
-        }
+        session.start(rangingPreference)
     }
 
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
