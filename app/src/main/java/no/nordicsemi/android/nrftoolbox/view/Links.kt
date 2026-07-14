@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Support
+import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +32,7 @@ internal fun Links(onEvent: (UiEvent) -> Unit) {
             shape = MaterialTheme.shapes.medium.copy(bottomStart = CornerSize(4.dp), bottomEnd = CornerSize(4.dp)),
         ) {
             Link(
-                icon = Icons.Default.Code,
+                icon = Icons.Outlined.Keyboard,
                 title = stringResource(R.string.github_repo),
                 subtitle = stringResource(R.string.github_repo_subtitle),
                 onClick = { onEvent(UiEvent.OnGitHubClick) },
@@ -43,7 +43,7 @@ internal fun Links(onEvent: (UiEvent) -> Unit) {
             shape = MaterialTheme.shapes.medium.copy(topStart = CornerSize(4.dp), topEnd = CornerSize(4.dp)),
         ) {
             Link(
-                icon = Icons.Default.Language,
+                icon = Icons.Default.Support,
                 title = stringResource(R.string.nordic_dev_zone),
                 subtitle = stringResource(R.string.nordic_dev_zone_subtitle),
                 onClick = { onEvent(UiEvent.OnNordicDevZoneClick) },
