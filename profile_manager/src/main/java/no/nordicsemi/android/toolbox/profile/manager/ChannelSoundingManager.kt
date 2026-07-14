@@ -75,7 +75,6 @@ class ChannelSoundingManager(
     }
 
     private var activeSession: RangingSession? = null
-    private var capabilitiesCallback: RangingManager.RangingCapabilitiesCallback? = null
     private val previousRangingData = mutableListOf<Float>()
 
     /** Rate the currently active (or last started) session was configured with. */
@@ -127,6 +126,7 @@ class ChannelSoundingManager(
     fun changeUpdateRate(rate: UpdateRate) {
         repository.updateRate(rate)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA || rate == currentRate) return
+        Timber.tag(tag).log(Log.Level.APPLICATION, "Update rate changed to: $rate")
         closeSession { startRangingMeasurement(rate) }
     }
 
@@ -134,6 +134,7 @@ class ChannelSoundingManager(
     fun restartRangingSession() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) return
         val rate = repository.data.value.updateRate
+        Timber.tag(tag).log(Log.Level.APPLICATION, "Session restarted")
         closeSession { startRangingMeasurement(rate) }
     }
 
@@ -158,9 +159,15 @@ class ChannelSoundingManager(
             repository.updateSessionAction(RangingSessionAction.OnRestarting)
         }
         try {
-            if (isSessionOpen) session.stop() else session.close()
+            if (isSessionOpen) {
+                Timber.tag(tag).v("Stopping session...")
+                session.stop()
+            } else {
+                Timber.tag(tag).v("Closing session...")
+                session.close()
+            }
         } catch (e: Exception) {
-            Timber.tag(tag).e(e, "Error closing ranging session")
+            Timber.tag(tag).e("Operation failed: ${e.message}")
             closing = false
             pendingRestart = null
             repository.updateSessionAction(RangingSessionAction.OnError(SessionClosedReason.UNKNOWN))
@@ -223,27 +230,33 @@ class ChannelSoundingManager(
             .setSessionConfig(sessionConfig)
             .build()
 
-        val newCapabilitiesCallback = RangingManager.RangingCapabilitiesCallback { capabilities ->
+        var callback: RangingManager.RangingCapabilitiesCallback? = null
+        callback = RangingManager.RangingCapabilitiesCallback { capabilities ->
+            callback?.let { rangingManager.unregisterCapabilitiesCallback(it) }
             if (activeSession != null) return@RangingCapabilitiesCallback
+            Timber.tag(tag).log(Log.Level.APPLICATION, "Ranging capabilities: $capabilities")
             val csCapabilities = capabilities.csCapabilities
             when {
                 csCapabilities == null -> {
                     repository.updateSessionAction(RangingSessionAction.OnError(SessionClosedReason.NOT_SUPPORTED))
                 }
 
-                !csCapabilities.supportedSecurityLevels.contains(BleCsRangingCapabilities.CS_SECURITY_LEVEL_ONE) -> {
+                BleCsRangingCapabilities.CS_SECURITY_LEVEL_ONE !in csCapabilities.supportedSecurityLevels -> {
+                    Timber.tag(tag).w("Security level 1 not supported")
                     repository.updateSessionAction(RangingSessionAction.OnError(SessionClosedReason.CS_SECURITY_NOT_AVAILABLE))
                 }
 
                 !hasRangingPermission() -> {
+                    Timber.tag(tag).w("Missing RANGING permission")
                     repository.updateSessionAction(RangingSessionAction.OnError(SessionClosedReason.MISSING_PERMISSION))
                 }
 
                 else -> openRangingSession(rangingManager, rangingPreference)
             }
+        }.also { callback ->
+            Timber.tag(tag).v("Requesting host capabilities...")
+            rangingManager.registerCapabilitiesCallback(context.mainExecutor, callback)
         }
-        capabilitiesCallback = newCapabilitiesCallback
-        rangingManager.registerCapabilitiesCallback(context.mainExecutor, newCapabilitiesCallback)
     }
 
     /** Creates and starts the [RangingSession]. Permission was just verified by the caller. */
@@ -253,12 +266,15 @@ class ChannelSoundingManager(
         rangingManager: RangingManager,
         rangingPreference: RangingPreference,
     ) {
+        Timber.tag(tag).v("Creating ranging session...")
         val session = rangingManager.createRangingSession(context.mainExecutor, createRangingSessionCallback())
         if (session == null) {
+            Timber.tag(tag).w("Creating ranging session failed")
             repository.updateSessionAction(RangingSessionAction.OnError(SessionClosedReason.UNKNOWN))
             return
         }
         activeSession = session
+        Timber.tag(tag).log(Log.Level.APPLICATION, "Starting session with preference: $rangingPreference")
         session.start(rangingPreference)
     }
 
@@ -266,16 +282,18 @@ class ChannelSoundingManager(
     private fun createRangingSessionCallback() = object : RangingSession.Callback {
         override fun onOpened() {
             isSessionOpen = true
+            Timber.tag(tag).log(Log.Level.APPLICATION, "Ranging session opened")
             repository.updateSessionAction(RangingSessionAction.OnStart)
         }
 
         override fun onOpenFailed(reason: Int) {
             activeSession = null
-            unregisterCapabilitiesCallback()
+            Timber.tag(tag).e("Opening ranging session failed: $reason")
             repository.updateSessionAction(RangingSessionAction.OnError(RangingSessionFailedReason.getReason(reason)))
         }
 
         override fun onStarted(peer: RangingDevice, technology: Int) {
+            Timber.tag(tag).log(Log.Level.APPLICATION, "Ranging session started with peer: $peer, technology: $technology")
             previousRangingData.clear()
             repository.updateSessionAction(RangingSessionAction.OnStart)
         }
@@ -293,6 +311,7 @@ class ChannelSoundingManager(
         @SuppressLint("MissingPermission") // Permission was already verified when the session was opened.
         override fun onStopped(peer: RangingDevice, technology: Int) {
             isSessionOpen = false
+            Timber.tag(tag).log(Log.Level.APPLICATION, "Ranging session stopped")
             previousRangingData.clear()
             if (closing) {
                 // We requested this stop as part of closeSession() - finish the teardown.
@@ -308,13 +327,21 @@ class ChannelSoundingManager(
             activeSession = null
             closing = false
             isSessionOpen = false
-            unregisterCapabilitiesCallback()
+            if (reason == RangingSessionFailedReason.LOCAL_REQUEST.reason) {
+                Timber.tag(tag).log(Log.Level.APPLICATION, "Ranging session closed (local request)")
+            } else {
+                Timber.tag(tag).e("Ranging session closed with reason: $reason")
+            }
             previousRangingData.clear()
 
             val restart = pendingRestart
             pendingRestart = null
             when {
-                restart != null -> restart()
+                restart != null -> {
+                    Timber.tag(tag).v("Restarting session...")
+                    restart()
+                }
+
                 reason == RangingSessionFailedReason.LOCAL_REQUEST.reason ->
                     repository.updateSessionAction(RangingSessionAction.OnClosed)
 
@@ -322,12 +349,6 @@ class ChannelSoundingManager(
                     repository.updateSessionAction(RangingSessionAction.OnError(RangingSessionFailedReason.getReason(reason)))
             }
         }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-    private fun unregisterCapabilitiesCallback() {
-        capabilitiesCallback?.let { rangingManager?.unregisterCapabilitiesCallback(it) }
-        capabilitiesCallback = null
     }
 
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
