@@ -49,7 +49,7 @@
     <string name="quick_start_module_full">Quick Start</string>
     <string name="dis_module_full">Device Information</string>
 
-    <string name="device_not_connected_title">No devices connected</string>
+    <string name="device_not_connected_title">No Connected Devices</string>
     <string name="device_not_connected_message">Connect a device to get started.</string>
 
     <string name="connect_device">Connect</string>
