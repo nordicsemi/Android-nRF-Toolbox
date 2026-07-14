@@ -72,5 +72,4 @@ internal fun SignalStrengthBar(confidenceLevel: Int? = ConfidenceLevel.CONFIDENC
                 .background(brush)
         )
     }
-
 }

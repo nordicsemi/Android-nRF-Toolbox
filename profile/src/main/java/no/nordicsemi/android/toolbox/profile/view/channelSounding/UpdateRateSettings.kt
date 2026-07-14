@@ -14,7 +14,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -67,12 +67,6 @@ internal fun UpdateRateSettings(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun UpdateRateSettingsPreview() {
-    UpdateRateSettings(UpdateRate.NORMAL) { }
-}
-
 @Composable
 internal fun UpdateRateDialog(
     selectedUpdateRate: UpdateRate,
@@ -99,63 +93,13 @@ internal fun UpdateRateDialog(
             }
         },
         text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-
-                Column(Modifier.selectableGroup()) {
-                    updateOptions.forEach { text ->
-                        OutlinedCard(
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .selectable(
-                                        selected = (text == selectedOption),
-                                        onClick = { onOptionSelected(text) },
-                                        role = Role.RadioButton
-                                    )
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(
-                                        text = stringResource(text.toUiString()),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                    )
-                                    Text(
-                                        text = stringResource(text.description()),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                Spacer(modifier = Modifier.weight(1f))
-                                RadioButton(
-                                    selected = (text == selectedOption),
-                                    onClick = null // null recommended for accessibility with screen readers
-                                )
-
-                            }
-                        }
-                    }
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.WarningAmber,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.scrim
-                    )
-                    Text(text = stringResource(R.string.update_rate_change_warning))
-                }
-            }
-
-
+            Content(
+                updateOptions = updateOptions,
+                selectedOption = selectedOption,
+                onItemSelected = onOptionSelected
+            )
         },
-        onDismissRequest = { onDismiss() },
+        onDismissRequest = onDismiss,
         confirmButton = {
             Button(
                 onClick = {
@@ -184,12 +128,79 @@ internal fun UpdateRateDialog(
     )
 }
 
+@Composable
+private fun Content(
+    updateOptions: List<UpdateRate>,
+    selectedOption: UpdateRate,
+    onItemSelected: (UpdateRate) -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedCard(
+            modifier = Modifier.selectableGroup()
+        ) {
+            updateOptions.forEach { rate ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = rate == selectedOption,
+                            onClick = { onItemSelected(rate) },
+                            role = Role.RadioButton,
+                        )
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = stringResource(rate.toUiString()),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                        Text(
+                            text = stringResource(rate.description()),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    RadioButton(
+                        selected = rate == selectedOption,
+                        onClick = null // null recommended for accessibility with screen readers
+                    )
+                }
+            }
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Warning,
+                contentDescription = null,
+            )
+            Text(text = stringResource(R.string.update_rate_change_warning))
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun UpdateRateDialogPreview() {
-    UpdateRateDialog(
-        selectedUpdateRate = UpdateRate.NORMAL,
-        onConfirmation = {},
-        onDismiss = {}
+    var selectedOption by remember { mutableStateOf(UpdateRate.NORMAL) }
+    UpdateRateSettings(
+        selectedItem = selectedOption,
+        onItemSelected = { selectedOption = it },
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun UpdateRateContentPreview() {
+    var selectedOption by remember { mutableStateOf(UpdateRate.NORMAL) }
+    Content(
+        updateOptions = UpdateRate.entries,
+        selectedOption = selectedOption,
+        onItemSelected = { selectedOption = it },
     )
 }

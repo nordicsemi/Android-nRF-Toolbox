@@ -88,5 +88,4 @@ fun TextWithAnimatedDots(
             dotSize = dotSize
         )
     }
-
 }

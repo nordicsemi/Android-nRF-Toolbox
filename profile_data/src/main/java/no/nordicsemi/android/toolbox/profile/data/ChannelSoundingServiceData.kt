@@ -37,8 +37,8 @@ data class CSRangingMeasurement(
 )
 
 enum class UpdateRate {
-    NORMAL,
     FREQUENT,
+    NORMAL,
     INFREQUENT;
 }
 
