@@ -70,8 +70,8 @@ internal fun NoConnectedDeviceView() {
             Text(
                 text = stringResource(R.string.device_not_connected_message),
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.alpha(0.6f),
             )
         }
     }

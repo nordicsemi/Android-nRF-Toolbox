@@ -61,4 +61,8 @@
     <string name="github_repo_subtitle">GitHub</string>
     <string name="nordic_dev_zone">Help</string>
     <string name="nordic_dev_zone_subtitle">Nordic DevZone</string>
+
+    <string name="about">About</string>
+    <string name="version">Version</string>
+    <string name="version_value">%s (%s)</string>
 </resources>
