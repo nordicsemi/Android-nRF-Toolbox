@@ -1,6 +1,7 @@
 package no.nordicsemi.android.toolbox.profile.view.channelSounding
 
 import android.os.Build
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SocialDistance
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -47,6 +51,7 @@ import no.nordicsemi.android.toolbox.profile.data.CsRangingData
 import no.nordicsemi.android.toolbox.profile.data.RangingSessionAction
 import no.nordicsemi.android.toolbox.profile.data.RangingSessionFailedReason
 import no.nordicsemi.android.toolbox.profile.data.RangingTechnology
+import no.nordicsemi.android.toolbox.profile.data.SessionCloseReasonProvider
 import no.nordicsemi.android.toolbox.profile.data.SessionClosedReason
 import no.nordicsemi.android.toolbox.profile.data.UpdateRate
 import no.nordicsemi.android.toolbox.profile.manager.ChannelSoundingManager
@@ -60,7 +65,6 @@ import no.nordicsemi.android.ui.view.internal.LoadingView
 @Composable
 internal fun ChannelSoundingScreen(
     manager: ChannelSoundingManager,
-    deviceId: String,
     isNotificationPermissionGranted: Boolean?,
 ) {
     // Channel Sounding is available from Android 16 (API 36) onward, while better accuracy and
@@ -71,9 +75,7 @@ internal fun ChannelSoundingScreen(
                 key = manager.instanceId,
                 creationCallback = { factory -> factory.create(manager) }
             )
-            val channelSoundingMapState by channelSoundingViewModel.state.collectAsStateWithLifecycle()
-            val channelSoundingState =
-                channelSoundingMapState[deviceId] ?: ChannelSoundingServiceData()
+            val channelSoundingState by channelSoundingViewModel.state.collectAsStateWithLifecycle()
 
             val onClickEvent: (event: ChannelSoundingEvent) -> Unit = {
                 channelSoundingViewModel.onEvent(it)
@@ -81,69 +83,12 @@ internal fun ChannelSoundingScreen(
 
             ChannelSoundingView(channelSoundingState, onClickEvent)
         }
-    } else if (Build.VERSION.SDK_INT_FULL == Build.VERSION_CODES_FULL.BAKLAVA && isNotificationPermissionGranted != null) {
-        // It supports the Channel Sounding, but we are intentionally not enabling it because of the accuracy and performance issues.
-        ChannelSoundingNotEnabledView()
     } else {
-        ChannelSoundingNotSupportedView()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ChannelSoundingNotEnabledView() {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        ScreenSection(modifier = Modifier.padding(0.dp) /* No padding */) {
-            Column(modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
-                SectionTitle(
-                    icon = Icons.Default.SocialDistance,
-                    title = stringResource(R.string.channel_sounding),
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(R.string.channel_sounding_not_enabled),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ChannelSoundingNotSupportedView() {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        ScreenSection(modifier = Modifier.padding(0.dp) /* No padding */) {
-            Column(modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
-                SectionTitle(
-                    icon = Icons.Default.SocialDistance,
-                    title = stringResource(R.string.channel_sounding),
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(R.string.channel_sounding_not_supported),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
+        SessionError(
+            reason = SessionClosedReason.NOT_SUPPORTED,
+            isRestartingSession = false,
+            onClickEvent = {},
+        )
     }
 }
 
@@ -153,87 +98,63 @@ private fun ChannelSoundingView(
     onClickEvent: (ChannelSoundingEvent) -> Unit,
 ) {
     var isRestartingSession by rememberSaveable { mutableStateOf(false) }
-    Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        when (val sessionData = channelSoundingState.rangingSessionAction) {
-            is RangingSessionAction.OnError -> {
-                SessionError(sessionData, isRestartingSession) { onClickEvent(it) }
-            }
-
-            is RangingSessionAction.OnResult -> {
-                RangingContent(
-                    channelSoundingState.updateRate,
-                    sessionData.data,
-                    sessionData.previousData,
-                ) {
-                    isRestartingSession = true
-                    onClickEvent(it)
-                }
-            }
-
-            RangingSessionAction.OnClosed -> {
-                SessionClosed(isRestartingSession, onClickEvent)
-            }
-
-            RangingSessionAction.OnStart -> {
-                isRestartingSession = false
-                InitiatingSession()
-            }
-
-            RangingSessionAction.OnRestarting -> {
-                isRestartingSession = true
-                RestartingSession()
-            }
-
-            null -> LoadingView()
+    when (val sessionData = channelSoundingState.rangingSessionAction) {
+        is RangingSessionAction.OnError -> {
+            SessionError(sessionData.reason, isRestartingSession) { onClickEvent(it) }
         }
 
+        is RangingSessionAction.OnResult -> {
+            RangingContent(
+                channelSoundingState.updateRate,
+                sessionData.data,
+                sessionData.previousData,
+            ) {
+                isRestartingSession = true
+                onClickEvent(it)
+            }
+        }
+
+        RangingSessionAction.OnClosed -> {
+            SessionClosed(isRestartingSession, onClickEvent)
+        }
+
+        RangingSessionAction.OnStart -> {
+            isRestartingSession = false
+            InitiatingSession()
+        }
+
+        RangingSessionAction.OnRestarting -> {
+            isRestartingSession = true
+            RestartingSession()
+        }
+
+        null -> LoadingView()
     }
 }
 
 @Composable
 private fun InitiatingSession() {
-    ScreenSection(modifier = Modifier.padding(0.dp) /* No padding */) {
-        Column(modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
-            SectionTitle(
-                icon = Icons.Default.SocialDistance,
-                title = stringResource(R.string.channel_sounding),
-            )
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            TextWithAnimatedDots(
-                text = stringResource(R.string.initiating_ranging),
-            )
-        }
+    ScreenSection {
+        SectionTitle(
+            icon = Icons.Default.SocialDistance,
+            title = stringResource(R.string.channel_sounding),
+        )
+        TextWithAnimatedDots(
+            text = stringResource(R.string.initiating_ranging),
+        )
     }
 }
 
 @Composable
 private fun RestartingSession() {
-    ScreenSection(modifier = Modifier.padding(0.dp) /* No padding */) {
-        Column(modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
-            SectionTitle(
-                icon = Icons.Default.SocialDistance,
-                title = stringResource(R.string.channel_sounding),
-            )
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            TextWithAnimatedDots(
-                text = stringResource(R.string.ranging_session_restarting),
-            )
-        }
+    ScreenSection {
+        SectionTitle(
+            icon = Icons.Default.SocialDistance,
+            title = stringResource(R.string.channel_sounding),
+        )
+        TextWithAnimatedDots(
+            text = stringResource(R.string.ranging_session_restarting),
+        )
     }
 }
 
@@ -247,24 +168,15 @@ private fun SessionClosed(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        ScreenSection(modifier = Modifier.padding(0.dp) /* No padding */) {
-            Column(modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
-                SectionTitle(
-                    icon = Icons.Default.SocialDistance,
-                    title = stringResource(R.string.channel_sounding),
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    stringResource(R.string.ranging_session_stopped),
-                    modifier = Modifier.padding(8.dp),
-                    textAlign = TextAlign.Center,
-                )
-            }
+        ScreenSection {
+            SectionTitle(
+                icon = Icons.Default.SocialDistance,
+                title = stringResource(R.string.channel_sounding),
+            )
+            Text(
+                stringResource(R.string.ranging_session_stopped),
+                style = MaterialTheme.typography.bodyLarge,
+            )
         }
 
         if (isRestartingSession) {
@@ -281,17 +193,9 @@ private fun SessionClosed(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun SessionClosed_Preview() {
-    NordicTheme {
-        SessionClosed(false, onClickEvent = {})
-    }
-}
-
 @Composable
 private fun SessionError(
-    sessionData: RangingSessionAction.OnError,
+    reason: SessionCloseReasonProvider,
     isRestartingSession: Boolean,
     onClickEvent: (ChannelSoundingEvent) -> Unit,
 ) {
@@ -300,32 +204,34 @@ private fun SessionError(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        ScreenSection(modifier = Modifier.padding(0.dp) /* No padding */) {
-            Column(modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
-                SectionTitle(
-                    icon = Icons.Default.SocialDistance,
-                    title = stringResource(R.string.channel_sounding),
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(sessionData.reason.toUiString()),
-                    modifier = Modifier.padding(8.dp),
-                    textAlign = TextAlign.Center,
-                )
-            }
+        ScreenSection(
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            SectionTitle(
+                icon = Icons.Default.SocialDistance,
+                title = stringResource(R.string.channel_sounding),
+                tint = MaterialTheme.colorScheme.error,
+            )
+            Image(
+                imageVector = Icons.Rounded.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(72.dp),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.error),
+            )
+            Text(
+                text = stringResource(reason.toUiString()),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+            )
         }
 
-        if (isRestartingSession && sessionData.reason == RangingSessionFailedReason.LOCAL_REQUEST) {
+        if (isRestartingSession && reason == RangingSessionFailedReason.LOCAL_REQUEST) {
             Button(onClick = { /* No action */ }) {
                 Text(text = stringResource(id = R.string.ranging_session_reconnecting))
             }
-        } else if (sessionData.reason != SessionClosedReason.NOT_SUPPORTED ||
-            sessionData.reason != SessionClosedReason.RANGING_NOT_AVAILABLE
+        } else if (
+            reason != SessionClosedReason.NOT_SUPPORTED &&
+            reason != SessionClosedReason.RANGING_NOT_AVAILABLE
         ) {
             Button(
                 onClick = { onClickEvent(ChannelSoundingEvent.RestartRangingSession) },
@@ -377,8 +283,7 @@ private fun DistanceDashboard(measurement: Double) {
         verticalArrangement = Arrangement.Center,
     ) {
         // get measurement in string with 2 decimal places
-        val data = "%.2f".format(measurement.toFloat())
-        if (data == "0.00") {
+        if (measurement < 0.01) {
             AnimatedThreeDots(dotSize = 16.dp)
         } else {
             Text(
@@ -397,15 +302,6 @@ private fun DistanceDashboard(measurement: Double) {
     }
 }
 
-@Preview
-@Composable
-private fun DDistanceDashboard_Preview() {
-    NordicTheme {
-        DistanceDashboard(0.0)
-    }
-}
-
-@Preview(showBackground = true)
 @Composable
 private fun DetailsCard(
     updateRate: UpdateRate = UpdateRate.NORMAL,
@@ -526,4 +422,47 @@ private fun RecentMeasurementsChart(
             previousData = previousMeasurements
         )
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DistanceDashboard_Preview() {
+    DistanceDashboard(10.0)
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DistanceDashboardLoading_Preview() {
+    DistanceDashboard(0.0)
+}
+
+@Preview
+@Composable
+private fun Restarting_Preview() {
+    RestartingSession()
+}
+
+@Preview
+@Composable
+private fun DetailsCard_Preview() {
+    DetailsCard()
+}
+
+@Preview
+@Composable
+private fun SessionClosed_Preview() {
+    SessionClosed(
+        isRestartingSession = false,
+        onClickEvent = {}
+    )
+}
+
+@Preview
+@Composable
+private fun SessionError_Preview() {
+    SessionError(
+        reason = SessionClosedReason.NOT_SUPPORTED,
+        isRestartingSession = false,
+        onClickEvent = {}
+    )
 }

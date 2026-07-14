@@ -217,7 +217,6 @@ internal fun DeviceConnectedView(
                     Profile.BATTERY -> BatteryScreen(manager = serviceManager as BatteryManager)
                     Profile.CHANNEL_SOUNDING -> ChannelSoundingScreen(
                         manager = serviceManager as ChannelSoundingManager,
-                        deviceId = state.deviceData.peripheral.address,
                         isNotificationPermissionGranted = isNotificationPermissionGranted
                     )
                     Profile.DDFS -> DFSScreen(manager = serviceManager as DDFSManager)

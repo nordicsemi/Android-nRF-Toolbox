@@ -1,7 +1,6 @@
 package no.nordicsemi.android.toolbox.profile.viewmodel
 
 import android.content.Context
-import android.os.Build
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,20 +22,16 @@ import no.nordicsemi.android.common.navigation.viewmodel.SimpleNavigationViewMod
 import no.nordicsemi.android.log.ILogSession
 import no.nordicsemi.android.service.profile.ProfileServiceManager
 import no.nordicsemi.android.service.profile.ServiceApi
-import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.ProfileDestinationId
 import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.argName
-import no.nordicsemi.android.toolbox.profile.repository.channelSounding.ChannelSoundingManager
+import no.nordicsemi.android.toolbox.profile.manager.ChannelSoundingManager
 import no.nordicsemi.kotlin.ble.client.android.Peripheral
-import timber.log.Timber
 import javax.inject.Inject
-import javax.inject.Provider
 
 @HiltViewModel
 internal class ProfileViewModel @Inject constructor(
     private val profileServiceManager: ProfileServiceManager,
-    private val channelSoundingManager: Provider<ChannelSoundingManager>,
     private val navigator: Navigator,
     private val analytics: AppAnalytics,
     @param:ApplicationContext private val context: Context,
@@ -92,15 +87,21 @@ internal class ProfileViewModel @Inject constructor(
         serviceApi.disconnectionEvent
             .filter { it.address == address }
             .onEach { event ->
-                // If the device is not in the map, it's disconnected.
-                // Check if there's a specific disconnection event for this device.
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                    channelSoundingManager.get()?.closeSession(address)
-                }
-                // Close channel sounding session if active
+                // Close the active channel sounding session, if any, before dropping the state.
+                closeActiveChannelSoundingSession()
                 _uiState.value = ProfileUiState.Disconnected(event.reason)
             }
             .launchIn(viewModelScope)
+    }
+
+    /**
+     * Closes the ranging session of the connected device's [ChannelSoundingManager], if present.
+     */
+    private fun closeActiveChannelSoundingSession() {
+        (_uiState.value as? ProfileUiState.Connected)?.deviceData?.services
+            ?.filterIsInstance<ChannelSoundingManager>()
+            ?.firstOrNull()
+            ?.closeSession()
     }
 
     /**
@@ -118,19 +119,8 @@ internal class ProfileViewModel @Inject constructor(
     fun onEvent(event: ConnectionEvent) {
         when (event) {
             ConnectionEvent.DisconnectEvent -> {
-                // if the profile is channel sounding then we need to stop the ranging session before disconnecting.
-                if (_uiState.value is ProfileUiState.Connected) {
-                    val state = _uiState.value as ProfileUiState.Connected
-                    if (state.deviceData.services.any { it.profile == Profile.CHANNEL_SOUNDING }) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                            try {
-                                channelSoundingManager.get().closeSession(address)
-                            } catch (e: Exception) {
-                                Timber.e(" ${e.message}")
-                            }
-                        }
-                    }
-                }
+                // If the profile is channel sounding, stop the ranging session before disconnecting.
+                closeActiveChannelSoundingSession()
                 serviceApi.disconnect(address)
             }
 

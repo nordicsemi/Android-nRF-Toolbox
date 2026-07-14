@@ -66,7 +66,7 @@ object ServiceManagerFactory {
         RSCSManager(deviceId, onReady),
         ThroughputManager(deviceId, onReady),
         UARTManager(deviceId, onReady),
-        ChannelSoundingManager(deviceId, onReady),
+        ChannelSoundingManager(context, deviceId, onReady),
         LBSManager(deviceId, onReady),
         DFUManager(DFU_SERVICE_UUID, deviceId, onReady),
         DFUManager(SMP_SERVICE_UUID, deviceId, onReady),

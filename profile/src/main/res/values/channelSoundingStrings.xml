@@ -2,11 +2,10 @@
 <resources>
     <string name="channel_sounding">Channel Sounding</string>
 
-    <string name="channel_sounding_not_supported">Channel Sounding is not supported on this Android version.</string>
-    <string name="channel_sounding_not_enabled">Channel Sounding is supported on Android 16 QPR2 or later. Please update your device to the latest software to use this feature.</string>
+    <string name="channel_sounding_not_supported">Channel Sounding is supported on Android 16 QPR2 or later. Update your device to required version to use this feature.</string>
     <string name="initiating_ranging">Initiating ranging</string>
     <string name="ranging_session_restarting">Reconnecting session</string>
-    <string name="ranging_session_stopped">Ranging session stopped</string>
+    <string name="ranging_session_stopped">Ranging session stopped.</string>
     <string name="ranging_session_reconnecting">Reconnecting…</string>
 
     <string name="ranging_distance">Distance</string>
