@@ -36,6 +36,10 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 internal class ProfileService : NotificationService() {
+    companion object {
+        const val DEVICE_ADDRESS = "deviceAddress"
+        const val DEVICE_NAME = "deviceName"
+    }
 
     @Inject
     lateinit var centralManager: CentralManager
