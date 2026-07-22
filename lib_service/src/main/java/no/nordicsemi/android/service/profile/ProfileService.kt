@@ -259,7 +259,12 @@ internal class ProfileService : NotificationService() {
         }
 
         override suspend fun forget(address: String) {
-            getPeripheral(address).removeBond()
+            try {
+                // This method may throw: OperationFailedException(reason=Request Failed)
+                getPeripheral(address).removeBond()
+            } catch (e: Exception) {
+                Timber.tag(address).e("Failed to remove bond information: ${e.message}")
+            }
         }
     }
 
