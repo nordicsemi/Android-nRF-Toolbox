@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.ModeStandby
 import androidx.compose.material.icons.filled.RadioButtonChecked
+import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -14,7 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -60,9 +62,13 @@ private fun LedControlView(
             .clickable { onStateChanged(!ledState) }
     ) {
         SectionTitle(
-            icon = Icons.Default.Lightbulb,
+            icon = if (ledState)
+                Icons.Default.Lightbulb
+            else Icons.Outlined.Lightbulb,
             title = stringResource(id = R.string.lbs_led),
-            tint = if (ledState) Color.Yellow else MaterialTheme.colorScheme.primary,
+            tint = if (ledState)
+                colorResource(R.color.nordicSun)
+            else MaterialTheme.colorScheme.primary,
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -85,18 +91,14 @@ private fun ButtonControlView(
     buttonState: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val (text, textColor) = if (buttonState) {
-        stringResource(id = R.string.lbs_button_pressed) to MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-    } else {
-        stringResource(id = R.string.lbs_button_released) to MaterialTheme.colorScheme.primary
-    }
     ScreenSection(
         modifier = modifier,
     ) {
         SectionTitle(
-            icon = Icons.Default.RadioButtonChecked,
+            icon = if (buttonState)
+                Icons.Default.ModeStandby
+            else Icons.Default.RadioButtonChecked,
             title = stringResource(id = R.string.lbs_button),
-            tint = textColor,
         )
         Row {
             Text(
@@ -105,7 +107,9 @@ private fun ButtonControlView(
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = text,
+                text = if (buttonState)
+                    stringResource(id = R.string.lbs_button_pressed)
+                else stringResource(id = R.string.lbs_button_released),
                 style = MaterialTheme.typography.bodyLarge,
             )
         }
@@ -116,7 +120,7 @@ private fun ButtonControlView(
 @Composable
 private fun LecControlViewPreview() {
     LedControlView(
-        ledState = true,
+        ledState = false,
         onStateChanged = {},
     )
 }
@@ -125,6 +129,6 @@ private fun LecControlViewPreview() {
 @Composable
 private fun ButtonControlViewPreview() {
     ButtonControlView(
-        buttonState = true,
+        buttonState = false,
     )
 }
