@@ -72,7 +72,13 @@ internal class ProfileService : NotificationService() {
 
     override fun onDestroy() {
         managedConnections.values.forEach { it.cancel() }
-        loggers.values.forEach { Timber.uproot(it) }
+        loggers.values.forEach {
+            try {
+                Timber.uproot(it)
+            } catch (_: IllegalArgumentException) {
+                // Already uprooted, ignore.
+            }
+        }
         super.onDestroy()
     }
 
@@ -236,7 +242,13 @@ internal class ProfileService : NotificationService() {
      * Uproots and clears the logger for the given device.
      */
     private fun uprootLogger(deviceAddress: String) {
-        loggers[deviceAddress]?.let { Timber.uproot(it) }
+        loggers[deviceAddress]?.let {
+            try {
+                Timber.uproot(it)
+            } catch (_: IllegalArgumentException) {
+                // Already uprooted, ignore.
+            }
+        }
         loggers.remove(deviceAddress)
     }
 
