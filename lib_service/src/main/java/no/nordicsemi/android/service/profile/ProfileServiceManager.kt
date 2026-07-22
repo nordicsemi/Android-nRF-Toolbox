@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.Build
 import android.os.IBinder
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -51,6 +52,10 @@ internal class ProfileServiceManagerImp @Inject constructor(
         val intent = Intent(context, ProfileService::class.java)
         intent.putExtra(ProfileService.DEVICE_ADDRESS, deviceAddress)
         intent.putExtra(ProfileService.DEVICE_NAME, deviceName)
-        context.startService(intent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
     }
 }
