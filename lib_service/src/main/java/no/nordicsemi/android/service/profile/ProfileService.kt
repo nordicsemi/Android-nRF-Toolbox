@@ -141,7 +141,7 @@ internal class ProfileService : NotificationService() {
             observeConnectionState(peripheral)
 
             try {
-                centralManager.connect(peripheral, options = ConnectionOptions.Direct(
+                centralManager.connect(peripheral, options = ConnectionOptions.AutoConnect(
                     automaticallyRequestHighestValueLength = true,
                 ))
             } catch (e: CancellationException) {
@@ -172,7 +172,14 @@ internal class ProfileService : NotificationService() {
                         handleDisconnection(peripheral.address)
                     }
 
-                    else -> {
+                    is ConnectionState.Connecting -> {
+                        _devices.update {
+                            it + (peripheral.address to (it[peripheral.address]?.copy(connectionState = state, services = emptyList())
+                                ?: ServiceApi.DeviceData(peripheral, state)))
+                        }
+                    }
+
+                    is ConnectionState.Connected -> {
                         _devices.update {
                             it + (peripheral.address to (it[peripheral.address]?.copy(connectionState = state)
                                 ?: ServiceApi.DeviceData(peripheral, state)))
