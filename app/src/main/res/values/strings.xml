@@ -54,6 +54,7 @@
 
     <string name="connect_device">Connect</string>
     <string name="connected_devices">Connected devices</string>
+    <string name="reconnecting">Reconnecting…</string>
     <string name="unknown_device">Unknown Device</string>
 
     <string name="links">Links</string>

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Badge
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -22,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
@@ -39,16 +41,34 @@ internal fun FeatureButton(
     profileNames: List<String> = listOf(description),
     deviceName: String?,
     deviceAddress: String,
+    isConnected: Boolean = true,
     onClick: () -> Unit
 ) {
     OutlinedCard(
         onClick = onClick,
+        // An offline device (waiting for reconnection) is dimmed.
+        modifier = Modifier.alpha(if (isConnected) 1f else 0.6f),
     ) {
         ListItem(
             headlineContent = { Text(deviceName ?: stringResource(R.string.unknown_device)) },
             supportingContent = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(deviceAddress)
+                    if (!isConnected) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(12.dp),
+                                strokeWidth = 2.dp,
+                            )
+                            Text(
+                                text = stringResource(R.string.reconnecting),
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
+                    }
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         maxLines = 1,
@@ -89,6 +109,22 @@ private fun FeatureButtonPreview() {
             profileNames = listOf("Quick Start", "LED Button", "MDS"),
             deviceName = "Quick Start",
             deviceAddress = "AA:BB:CC:DD:EE:FF",
+            onClick = {}
+        )
+    }
+}
+
+@Preview(heightDp = 120)
+@Composable
+private fun FeatureButtonPreview_Offline() {
+    NordicTheme {
+        FeatureButton(
+            icon = painterResource(R.drawable.ic_quick_start),
+            description = stringResource(R.string.quick_start_module_full),
+            profileNames = listOf("Quick Start", "LED Button", "MDS"),
+            deviceName = "Quick Start",
+            deviceAddress = "AA:BB:CC:DD:EE:FF",
+            isConnected = false,
             onClick = {}
         )
     }
