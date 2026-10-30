@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.onEach
 import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.UART_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.UartRepository
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.util.chunked
@@ -32,14 +33,14 @@ class UARTManager(
     private lateinit var txCharacteristic: RemoteCharacteristic
     private lateinit var rxCharacteristic: RemoteCharacteristic
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         txCharacteristic = service.characteristics.first { it.uuid == UART_TX_CHARACTERISTIC_UUID }
         rxCharacteristic = service.characteristics.first { it.uuid == UART_RX_CHARACTERISTIC_UUID }
         require(txCharacteristic.isSubscribable()) { "UART TX characteristic must have NOTIFY or INDICATE" }
         require(rxCharacteristic.isWritable()) { "UART RX characteristic must be writable" }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         txCharacteristic.subscribe()
             .map { String(it) to it }
             .onEach { (text, bytes) ->

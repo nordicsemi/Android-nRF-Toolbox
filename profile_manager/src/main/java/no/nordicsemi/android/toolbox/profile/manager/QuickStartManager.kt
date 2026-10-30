@@ -2,6 +2,7 @@ package no.nordicsemi.android.toolbox.profile.manager
 
 import kotlinx.coroutines.CoroutineScope
 import no.nordicsemi.android.toolbox.lib.utils.spec.QUICK_START_SERVICE_UUID
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.android.toolbox.lib.utils.Profile as ServiceType
 
@@ -15,11 +16,11 @@ class QuickStartManager(
 ) : ServiceManager(QUICK_START_SERVICE_UUID, deviceId, "Quick Start", onReady) {
     override val profile: ServiceType = ServiceType.QUICK_START
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         // No characteristics to validate.
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         onReady(this@QuickStartManager)
     }
 }

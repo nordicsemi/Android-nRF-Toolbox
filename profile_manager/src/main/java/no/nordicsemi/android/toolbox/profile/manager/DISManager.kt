@@ -1,11 +1,11 @@
 package no.nordicsemi.android.toolbox.profile.manager
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.DIS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.DISRepository
 import no.nordicsemi.android.toolbox.profile.parser.dis.DeviceInformationParser
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -41,7 +41,7 @@ class DISManager(
     private var ieeeCertificationDataCharacteristic: RemoteCharacteristic? = null
     private var pnpIdCharacteristic: RemoteCharacteristic? = null
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         // Every Device Information Service characteristic is optional.
         manufacturerNameCharacteristic = service.characteristics.firstOrNull { it.uuid == MANUFACTURER_NAME_CHARACTERISTIC_UUID }
         modelNumberCharacteristic = service.characteristics.firstOrNull { it.uuid == MODEL_NUMBER_CHARACTERISTIC_UUID }
@@ -54,7 +54,7 @@ class DISManager(
         pnpIdCharacteristic = service.characteristics.firstOrNull { it.uuid == PNP_ID_CHARACTERISTIC_UUID }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         onReady(this@DISManager)
 
         readInto(manufacturerNameCharacteristic, "Manufacturer Name", DeviceInformationParser::parseString, repository::updateManufacturerName)

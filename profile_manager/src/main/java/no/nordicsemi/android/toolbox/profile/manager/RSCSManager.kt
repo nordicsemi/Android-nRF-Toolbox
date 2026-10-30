@@ -13,6 +13,7 @@ import no.nordicsemi.android.toolbox.lib.utils.spec.RSCS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.RSCSRepository
 import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSDataParser
 import no.nordicsemi.android.toolbox.profile.parser.rscs.RSCSFeatureDataParser
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -34,13 +35,13 @@ class RSCSManager(
     private lateinit var measurementCharacteristic: RemoteCharacteristic
     private var featureCharacteristic: RemoteCharacteristic? = null
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         measurementCharacteristic = service.characteristics.first { it.uuid == RSC_MEASUREMENT_CHARACTERISTIC_UUID }
         require(measurementCharacteristic.isSubscribable()) { "RSC measurement characteristic must have NOTIFY or INDICATE" }
         featureCharacteristic = service.characteristics.firstOrNull { it.uuid == RSC_FEATURE_CHARACTERISTIC_UUID }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         measurementCharacteristic.subscribe()
             .mapNotNull { RSCSDataParser.parse(it) }
             .onEach {

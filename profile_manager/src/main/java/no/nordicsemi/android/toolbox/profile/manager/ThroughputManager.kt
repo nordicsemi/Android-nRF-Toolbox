@@ -11,6 +11,7 @@ import no.nordicsemi.android.toolbox.profile.data.ThroughputInputType
 import no.nordicsemi.android.toolbox.profile.data.WritingStatus
 import no.nordicsemi.android.toolbox.profile.manager.repository.ThroughputRepository
 import no.nordicsemi.android.toolbox.profile.parser.throughput.ThroughputDataParser
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.ble.core.WriteType
@@ -32,12 +33,12 @@ class ThroughputManager(
 
     private lateinit var writeCharacteristic: RemoteCharacteristic
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         writeCharacteristic = service.characteristics.first { it.uuid == THROUGHPUT_CHAR_UUID }
         require(writeCharacteristic.isWritable()) { "Throughput characteristic must be writable" }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         repository.clearData()
         onReady(this@ThroughputManager)
     }

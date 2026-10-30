@@ -10,6 +10,7 @@ import no.nordicsemi.android.toolbox.lib.utils.spec.LEGACY_DFU_SERVICE_UUID
 import no.nordicsemi.android.toolbox.lib.utils.spec.SMP_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.data.DFUsAvailable
 import no.nordicsemi.android.toolbox.profile.manager.repository.DFURepository
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import kotlin.uuid.Uuid
 
@@ -23,11 +24,11 @@ class DFUManager(
 
     val repository = DFURepository()
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         // DFU is detected by service presence only; no specific characteristic is required.
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         val dfuType = when (serviceUuid) {
             DFU_SERVICE_UUID -> DFUsAvailable.DFU_SERVICE
             SMP_SERVICE_UUID -> DFUsAvailable.SMP_SERVICE
