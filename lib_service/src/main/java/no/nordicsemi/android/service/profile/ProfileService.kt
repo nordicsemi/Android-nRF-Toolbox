@@ -100,6 +100,8 @@ internal class ProfileService : NotificationService() {
                     val existingData = currentMap[address] ?: return@update currentMap
                     currentMap + (address to existingData.copy(
                         services = (existingData.services + manager).sortedBy { it.profile.ordinal },
+                        knownProfiles = (existingData.knownProfiles + manager.profile).distinct()
+                            .sortedBy { it.ordinal },
                         notSupported = false,
                     ))
                 }
