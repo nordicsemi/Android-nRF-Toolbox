@@ -28,6 +28,7 @@ import no.nordicsemi.android.toolbox.profile.parser.gls.data.RequestStatus
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.ResponseData
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPOpCode
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPResponseCode
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -59,7 +60,7 @@ class CGMManager(
     private var recordAccessRequestInProgress = false
     private var secured = false
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         measurementCharacteristic = service.characteristics.first { it.uuid == CGM_MEASUREMENT_UUID }
         require(measurementCharacteristic.isSubscribable()) { "CGM measurement characteristic must have NOTIFY or INDICATE" }
         racpCharacteristic = service.characteristics.first { it.uuid == RACP_UUID }
@@ -72,7 +73,7 @@ class CGMManager(
         statusCharacteristic = service.characteristics.firstOrNull { it.uuid == CGM_STATUS_UUID }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         measurementCharacteristic.subscribe()
             .mapNotNull { CGMMeasurementParser.parse(it) }
             .onEach { cgmRecords ->

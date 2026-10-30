@@ -12,6 +12,7 @@ import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.BATTERY_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.BatteryRepository
 import no.nordicsemi.android.toolbox.profile.parser.battery.BatteryLevelParser
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -31,11 +32,11 @@ class BatteryManager(
 
     private lateinit var batteryLevelCharacteristic: RemoteCharacteristic
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         batteryLevelCharacteristic = service.characteristics.first { it.uuid == BATTERY_LEVEL_CHARACTERISTIC_UUID }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         if (batteryLevelCharacteristic.isSubscribable()) {
             Timber.tag(tag).v("Enabling battery level notifications...")
             batteryLevelCharacteristic

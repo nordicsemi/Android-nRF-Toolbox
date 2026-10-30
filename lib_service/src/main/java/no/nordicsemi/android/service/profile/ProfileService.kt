@@ -19,17 +19,17 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.log.timber.nRFLoggerTree
 import no.nordicsemi.android.analytics.AppAnalytics
 import no.nordicsemi.android.analytics.ProfileConnectedEvent
+import no.nordicsemi.android.log.timber.nRFLoggerTree
 import no.nordicsemi.android.service.NotificationService
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManager
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManagerFactory
 import no.nordicsemi.kotlin.ble.client.RemoteServices
+import no.nordicsemi.kotlin.ble.client.android.BondState
 import no.nordicsemi.kotlin.ble.client.android.CentralManager
 import no.nordicsemi.kotlin.ble.client.android.CentralManager.ConnectionOptions
 import no.nordicsemi.kotlin.ble.client.android.Peripheral
-import no.nordicsemi.kotlin.ble.core.BondState
 import no.nordicsemi.kotlin.ble.core.ConnectionState
 import timber.log.Timber
 import javax.inject.Inject
@@ -284,7 +284,7 @@ internal class ProfileService : NotificationService() {
      * Ensures the peripheral is bonded. If not, initiates bonding.
      */
     private suspend fun Peripheral.ensureBonded() {
-        if (this.bondState.value == BondState.BONDED) return
+        if (this.bondState.value == BondState.Bonded) return
         createBond()
     }
 }

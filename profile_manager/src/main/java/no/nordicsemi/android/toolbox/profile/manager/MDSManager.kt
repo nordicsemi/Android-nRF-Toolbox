@@ -6,6 +6,7 @@ import no.nordicsemi.android.log.LogContract
 import no.nordicsemi.android.observability.ObservabilityManager
 import no.nordicsemi.android.observability.bluetooth.MonitoringAndDiagnosticsProfile
 import no.nordicsemi.android.toolbox.lib.utils.spec.MDS_SERVICE_UUID
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import no.nordicsemi.kotlin.log.Log
 import timber.log.Timber
@@ -35,18 +36,19 @@ class MDSManager(
     // Instead, let's just all  `prepare` and `initialize` protected methods from this profile.
     // We must override the class to make them visible from outside.
     private val impl = object : MonitoringAndDiagnosticsProfile() {
-        public override fun prepare(service: RemoteService) = super.prepare(service)
-        suspend fun run(scope: CoroutineScope) = scope.initialize()
+        public override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) = super.prepare(peripheral, service)
+        suspend fun run(peripheral: Peripheral<*, *>, scope: CoroutineScope) = scope.initialize(peripheral)
     }
 
-    override fun prepare(service: RemoteService) {
-        impl.prepare(service)
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
+        impl.prepare(peripheral, service)
+        manager.disconnect()
         manager.connect(impl)
         // Calling onReady will show the MDS view with Connecting... state.
         onReady(this@MDSManager)
     }
 
-    override suspend fun CoroutineScope.initialize() {
-        impl.run(this)
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
+        impl.run(peripheral, this)
     }
 }

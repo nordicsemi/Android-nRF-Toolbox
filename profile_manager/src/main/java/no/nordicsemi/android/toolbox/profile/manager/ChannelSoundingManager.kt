@@ -48,8 +48,9 @@ import no.nordicsemi.android.toolbox.profile.data.UpdateRate
 import no.nordicsemi.android.toolbox.profile.manager.repository.ChannelSoundingRepository
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
-import no.nordicsemi.kotlin.ble.client.android.Peripheral
-import no.nordicsemi.kotlin.ble.core.BondState
+import no.nordicsemi.kotlin.ble.client.Peripheral
+import no.nordicsemi.kotlin.ble.client.android.Peripheral as AndroidPeripheral
+import no.nordicsemi.kotlin.ble.client.android.BondState
 import timber.log.Timber
 import java.util.UUID
 import kotlin.uuid.Uuid
@@ -82,7 +83,7 @@ class ChannelSoundingManager(
 
     val repository = ChannelSoundingRepository()
 
-    private lateinit var peripheral: Peripheral
+    private lateinit var peripheral: Peripheral<*, *>
     private var rasFeaturesCharacteristic: RemoteCharacteristic? = null
 
     private val rangingManager: RangingManager? by lazy {
@@ -111,12 +112,12 @@ class ChannelSoundingManager(
     /** A flag set when accessing hidden Android API fails. No more attempts will be made. */
     private var hiddenApiBlocked = false
 
-    override fun prepare(service: RemoteService) {
-        peripheral = requireNotNull(service.owner as? Peripheral)
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
+        this.peripheral = peripheral
         rasFeaturesCharacteristic = service.characteristics.firstOrNull { it.uuid == RAS_FEATURES }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         rasFeaturesCharacteristic?.let { char ->
             launch {
                 try {
@@ -134,7 +135,7 @@ class ChannelSoundingManager(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             launch {
                 // Channel Sounding requires the devices to be bonded before ranging can start.
-                peripheral.bondState.first { it == BondState.BONDED }
+                (peripheral as? AndroidPeripheral)?.bondState?.first { it == BondState.Bonded }
                 requestHostCapabilitiesOnce()
             }
         }

@@ -10,6 +10,7 @@ import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.CSC_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.CSCRepository
 import no.nordicsemi.android.toolbox.profile.parser.csc.CSCDataParser
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -29,12 +30,12 @@ class CSCManager(
 
     private lateinit var measurementCharacteristic: RemoteCharacteristic
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         measurementCharacteristic = service.characteristics.first { it.uuid == CSC_MEASUREMENT_CHARACTERISTIC_UUID }
         require(measurementCharacteristic.isSubscribable()) { "CSC measurement characteristic must have NOTIFY or INDICATE" }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         measurementCharacteristic.subscribe()
             .mapNotNull { CSCDataParser.parse(it, repository.wheelSize) }
             .onEach {

@@ -13,6 +13,7 @@ import no.nordicsemi.android.toolbox.lib.utils.spec.HRS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.HRSRepository
 import no.nordicsemi.android.toolbox.profile.parser.hrs.BodySensorLocationParser
 import no.nordicsemi.android.toolbox.profile.parser.hrs.HRSDataParser
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -34,13 +35,13 @@ class HRSManager(
     private lateinit var hrMeasurementCharacteristic: RemoteCharacteristic
     private var bodySensorLocationCharacteristic: RemoteCharacteristic? = null
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         hrMeasurementCharacteristic = service.characteristics.first { it.uuid == HEART_RATE_MEASUREMENT_CHARACTERISTIC_UUID }
         require(hrMeasurementCharacteristic.isSubscribable()) { "Heart Rate measurement characteristic must have NOTIFY or INDICATE" }
         bodySensorLocationCharacteristic = service.characteristics.firstOrNull { it.uuid == BODY_SENSOR_LOCATION_CHARACTERISTIC_UUID }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         hrMeasurementCharacteristic.subscribe()
             .mapNotNull { HRSDataParser.parse(it) }
             .onEach {

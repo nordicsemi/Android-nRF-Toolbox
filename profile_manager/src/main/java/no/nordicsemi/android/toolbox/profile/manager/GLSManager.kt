@@ -22,6 +22,7 @@ import no.nordicsemi.android.toolbox.profile.parser.gls.data.RequestStatus
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.ResponseData
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPOpCode
 import no.nordicsemi.android.toolbox.profile.parser.racp.RACPResponseCode
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -46,7 +47,7 @@ class GLSManager(
     private lateinit var racpCharacteristic: RemoteCharacteristic
     private var contextCharacteristic: RemoteCharacteristic? = null
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         glucoseMeasurementCharacteristic = service.characteristics.first { it.uuid == GLUCOSE_MEASUREMENT_CHARACTERISTIC }
         require(glucoseMeasurementCharacteristic.isSubscribable()) { "Glucose measurement characteristic must have NOTIFY or INDICATE" }
         racpCharacteristic = service.characteristics.first { it.uuid == RACP_CHARACTERISTIC }
@@ -55,7 +56,7 @@ class GLSManager(
         contextCharacteristic = service.characteristics.firstOrNull { it.uuid == GLUCOSE_MEASUREMENT_CONTEXT_CHARACTERISTIC }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         glucoseMeasurementCharacteristic.subscribe()
             .mapNotNull { GlucoseMeasurementParser.parse(it) }
             .onEach {

@@ -10,6 +10,7 @@ import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.HTS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.HTSRepository
 import no.nordicsemi.android.toolbox.profile.parser.hts.HTSDataParser
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -29,12 +30,12 @@ class HTSManager(
 
     private lateinit var measurementCharacteristic: RemoteCharacteristic
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         measurementCharacteristic = service.characteristics.first { it.uuid == HTS_MEASUREMENT_CHARACTERISTIC_UUID }
         require(measurementCharacteristic.isSubscribable()) { "HTS measurement characteristic must have INDICATE property" }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         measurementCharacteristic.subscribe()
             .mapNotNull { HTSDataParser.parse(it) }
             .onEach {

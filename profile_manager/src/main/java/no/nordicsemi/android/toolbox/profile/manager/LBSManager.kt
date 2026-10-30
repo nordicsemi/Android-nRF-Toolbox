@@ -8,10 +8,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
 import no.nordicsemi.android.log.LogContract.Log
 import no.nordicsemi.android.toolbox.lib.utils.spec.LBS_SERVICE_UUID
 import no.nordicsemi.android.toolbox.profile.manager.repository.LBSRepository
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -33,14 +33,14 @@ class LBSManager(
     private lateinit var ledCharacteristic: RemoteCharacteristic
     private lateinit var buttonCharacteristic: RemoteCharacteristic
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         ledCharacteristic = service.characteristics.first { it.uuid == BLINKY_LED_CHARACTERISTIC_UUID }
         buttonCharacteristic = service.characteristics.first { it.uuid == BLINKY_BUTTON_CHARACTERISTIC_UUID }
         require(ledCharacteristic.isWritable()) { "LED characteristic must be writable" }
         require(buttonCharacteristic.isSubscribable()) { "Button characteristic must have NOTIFY or INDICATE" }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         buttonCharacteristic
             .subscribe {
                 Timber.tag(tag).log(Log.Level.APPLICATION, "Button notifications enabled")

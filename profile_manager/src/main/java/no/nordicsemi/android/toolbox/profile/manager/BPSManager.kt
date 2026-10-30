@@ -14,6 +14,7 @@ import no.nordicsemi.android.toolbox.profile.manager.repository.BPSRepository
 import no.nordicsemi.android.toolbox.profile.parser.bps.BloodPressureFeatureParser
 import no.nordicsemi.android.toolbox.profile.parser.bps.BloodPressureMeasurementParser
 import no.nordicsemi.android.toolbox.profile.parser.bps.IntermediateCuffPressureParser
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -37,7 +38,7 @@ class BPSManager(
     private var icpCharacteristic: RemoteCharacteristic? = null
     private var bpfCharacteristic: RemoteCharacteristic? = null
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         bpmCharacteristic = service.characteristics.first { it.uuid == BPM_CHARACTERISTIC_UUID }
         require(bpmCharacteristic.isSubscribable()) { "Blood Pressure measurement characteristic must have INDICATE property" }
         icpCharacteristic = service.characteristics.firstOrNull { it.uuid == ICP_CHARACTERISTIC_UUID }
@@ -50,7 +51,7 @@ class BPSManager(
         }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         bpmCharacteristic.subscribe()
             .mapNotNull { BloodPressureMeasurementParser.parse(it) }
             .onEach {

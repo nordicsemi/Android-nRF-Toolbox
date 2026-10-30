@@ -18,6 +18,7 @@ import no.nordicsemi.android.toolbox.profile.parser.directionFinder.ddf.DDFDataP
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.distance.DistanceMeasurementDataParser
 import no.nordicsemi.android.toolbox.profile.parser.directionFinder.elevation.ElevationMeasurementDataParser
 import no.nordicsemi.android.toolbox.profile.parser.gls.data.RequestStatus
+import no.nordicsemi.kotlin.ble.client.Peripheral
 import no.nordicsemi.kotlin.ble.client.RemoteCharacteristic
 import no.nordicsemi.kotlin.ble.client.RemoteService
 import timber.log.Timber
@@ -49,7 +50,7 @@ class DDFSManager(
     private var ddfFeatureCharacteristic: RemoteCharacteristic? = null
     private lateinit var controlPointCharacteristic: RemoteCharacteristic
 
-    override fun prepare(service: RemoteService) {
+    override fun prepare(peripheral: Peripheral<*, *>, service: RemoteService) {
         controlPointCharacteristic = service.characteristics.first { it.uuid == CONTROL_POINT_CHARACTERISTIC_UUID }
         require(controlPointCharacteristic.isWritable()) { "DFS control point characteristic must be writable" }
         azimuthCharacteristic = service.characteristics.firstOrNull { it.uuid == AZIMUTH_MEASUREMENT_CHARACTERISTIC_UUID }
@@ -58,7 +59,7 @@ class DDFSManager(
         ddfFeatureCharacteristic = service.characteristics.firstOrNull { it.uuid == DDF_FEATURE_CHARACTERISTIC_UUID }
     }
 
-    override suspend fun CoroutineScope.initialize() {
+    override suspend fun CoroutineScope.initialize(peripheral: Peripheral<*, *>) {
         azimuthCharacteristic?.subscribe()
             ?.mapNotNull { AzimuthalMeasurementDataParser().parse(it) }
             ?.onEach {

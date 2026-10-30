@@ -15,4 +15,5 @@ fun Reason.displayMessage(): String =
         Reason.UnsupportedAddress -> "Unsupported address type."
         Reason.InsufficientAuthentication -> "Insufficient authentication.\nBond information was removed on peer."
         Reason.UnsupportedConfiguration -> "PHY negotiations might have failed."
+        Reason.UnacceptableConnectionParameters -> "Unacceptable connection parameters."
     }
