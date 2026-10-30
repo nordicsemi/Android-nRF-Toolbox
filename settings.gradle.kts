@@ -52,11 +52,11 @@ dependencyResolutionManagement {
     versionCatalogs {
         // Use Nordic Gradle Version Catalog with common external libraries versions.
         create("libs") {
-            from("no.nordicsemi.gradle:version-catalog:3.2-1")
+            from("no.nordicsemi.gradle:version-catalog:3.3-2")
         }
         // Fixed versions for Nordic libraries.
         create("nordic") {
-            from("no.nordicsemi.gradle:nordic-version-catalog:2026.08.00")
+            from("no.nordicsemi.gradle:nordic-version-catalog:2026.10.00")
         }
     }
 }
