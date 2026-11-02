@@ -47,7 +47,8 @@ object CGMMeasurementParser {
                 val expectedCrc: Int = data.getInt(offset + dataSize, IntFormat.UINT16, ByteOrder.LITTLE_ENDIAN)
                 val actualCrc: Int = CRC16.MCRF4XX(data, offset, dataSize)
                 if (expectedCrc != actualCrc) {
-                    continue
+                    // The packet is corrupted.
+                    return null
                 }
             }
             offset += 2

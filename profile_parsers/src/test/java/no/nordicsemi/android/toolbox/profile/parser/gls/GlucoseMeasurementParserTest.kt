@@ -111,7 +111,7 @@ class GlucoseMeasurementParserNewTest {
     }
 
     @Test
-    fun `parse should handle little endian and big endian byte orders`() {
+    fun `parse should read the sequence number as little endian`() {
         val littleEndianData = byteArrayOf(
             0x00,                           // Flags
             0x01, 0x00,                     // Sequence Number (Little Endian: 1)
@@ -122,9 +122,9 @@ class GlucoseMeasurementParserNewTest {
             0x1E.toByte(),                  // Minute: 30
             0x2D.toByte(),                  // Second: 45
         )
-        val bigEndianData = byteArrayOf(
+        val swappedData = byteArrayOf(
             0x00,                           // Flags
-            0x00, 0x01,                     // Sequence Number (Big Endian: 1)
+            0x00, 0x01,                     // Sequence Number (Little Endian: 256)
             0xE4.toByte(), 0x07.toByte(),   // Year: 2020 (little-endian)
             0x05.toByte(),                  // Month: May
             0x15.toByte(),                  // Day: 21
@@ -134,9 +134,9 @@ class GlucoseMeasurementParserNewTest {
         )
 
         val littleEndianResult = GlucoseMeasurementParser.parse(littleEndianData)
-        val bigEndianResult = GlucoseMeasurementParser.parse(bigEndianData)
+        val swappedResult = GlucoseMeasurementParser.parse(swappedData)
 
         assertEquals(1, littleEndianResult?.sequenceNumber)
-        assertEquals(1, bigEndianResult?.sequenceNumber)
+        assertEquals(256, swappedResult?.sequenceNumber)
     }
 }

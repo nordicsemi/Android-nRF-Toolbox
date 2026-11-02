@@ -94,14 +94,16 @@ class HTSDataParserTest {
     }
 
     @Test
-    fun `test parse with invalid flag`() {
+    fun `test parse ignores reserved flag bits`() {
         val byteArray = byteArrayOf(
-            0x08.toByte(),            // Invalid Flag
+            0x08.toByte(),            // Flags: only a reserved bit is set
             0xC4.toByte(), 0x09.toByte(), 0x00.toByte(), 0xFE.toByte() // Temperature: 25.0
         )
 
         val result = HTSDataParser.parse(byteArray)
 
-        assertNull(result) // Should return null due to invalid unit flag
+        assertNotNull(result)
+        assertEquals(TemperatureUnitData.CELSIUS, result!!.unit)
+        assertEquals(25.0f, result.temperature, 0.001f)
     }
 }
