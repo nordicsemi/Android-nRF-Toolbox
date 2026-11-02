@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.DataObject
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
@@ -28,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -88,7 +90,8 @@ internal fun HomeView() {
                 .consumeWindowInsets(paddingValues),
             contentPadding = PaddingValues(
                 top = 16.dp,
-                bottom = paddingValues.calculateBottomPadding() + 16.dp
+                // Extra space, so the list can be scrolled above the FAB.
+                bottom = paddingValues.calculateBottomPadding() + 16.dp + 64.dp
             ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -100,203 +103,25 @@ internal fun HomeView() {
                 items(items = items, key = { it }) { address ->
                     state.connectedDevices[address]?.let { deviceData ->
                         val peripheral = deviceData.peripheral
-                        val services = deviceData.services
-                        val onClick = {
-                            onEvent(
-                                UiEvent.OnDeviceClick(
-                                    deviceAddress = peripheral.address,
-                                    name = peripheral.name,
-                                )
-                            )
-                        }
-
-                        // Case 1: If Battery and/or Device Information are the only services, show Device Information.
-                        if (services.any { it.profile == Profile.DIS } &&
-                            services.all { it.profile == Profile.BATTERY || it.profile == Profile.DIS }
-                        ) {
-                            FeatureButton(
-                                icon = rememberVectorPainter(Icons.Default.Info),
-                                description = stringResource(R.string.dis_module_full),
-                                deviceName = peripheral.name,
-                                deviceAddress = peripheral.address,
-                                profileNames = services.map { it.profile.toString() },
-                                onClick = onClick,
-                            )
-                        }
-                        // Case 2: If Battery service is the only one, show it.
-                        else if (services.size == 1 && services.first().profile == Profile.BATTERY) {
-                            FeatureButton(
-                                icon = painterResource(R.drawable.ic_battery),
-                                description = stringResource(R.string.battery_module_full),
-                                deviceName = peripheral.name,
-                                deviceAddress = peripheral.address,
-                                onClick = onClick,
-                            )
-                        }
-                        // Case 3: Show the first *non-Battery, non-Device-Information* profile.
-                        // This ensures only one service is shown per peripheral when multiple services are available.
-                        services.firstOrNull { it.profile != Profile.BATTERY && it.profile != Profile.DIS }?.let { serviceManager ->
-                            when (serviceManager.profile) {
-                                Profile.HRS -> FeatureButton(
-                                    icon = painterResource(R.drawable.ic_hrs),
-                                    description = stringResource(R.string.hrs_module_full),
-                                    deviceName = peripheral.name,
-                                    profileNames = services.map { it.profile.toString() },
-                                    deviceAddress = peripheral.address,
-                                    onClick = onClick,
-                                )
-
-                                Profile.HTS -> FeatureButton(
-                                    icon = painterResource(R.drawable.ic_hts),
-                                    description = stringResource(R.string.hts_module_full),
-                                    deviceName = peripheral.name,
-                                    deviceAddress = peripheral.address,
-                                    profileNames = services.map { it.profile.toString() },
-                                    onClick = onClick,
-                                )
-
-                                Profile.BPS -> FeatureButton(
-                                    icon = painterResource(R.drawable.ic_bps),
-                                    description = stringResource(R.string.bps_module_full),
-                                    deviceName = peripheral.name,
-                                    deviceAddress = peripheral.address,
-                                    profileNames = services.map { it.profile.toString() },
-                                    onClick = onClick,
-                                )
-
-                                Profile.GLS -> FeatureButton(
-                                    icon = painterResource(R.drawable.ic_gls),
-                                    description = stringResource(R.string.gls_module_full),
-                                    deviceName = peripheral.name,
-                                    deviceAddress = peripheral.address,
-                                    profileNames = services.map { it.profile.toString() },
-                                    onClick = onClick,
-                                )
-
-                                Profile.CGM -> FeatureButton(
-                                    icon = painterResource(R.drawable.ic_cgm),
-                                    description = stringResource(R.string.cgm_module_full),
-                                    deviceName = peripheral.name,
-                                    deviceAddress = peripheral.address,
-                                    profileNames = services.map { it.profile.toString() },
-                                    onClick = onClick,
-                                )
-
-                                Profile.RSCS -> FeatureButton(
-                                    icon = painterResource(R.drawable.ic_rscs),
-                                    description = stringResource(R.string.rscs_module_full),
-                                    deviceName = peripheral.name,
-                                    deviceAddress = peripheral.address,
-                                    profileNames = services.map { it.profile.toString() },
-                                    onClick = onClick,
-                                )
-
-                                Profile.DDFS -> FeatureButton(
-                                    icon = rememberVectorPainter(Icons.Default.MyLocation),
-                                    description = stringResource(R.string.direction_module_full),
-                                    deviceName = peripheral.name,
-                                    deviceAddress = peripheral.address,
-                                    profileNames = services.map { it.profile.toString() },
-                                    onClick = onClick,
-                                )
-
-                                Profile.CSC -> FeatureButton(
-                                    icon = painterResource(R.drawable.ic_csc),
-                                    description = stringResource(R.string.csc_module_full),
-                                    deviceName = peripheral.name,
-                                    deviceAddress = peripheral.address,
-                                    profileNames = services.map { it.profile.toString() },
-                                    onClick = onClick,
-                                )
-
-                                Profile.THROUGHPUT -> {
-                                    FeatureButton(
-                                        icon = rememberVectorPainter(Icons.Default.SyncAlt),
-                                        description = stringResource(R.string.throughput_module_full),
-                                        deviceName = peripheral.name,
+                        DeviceItem(
+                            deviceName = peripheral.name,
+                            deviceAddress = peripheral.address,
+                            // While not connected (reconnecting), the services are not known,
+                            // so the last known profiles are used.
+                            profiles = deviceData.services.map { it.profile }
+                                .ifEmpty { deviceData.knownProfiles },
+                            isConnected = deviceData.connectionState.isConnected,
+                            values = deviceData.values(),
+                            onDisconnect = { onEvent(UiEvent.OnDisconnectClick(peripheral.address)) },
+                            onClick = {
+                                onEvent(
+                                    UiEvent.OnDeviceClick(
                                         deviceAddress = peripheral.address,
-                                        profileNames = services.map { it.profile.toString() },
-                                        onClick = onClick,
+                                        name = peripheral.name,
                                     )
-                                }
-
-                                Profile.UART -> {
-                                    FeatureButton(
-                                        icon = painterResource(R.drawable.ic_uart),
-                                        description = stringResource(R.string.uart_module_full),
-                                        deviceName = peripheral.name,
-                                        deviceAddress = peripheral.address,
-                                        profileNames = services.map { it.profile.toString() },
-                                        onClick = onClick,
-                                    )
-                                }
-
-                                Profile.CHANNEL_SOUNDING -> {
-                                    FeatureButton(
-                                        icon = rememberVectorPainter(Icons.Default.SocialDistance),
-                                        description = stringResource(R.string.channel_sounding_module_full),
-                                        deviceName = peripheral.name,
-                                        deviceAddress = peripheral.address,
-                                        profileNames = services.map { it.profile.toString() },
-                                        onClick = onClick,
-                                    )
-                                }
-
-                                Profile.LBS -> {
-                                    FeatureButton(
-                                        icon = rememberVectorPainter(Icons.Default.Lightbulb),
-                                        description = stringResource(R.string.lbs_blinky_module_full),
-                                        deviceName = peripheral.name,
-                                        deviceAddress = peripheral.address,
-                                        profileNames = services.map { it.profile.toString() },
-                                        onClick = onClick,
-                                    )
-                                }
-
-                                Profile.QUICK_START -> {
-                                    FeatureButton(
-                                        icon = painterResource(R.drawable.ic_quick_start),
-                                        description = stringResource(R.string.quick_start_module_full),
-                                        deviceName = peripheral.name,
-                                        deviceAddress = peripheral.address,
-                                        profileNames = services.map { it.profile.toString() },
-                                        onClick = onClick,
-                                    )
-                                }
-
-                                Profile.MDS -> {
-                                    FeatureButton(
-                                        icon = painterResource(R.drawable.ic_mds),
-                                        description = stringResource(R.string.mds_module_full),
-                                        deviceName = peripheral.name,
-                                        deviceAddress = peripheral.address,
-                                        profileNames = services.map { it.profile.toString() },
-                                        onClick = onClick,
-                                    )
-                                }
-
-                                Profile.DFU -> {
-                                    FeatureButton(
-                                        icon = painterResource(R.drawable.ic_dfu),
-                                        description = stringResource(R.string.dfu_module_full),
-                                        deviceName = peripheral.name,
-                                        deviceAddress = peripheral.address,
-                                        profileNames = services.map { it.profile.toString() },
-                                        onClick = onClick,
-                                    )
-                                }
-
-                                Profile.BATTERY -> {
-                                    // Battery service is handled above.
-                                    // Do not show it if it's not an only service.
-                                }
-
-                                Profile.DIS -> {
-                                    // Device Information service is handled above.
-                                    // Do not show it if it's not an only (with Battery) service.
-                                }
-                            }
-                        }
+                                )
+                            },
+                        )
                     }
                 }
             } else {
@@ -335,4 +160,93 @@ private fun Version() {
             },
         )
     }
+}
+
+/**
+ * A device item on the list.
+ *
+ * Only one item is shown per peripheral. Its icon and description are taken from the most
+ * specific of the [profiles].
+ */
+@Composable
+private fun DeviceItem(
+    deviceName: String?,
+    deviceAddress: String,
+    profiles: List<Profile>,
+    isConnected: Boolean,
+    values: List<DeviceValue>,
+    onDisconnect: () -> Unit,
+    onClick: () -> Unit,
+) {
+    val profileNames = profiles.map { it.toString() }
+    // Case 1: If Battery and/or Device Information are the only services, show Device Information.
+    if (profiles.contains(Profile.DIS) &&
+        profiles.all { it == Profile.BATTERY || it == Profile.DIS }
+    ) {
+        FeatureButton(
+            icon = rememberVectorPainter(Icons.Default.Info),
+            description = stringResource(R.string.dis_module_full),
+            deviceName = deviceName,
+            deviceAddress = deviceAddress,
+            profileNames = profileNames,
+            isConnected = isConnected,
+            values = values,
+            onDisconnect = onDisconnect,
+            onClick = onClick,
+        )
+        return
+    }
+    // Case 2: If Battery service is the only one, show it.
+    if (profiles.size == 1 && profiles.first() == Profile.BATTERY) {
+        FeatureButton(
+            icon = painterResource(R.drawable.ic_battery),
+            description = stringResource(R.string.battery_module_full),
+            deviceName = deviceName,
+            deviceAddress = deviceAddress,
+            isConnected = isConnected,
+            values = values,
+            onDisconnect = onDisconnect,
+            onClick = onClick,
+        )
+        return
+    }
+    // Case 3: Show the first *non-Battery, non-Device-Information* profile.
+    // This ensures only one service is shown per peripheral when multiple services are available.
+    val profile = profiles.firstOrNull { it != Profile.BATTERY && it != Profile.DIS }
+    // Case 4: No profiles are known yet (the services are being discovered).
+    val icon: Painter
+    val description: String
+    when (profile) {
+        Profile.HRS -> { icon = painterResource(R.drawable.ic_hrs); description = stringResource(R.string.hrs_module_full) }
+        Profile.HTS -> { icon = painterResource(R.drawable.ic_hts); description = stringResource(R.string.hts_module_full) }
+        Profile.BPS -> { icon = painterResource(R.drawable.ic_bps); description = stringResource(R.string.bps_module_full) }
+        Profile.GLS -> { icon = painterResource(R.drawable.ic_gls); description = stringResource(R.string.gls_module_full) }
+        Profile.CGM -> { icon = painterResource(R.drawable.ic_cgm); description = stringResource(R.string.cgm_module_full) }
+        Profile.RSCS -> { icon = painterResource(R.drawable.ic_rscs); description = stringResource(R.string.rscs_module_full) }
+        Profile.DDFS -> { icon = rememberVectorPainter(Icons.Default.MyLocation); description = stringResource(R.string.direction_module_full) }
+        Profile.CSC -> { icon = painterResource(R.drawable.ic_csc); description = stringResource(R.string.csc_module_full) }
+        Profile.THROUGHPUT -> { icon = rememberVectorPainter(Icons.Default.SyncAlt); description = stringResource(R.string.throughput_module_full) }
+        Profile.UART -> { icon = painterResource(R.drawable.ic_uart); description = stringResource(R.string.uart_module_full) }
+        Profile.CHANNEL_SOUNDING -> { icon = rememberVectorPainter(Icons.Default.SocialDistance); description = stringResource(R.string.channel_sounding_module_full) }
+        Profile.LBS -> { icon = rememberVectorPainter(Icons.Default.Lightbulb); description = stringResource(R.string.lbs_blinky_module_full) }
+        Profile.QUICK_START -> { icon = painterResource(R.drawable.ic_quick_start); description = stringResource(R.string.quick_start_module_full) }
+        Profile.MDS -> { icon = painterResource(R.drawable.ic_mds); description = stringResource(R.string.mds_module_full) }
+        Profile.DFU -> { icon = painterResource(R.drawable.ic_dfu); description = stringResource(R.string.dfu_module_full) }
+        // Battery and Device Information are handled above.
+        Profile.BATTERY, Profile.DIS, null -> {
+            icon = rememberVectorPainter(Icons.Default.Bluetooth)
+            description = stringResource(R.string.unknown_device)
+        }
+    }
+    FeatureButton(
+        icon = icon,
+        description = description,
+        deviceName = deviceName,
+        deviceAddress = deviceAddress,
+        profileNames = profileNames,
+        isConnected = isConnected,
+        values = values,
+        onDisconnect = onDisconnect,
+        onClick = onClick,
+    )
 }

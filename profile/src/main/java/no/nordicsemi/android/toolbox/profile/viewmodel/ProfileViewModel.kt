@@ -27,6 +27,7 @@ import no.nordicsemi.android.toolbox.profile.argAddress
 import no.nordicsemi.android.toolbox.profile.argName
 import no.nordicsemi.android.toolbox.profile.manager.ChannelSoundingManager
 import no.nordicsemi.kotlin.ble.client.android.Peripheral
+import no.nordicsemi.kotlin.ble.core.ConnectionState
 import javax.inject.Inject
 
 @HiltViewModel
@@ -64,7 +65,6 @@ internal class ProfileViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        super.onCleared()
         profileServiceManager.unbindService()
     }
 
@@ -76,8 +76,14 @@ internal class ProfileViewModel @Inject constructor(
 
                 // The device may be in Connecting or Connected state.
                 // When in Connecting, the ProfileUiState is Loading.
-                if (deviceData.connectionState.isConnected) {
-                    _uiState.value = ProfileUiState.Connected(deviceData)
+                when (deviceData.connectionState) {
+                    ConnectionState.Connecting -> {
+                        _uiState.value = ProfileUiState.Loading
+                    }
+                    ConnectionState.Connected -> {
+                        _uiState.value = ProfileUiState.Connected(deviceData)
+                    }
+                    else -> {}
                 }
             }
             .launchIn(viewModelScope)

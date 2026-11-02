@@ -54,6 +54,8 @@
 
     <string name="connect_device">Connect</string>
     <string name="connected_devices">Connected devices</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="stop_reconnecting">Stop reconnecting</string>
     <string name="unknown_device">Unknown Device</string>
 
     <string name="links">Links</string>

@@ -3,6 +3,7 @@ package no.nordicsemi.android.service.profile
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import no.nordicsemi.android.log.ILogSession
+import no.nordicsemi.android.toolbox.lib.utils.Profile
 import no.nordicsemi.android.toolbox.profile.manager.ServiceManager
 import no.nordicsemi.kotlin.ble.client.android.Peripheral
 import no.nordicsemi.kotlin.ble.core.ConnectionState
@@ -17,6 +18,13 @@ interface ServiceApi {
         val peripheral: Peripheral,
         val connectionState: ConnectionState = ConnectionState.Connecting,
         val services: List<ServiceManager> = emptyList(),
+        /**
+         * Profiles that were ready at any time since the device was added.
+         *
+         * Unlike [services], they are not cleared when the device disconnects and the service
+         * is trying to reconnect, so the UI can still show what the device is.
+         */
+        val knownProfiles: List<Profile> = emptyList(),
         val notSupported: Boolean? = null
     )
 
