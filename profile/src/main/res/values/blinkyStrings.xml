@@ -2,9 +2,16 @@
 <resources>
     <string name="lbs_led">LED</string>
     <string name="lbs_led_guide">Switch to toggle the LED</string>
+    <string name="lbs_led_blink_guide">Blink %d times</string>
+    <string name="lbs_led_blink">Blink</string>
 
     <string name="lbs_button">Button</string>
-    <string name="lbs_button_guide">The button state</string>
+    <string name="lbs_button_guide">Current button state</string>
     <string name="lbs_button_pressed">PRESSED</string>
     <string name="lbs_button_released">RELEASED</string>
+    <string name="lbs_button_click_guide">Click events</string>
+    <string name="lbs_button_click">Click</string>
+    <string name="lbs_button_long_click_guide">Long click events</string>
+    <string name="lbs_button_long_click">Long click</string>
+    <string name="lbs_button_long_click_legend">%d second</string>
 </resources>
