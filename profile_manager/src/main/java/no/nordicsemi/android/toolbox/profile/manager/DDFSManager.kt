@@ -38,7 +38,7 @@ private val CHECK_CONFIG_BYTES = byteArrayOf(0x0A)
 class DDFSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(DDF_SERVICE_UUID, deviceId, "DDFS", onReady) {
+) : SimpleServiceManager(DDF_SERVICE_UUID, deviceId, "DDFS", onReady) {
     override val profile: ServiceType = ServiceType.DDFS
     private val tag = "DDFS ($deviceId)"
 

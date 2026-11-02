@@ -24,7 +24,7 @@ private val UART_TX_CHARACTERISTIC_UUID = Uuid.parse("6E400003-B5A3-F393-E0A9-E5
 class UARTManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(UART_SERVICE_UUID, deviceId, "UART", onReady) {
+) : SimpleServiceManager(UART_SERVICE_UUID, deviceId, "UART", onReady) {
     override val profile: ServiceType = ServiceType.UART
     private val tag = "UART ($deviceId)"
 

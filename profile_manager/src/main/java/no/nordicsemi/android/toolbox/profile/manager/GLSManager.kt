@@ -37,7 +37,7 @@ private val RACP_CHARACTERISTIC = Uuid.parse("00002A52-0000-1000-8000-00805f9b34
 class GLSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(GLS_SERVICE_UUID, deviceId, "GLS", onReady) {
+) : SimpleServiceManager(GLS_SERVICE_UUID, deviceId, "GLS", onReady) {
     override val profile: ServiceType = ServiceType.GLS
     private val tag = "GLS ($deviceId)"
 

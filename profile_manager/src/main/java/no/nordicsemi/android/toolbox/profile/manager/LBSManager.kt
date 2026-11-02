@@ -36,7 +36,7 @@ private val BLINKY_LED_CHARACTERISTIC_UUID = Uuid.parse("00001525-1212-EFDE-1523
 class LBSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(LBS_SERVICE_UUID, deviceId, "LBS", onReady) {
+) : SimpleServiceManager(LBS_SERVICE_UUID, deviceId, "LBS", onReady) {
     override val profile: ServiceType = ServiceType.LBS
     private val tag = "LBS ($deviceId)"
 

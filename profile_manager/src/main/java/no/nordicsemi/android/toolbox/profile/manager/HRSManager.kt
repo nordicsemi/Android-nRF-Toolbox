@@ -26,7 +26,7 @@ private val HEART_RATE_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A37-00
 class HRSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(HRS_SERVICE_UUID, deviceId, "HRS", onReady) {
+) : SimpleServiceManager(HRS_SERVICE_UUID, deviceId, "HRS", onReady) {
     override val profile: ServiceType = ServiceType.HRS
     private val tag = "HRS ($deviceId)"
 

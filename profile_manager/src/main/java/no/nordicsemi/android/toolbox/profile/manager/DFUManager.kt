@@ -18,7 +18,7 @@ class DFUManager(
     private val serviceUuid: Uuid,
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(serviceUuid, deviceId, "DFU", onReady) {
+) : SimpleServiceManager(serviceUuid, deviceId, "DFU", onReady) {
     override val profile: ServiceType = ServiceType.DFU
     private val tag = "DFU ($deviceId)"
 
