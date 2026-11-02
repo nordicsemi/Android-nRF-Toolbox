@@ -61,75 +61,75 @@ internal fun FeatureButton(
         // the text. The icon is centered between the name and the address, not including the
         // profile badges, and the trailing content is centered in the whole card.
         Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
-                    .then(dimmed),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
+                        .then(dimmed),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Icon(
-                        painter = icon,
-                        contentDescription = description,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp),
-                    )
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = deviceName ?: stringResource(R.string.unknown_device),
-                            style = MaterialTheme.typography.bodyLarge,
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            painter = icon,
+                            contentDescription = description,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp),
                         )
-                        Text(
-                            text = deviceAddress,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                FlowRow(
-                    modifier = Modifier.padding(start = 40.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    maxLines = 1,
-                ) {
-                    profileNames.forEach {
-                        Badge(
-                            containerColor = vibrantColorFromString(it),
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
-                                text = it,
-                                modifier = Modifier.padding(1.dp),
+                                text = deviceName ?: stringResource(R.string.unknown_device),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            Text(
+                                text = deviceAddress,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
+                    FlowRow(
+                        modifier = Modifier.padding(start = 40.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        maxLines = 1,
+                    ) {
+                        profileNames.forEach {
+                            Badge(
+                                containerColor = vibrantColorFromString(it),
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ) {
+                                Text(
+                                    text = it,
+                                    modifier = Modifier.padding(1.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+                onDisconnect?.let {
+                    // The icon of the 48 dp button is inset by 12 dp, so with 4 dp it ends 16 dp
+                    // from the edge, like the trailing icons of ListItem on the Links cards.
+                    Box(modifier = Modifier.padding(end = 4.dp)) {
+                        Disconnect(isReconnecting = !isConnected, onClick = it)
+                    }
                 }
             }
-            onDisconnect?.let {
-                // The icon of the 48 dp button is inset by 12 dp, so with 4 dp it ends 16 dp
-                // from the edge, like the trailing icons of ListItem on the Links cards.
-                Box(modifier = Modifier.padding(end = 4.dp)) {
-                    Disconnect(isReconnecting = !isConnected, onClick = it)
+            // The footer: the most important values of the services, separated from the device
+            // info with a line.
+            if (values.isNotEmpty()) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                FlowRow(
+                    // The 16 dp icon is centered below the 24 dp icon of the device.
+                    modifier = Modifier.padding(start = 20.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    values.forEach { DeviceValueItem(it) }
                 }
             }
-        }
-        // The footer: the most important values of the services, separated from the device
-        // info with a line.
-        if (values.isNotEmpty()) {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            FlowRow(
-                // The 16 dp icon is centered below the 24 dp icon of the device.
-                modifier = Modifier.padding(start = 20.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                values.forEach { DeviceValueItem(it) }
-            }
-        }
         }
     }
 }
