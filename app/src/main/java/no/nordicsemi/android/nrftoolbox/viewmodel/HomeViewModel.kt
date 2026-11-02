@@ -38,10 +38,11 @@ internal class HomeViewModel @Inject constructor(
 ) : ViewModel() {
     private val _state = MutableStateFlow(HomeViewState())
     val state = _state.asStateFlow()
+    private var api: ServiceApi? = null
 
     init {
         viewModelScope.launch {
-            val api = profileServiceManager.bindService()
+            val api = profileServiceManager.bindService().also { this@HomeViewModel.api = it }
 
             // Observe connected devices from the repository
             api.devices
@@ -64,6 +65,8 @@ internal class HomeViewModel @Inject constructor(
                 }
                 navigator.navigateTo(ProfileDestinationId, bundle)
             }
+
+            is UiEvent.OnDisconnectClick -> api?.disconnect(event.deviceAddress)
 
             UiEvent.OnGitHubClick -> {
                 // Log the event for analytics.

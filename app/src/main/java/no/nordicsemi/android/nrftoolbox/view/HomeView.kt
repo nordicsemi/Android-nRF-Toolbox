@@ -90,7 +90,8 @@ internal fun HomeView() {
                 .consumeWindowInsets(paddingValues),
             contentPadding = PaddingValues(
                 top = 16.dp,
-                bottom = paddingValues.calculateBottomPadding() + 16.dp
+                // Extra space, so the list can be scrolled above the FAB.
+                bottom = paddingValues.calculateBottomPadding() + 16.dp + 64.dp
             ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -110,6 +111,8 @@ internal fun HomeView() {
                             profiles = deviceData.services.map { it.profile }
                                 .ifEmpty { deviceData.knownProfiles },
                             isConnected = deviceData.connectionState.isConnected,
+                            values = deviceData.values(),
+                            onDisconnect = { onEvent(UiEvent.OnDisconnectClick(peripheral.address)) },
                             onClick = {
                                 onEvent(
                                     UiEvent.OnDeviceClick(
@@ -171,6 +174,8 @@ private fun DeviceItem(
     deviceAddress: String,
     profiles: List<Profile>,
     isConnected: Boolean,
+    values: List<DeviceValue>,
+    onDisconnect: () -> Unit,
     onClick: () -> Unit,
 ) {
     val profileNames = profiles.map { it.toString() }
@@ -185,6 +190,8 @@ private fun DeviceItem(
             deviceAddress = deviceAddress,
             profileNames = profileNames,
             isConnected = isConnected,
+            values = values,
+            onDisconnect = onDisconnect,
             onClick = onClick,
         )
         return
@@ -197,6 +204,8 @@ private fun DeviceItem(
             deviceName = deviceName,
             deviceAddress = deviceAddress,
             isConnected = isConnected,
+            values = values,
+            onDisconnect = onDisconnect,
             onClick = onClick,
         )
         return
@@ -236,6 +245,8 @@ private fun DeviceItem(
         deviceAddress = deviceAddress,
         profileNames = profileNames,
         isConnected = isConnected,
+        values = values,
+        onDisconnect = onDisconnect,
         onClick = onClick,
     )
 }

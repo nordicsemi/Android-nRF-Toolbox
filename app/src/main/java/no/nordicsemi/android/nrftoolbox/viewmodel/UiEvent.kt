@@ -11,6 +11,9 @@ sealed interface UiEvent {
     /**  OnDeviceClick event is emitted when the user clicks on a connected device. */
     data class OnDeviceClick(val deviceAddress: String, val name: String?) : UiEvent
 
+    /** OnDisconnectClick event is emitted when the user disconnects a device, or stops reconnecting. */
+    data class OnDisconnectClick(val deviceAddress: String) : UiEvent
+
     /**
      * OnGitHubClick event is emitted when the user clicks on the GitHub repository option.
      */
