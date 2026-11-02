@@ -77,7 +77,7 @@ class ChannelSoundingManager(
     private val context: Context,
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(RANGING_SERVICE_UUID, deviceId, "Channel Sounding", onReady) {
+) : SimpleServiceManager(RANGING_SERVICE_UUID, deviceId, "Channel Sounding", onReady) {
     override val profile: ServiceType = ServiceType.CHANNEL_SOUNDING
     private val tag = "CS ($deviceId)"
 

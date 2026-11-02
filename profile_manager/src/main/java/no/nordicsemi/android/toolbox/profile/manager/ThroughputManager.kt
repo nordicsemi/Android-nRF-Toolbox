@@ -25,7 +25,7 @@ private val THROUGHPUT_CHAR_UUID = Uuid.parse("00001524-0000-1000-8000-00805F9B3
 class ThroughputManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(THROUGHPUT_SERVICE_UUID, deviceId, "Throughput", onReady) {
+) : SimpleServiceManager(THROUGHPUT_SERVICE_UUID, deviceId, "Throughput", onReady) {
     override val profile: ServiceType = ServiceType.THROUGHPUT
     private val tag = "Throughput ($deviceId)"
 

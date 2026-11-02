@@ -44,7 +44,7 @@ private val RACP_UUID = Uuid.parse("00002A52-0000-1000-8000-00805f9b34fb")
 class CGMManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(CGMS_SERVICE_UUID, deviceId, "CGMS", onReady) {
+) : SimpleServiceManager(CGMS_SERVICE_UUID, deviceId, "CGMS", onReady) {
     override val profile: ServiceType = ServiceType.CGM
     private val tag = "CGM ($deviceId)"
 

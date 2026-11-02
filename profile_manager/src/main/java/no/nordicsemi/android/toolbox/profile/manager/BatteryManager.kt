@@ -24,7 +24,7 @@ private val BATTERY_LEVEL_CHARACTERISTIC_UUID: Uuid = Uuid.parse("00002A19-0000-
 class BatteryManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(BATTERY_SERVICE_UUID, deviceId, "Battery", onReady) {
+) : SimpleServiceManager(BATTERY_SERVICE_UUID, deviceId, "Battery", onReady) {
     override val profile: ServiceType = ServiceType.BATTERY
     private val tag = "Battery ($deviceId)"
 

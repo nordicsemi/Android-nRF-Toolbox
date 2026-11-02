@@ -28,7 +28,7 @@ private val BPF_CHARACTERISTIC_UUID = Uuid.parse("00002A49-0000-1000-8000-00805f
 class BPSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(BPS_SERVICE_UUID, deviceId, "BPS", onReady) {
+) : SimpleServiceManager(BPS_SERVICE_UUID, deviceId, "BPS", onReady) {
     override val profile: ServiceType = ServiceType.BPS
     private val tag = "BPS ($deviceId)"
 

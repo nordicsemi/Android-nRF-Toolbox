@@ -16,7 +16,7 @@ class MDSManager(
     context: Context,
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(MDS_SERVICE_UUID, deviceId, "MDS", onReady) {
+) : SimpleServiceManager(MDS_SERVICE_UUID, deviceId, "MDS", onReady) {
     override val profile: ServiceType = ServiceType.MDS
     private val tag = "MDS ($deviceId)"
 

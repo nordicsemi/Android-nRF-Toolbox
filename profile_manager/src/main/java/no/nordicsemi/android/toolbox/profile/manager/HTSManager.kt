@@ -22,7 +22,7 @@ private val HTS_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A1C-0000-1000
 class HTSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(HTS_SERVICE_UUID, deviceId, "HTS", onReady) {
+) : SimpleServiceManager(HTS_SERVICE_UUID, deviceId, "HTS", onReady) {
     override val profile: ServiceType = ServiceType.HTS
     private val tag = "HTS ($deviceId)"
 

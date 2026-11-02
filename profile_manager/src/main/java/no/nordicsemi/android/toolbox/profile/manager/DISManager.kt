@@ -25,7 +25,7 @@ private val PNP_ID_CHARACTERISTIC_UUID = Uuid.parse("00002A50-0000-1000-8000-008
 class DISManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(DIS_SERVICE_UUID, deviceId, "DIS", onReady) {
+) : SimpleServiceManager(DIS_SERVICE_UUID, deviceId, "DIS", onReady) {
     override val profile: ServiceType = ServiceType.DIS
     private val tag = "DIS ($deviceId)"
 

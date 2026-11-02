@@ -26,7 +26,7 @@ private val RSC_FEATURE_CHARACTERISTIC_UUID = Uuid.parse("00002A54-0000-1000-800
 class RSCSManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(RSCS_SERVICE_UUID, deviceId, "RSCS", onReady) {
+) : SimpleServiceManager(RSCS_SERVICE_UUID, deviceId, "RSCS", onReady) {
     override val profile: ServiceType = ServiceType.RSCS
     private val tag = "RSC ($deviceId)"
 

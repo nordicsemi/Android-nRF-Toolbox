@@ -22,7 +22,7 @@ private val CSC_MEASUREMENT_CHARACTERISTIC_UUID = Uuid.parse("00002A5B-0000-1000
 class CSCManager(
     deviceId: String,
     onReady: (ServiceManager) -> Unit,
-) : ServiceManager(CSC_SERVICE_UUID, deviceId, "CSCS", onReady) {
+) : SimpleServiceManager(CSC_SERVICE_UUID, deviceId, "CSCS", onReady) {
     override val profile: ServiceType = ServiceType.CSC
     private val tag = "CSC ($deviceId)"
 
