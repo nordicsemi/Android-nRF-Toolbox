@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -22,7 +21,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.ModeStandby
 import androidx.compose.material.icons.filled.RadioButtonChecked
+import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.WatchLater
@@ -48,8 +49,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -59,6 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import no.nordicsemi.android.common.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.manager.LBSManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.LBSEvent
@@ -173,22 +175,11 @@ private fun LedControlView(
                 .clickable(enabled = enabled) { onStateChanged(!state) }
                 .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Image(
-                    imageVector = Icons.Default.Lightbulb,
-                    contentDescription = null,
-                    modifier = Modifier.padding(end = 16.dp),
-                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
-                )
-                Text(
-                    text = stringResource(R.string.lbs_led),
-                    style = MaterialTheme.typography.headlineMedium,
-                )
-            }
+            SectionTitle(
+                icon = if (state) Icons.Default.Lightbulb else Icons.Outlined.Lightbulb,
+                title = stringResource(R.string.lbs_led),
+                tint = if (state) colorResource(R.color.nordicSun) else MaterialTheme.colorScheme.primary,
+            )
 
             Row(
                 modifier = Modifier
@@ -277,22 +268,10 @@ private fun ButtonControlView(
             modifier = Modifier
                 .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Image(
-                    imageVector = Icons.Default.RadioButtonChecked,
-                    contentDescription = null,
-                    modifier = Modifier.padding(end = 16.dp),
-                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
-                )
-                Text(
-                    text = stringResource(R.string.lbs_button),
-                    style = MaterialTheme.typography.headlineMedium,
-                )
-            }
+            SectionTitle(
+                icon = if (state) Icons.Default.ModeStandby else Icons.Default.RadioButtonChecked,
+                title = stringResource(R.string.lbs_button),
+            )
 
             Row(
                 modifier = Modifier
