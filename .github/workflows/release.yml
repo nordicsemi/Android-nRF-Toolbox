@@ -1,0 +1,159 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 11.0.0 or 11.0.0-alpha01'
+        required: true
+        type: string
+      dry-run:
+        description: 'Dry run'
+        required: false
+        type: boolean
+        default: false
+# Only one release at a time.
+concurrency:
+  group: release
+  cancel-in-progress: false
+permissions:
+  contents: read
+env:
+  # The version used by the Nordic Gradle plugins for the app.
+  RELEASE_VERSION: ${{ inputs.version }}
+  # When true, nothing is pushed, tagged or uploaded.
+  DRY_RUN: ${{ inputs.dry-run }}
+# The release is made in stages. Each one depends on the previous one, so the graph shows where
+# it failed. After fixing the problem, use "Re-run failed jobs" to continue from that stage.
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - shell: bash
+        run: |
+          if [[ "${{ github.ref_type }}" != "branch" ]]; then
+            echo "::error::Run this workflow on a branch: choose the branch in \"Use workflow from\"."
+            exit 1
+          fi
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::'$RELEASE_VERSION' is not a valid version, e.g. 11.0.0 or 11.0.0-alpha01."
+            exit 1
+          fi
+          if gh api "repos/${{ github.repository }}/git/ref/tags/$RELEASE_VERSION" > /dev/null 2>&1; then
+            # A dry run does not create the tag, so it may be run for a version that was released.
+            if [[ "$DRY_RUN" == "true" ]]; then
+              echo "::warning::The tag $RELEASE_VERSION already exists, it is ignored in a dry run."
+            else
+              echo "::error::The tag $RELEASE_VERSION already exists."
+              exit 1
+            fi
+          fi
+
+  test:
+    name: Test
+    needs: check
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: 'jetbrains'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Run unit tests
+        shell: bash
+        run: ./gradlew testDebugUnitTest --continue --stacktrace
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: '**/build/reports/tests/'
+          if-no-files-found: ignore
+
+  tag:
+    name: Tag
+    needs: test
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: write # Push the tag.
+    steps:
+      - uses: actions/checkout@v7
+      - shell: bash
+        run: |
+          git tag "$RELEASE_VERSION"
+          if [[ "$DRY_RUN" == "true" ]]; then
+            echo "Dry run: the tag $RELEASE_VERSION is not pushed."
+          else
+            git push origin "refs/tags/$RELEASE_VERSION"
+          fi
+
+  deploy:
+    name: Deploy
+    needs: tag
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    steps:
+      # A dry run does not create the tag, so it builds the commit that was tested.
+      # The version code of the app is based on the number of tags, so the whole history is needed.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.dry-run && github.sha || format('refs/tags/{0}', inputs.version) }}
+          fetch-depth: 0
+      - uses: actions/setup-java@v6
+        with:
+          distribution: 'jetbrains'
+          java-version: '21'
+          cache: 'gradle'
+      # The runner image does not have Fastlane. It is installed from the Gemfile.lock.
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '4.0'
+          bundler-cache: true
+      - shell: bash
+        env:
+          # The following env variables are used by the signing configuration of the app.
+          KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
+          KEYSTORE_KEY_PSWD: ${{ secrets.KEYSTORE_KEY_PSWD }}
+          KEYSTORE_PSWD: ${{ secrets.KEYSTORE_PSWD }}
+        # The script decodes google-services.json, the keystore and fastlane-api.json needed by
+        # the build and fastlane (see fastlane/Appfile). A dry run builds and signs the app bundle, and Google Play only
+        # validates it, nothing is uploaded.
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES }}" | base64 --decode > app/google-services.json
+          echo "${{ secrets.KEYSTORE_FILE }}" > keystore.asc
+          gpg -d --passphrase "${{ secrets.KEYSTORE_FILE_PSWD }}" --batch keystore.asc > keystore
+          echo "${{ secrets.API_KEY_FILE }}" > fastlane-api.json.asc
+          gpg -d --passphrase "${{ secrets.API_KEY_FILE_PSWD }}" --batch fastlane-api.json.asc > fastlane-api.json
+          bundle exec fastlane deployInternal dry_run:"$DRY_RUN"
+
+  github-release:
+    name: GitHub release
+    needs: deploy
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: write # Create the release, and generate the notes.
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      # Created only after the app was deployed. The release uses the tag pushed by the Tag
+      # stage, and its notes list the pull requests merged since the previous tag.
+      - shell: bash
+        run: |
+          if [[ "$DRY_RUN" == "true" ]]; then
+            echo "Dry run: the release $RELEASE_VERSION is not created. Its notes would be:"
+            gh api --method POST "repos/${{ github.repository }}/releases/generate-notes" \
+              -f tag_name="$RELEASE_VERSION" -f target_commitish="${{ github.sha }}" --jq '.body' \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            # Versions with a suffix, e.g. 2.7.0-alpha01, are marked as pre-releases.
+            [[ "$RELEASE_VERSION" == *-* ]] && prerelease="--prerelease"
+            gh release create "$RELEASE_VERSION" --repo "${{ github.repository }}" \
+              --title "$RELEASE_VERSION" --generate-notes --verify-tag ${prerelease:-}
+          fi

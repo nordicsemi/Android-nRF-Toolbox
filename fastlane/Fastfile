@@ -31,14 +31,15 @@ platform :android do
     # You can also use other beta testing services here
   end
 
-  desc "Deploy build to internal channel."
-    lane :deployInternal do
-      gradle(task: "clean bundleRelease")
-      upload_to_play_store(
-        track: 'internal',
-        aab: 'app/build/outputs/bundle/release/app-release.aab',
-        skip_upload_apk: true
-      )
+  desc "Deploy build to Internal channel. With dry_run:true the bundle is only validated by Google Play."
+  lane :deployInternal do |options|
+    gradle(task: "clean bundleRelease")
+    upload_to_play_store(
+      track: 'internal',
+      aab: 'app/build/outputs/bundle/release/app-release.aab',
+      skip_upload_apk: true,
+      validate_only: options[:dry_run].to_s == "true"
+    )
   end
 
 end
