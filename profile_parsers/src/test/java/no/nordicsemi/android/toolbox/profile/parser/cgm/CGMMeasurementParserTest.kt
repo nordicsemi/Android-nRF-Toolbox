@@ -12,12 +12,12 @@ class CGMMeasurementParserTest {
     fun `test valid data with all optional fields`() {
         // Constructing a valid byte array
         val data = byteArrayOf(
-            0x0F,  // Size: 14 bytes (6 base + 2 trend + 2 quality + 1 warning + 1 temp + 1 status + 2 CRC)
+            0x0F,  // Size: 15 bytes (6 base + 2 trend + 2 quality + 1 warning + 1 temp + 1 status + 2 CRC)
             0xE3.toByte(),  // Flags: All optional fields present (binary 11100011)
             0x78, 0x00,  // Glucose concentration: 120 mg/dL
             0x1E, 0x00,  // Time offset: 30 minutes
-            0x01,  // Warning status
-            0x02,  // Calibration temp status
+            0x18,  // Warning status: sensor malfunction, device specific alert
+            0x08,  // Calibration temp status: calibration required
             0x03,  // Sensor status
             0x50, 0x00,  // Trend: 80 mg/dL/min
             0x60, 0x00,  // Quality: 96 mg/dL
@@ -25,7 +25,7 @@ class CGMMeasurementParserTest {
         )
 
         // Calculate correct CRC and update the placeholder
-        val expectedCrc = CRC16.MCRF4XX(data, 0, 12) // Excluding the CRC bytes
+        val expectedCrc = CRC16.MCRF4XX(data, 0, 13) // Excluding the CRC bytes
         data[data.size - 2] = (expectedCrc and 0xFF).toByte()
         data[data.size - 1] = (expectedCrc shr 8).toByte()
 

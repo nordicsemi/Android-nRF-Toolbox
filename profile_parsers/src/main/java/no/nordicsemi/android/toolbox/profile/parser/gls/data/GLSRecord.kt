@@ -128,8 +128,7 @@ enum class SampleLocation(val id: Int) {
     NOT_AVAILABLE(15);
 
     companion object {
-        fun createOrNull(value: Int?): SampleLocation = entries.firstOrNull { it.id == value }
-            ?: throw IllegalArgumentException("Cannot find element for provided value.")
+        fun createOrNull(value: Int?): SampleLocation? = entries.firstOrNull { it.id == value }
     }
 
     override fun toString() = when (this) {

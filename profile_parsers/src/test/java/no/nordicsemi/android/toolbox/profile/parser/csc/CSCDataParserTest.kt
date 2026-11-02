@@ -77,8 +77,11 @@ class CSCDataParserTest {
         )
         val result = CSCDataParser.parse(updatedData)
 
-        assertEquals(234.0f, result?.distance) // Example calculation
-        result?.speed?.let { assertEquals(299.52f, it, 0.1f) } // Example calculation
+        // 100 revolutions of the default wheel, in meters.
+        val distance = 100 * WheelSizes.default.value / 1000.0f
+        assertEquals(distance, result!!.distance, 0.001f)
+        // Over (1000 - 200) / 1024 seconds.
+        assertEquals(distance / (800 / 1024.0f), result.speed, 0.01f)
     }
 
     @Test
