@@ -13,7 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import no.nordicsemi.android.common.ui.view.SectionTitle
+import no.nordicsemi.android.ui.view.SectionTitle
 import no.nordicsemi.android.observability.ObservabilityManager
 import no.nordicsemi.android.observability.data.Chunk
 import no.nordicsemi.android.observability.data.ChunksEmitter

@@ -60,7 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
-import no.nordicsemi.android.common.ui.view.SectionTitle
+import no.nordicsemi.android.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.manager.LBSManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.LBSEvent

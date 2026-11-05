@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.ui.view.ActionOutlinedButton
-import no.nordicsemi.android.common.ui.view.SectionTitle
+import no.nordicsemi.android.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.R
 import no.nordicsemi.android.toolbox.profile.data.NumberOfBytes
 import no.nordicsemi.android.toolbox.profile.data.NumberOfSeconds

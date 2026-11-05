@@ -55,7 +55,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.theme.nordicGreen
 import no.nordicsemi.android.common.theme.nordicSun
-import no.nordicsemi.android.common.ui.view.SectionTitle
+import no.nordicsemi.android.ui.view.SectionTitle
 import no.nordicsemi.android.toolbox.profile.manager.BatteryManager
 import no.nordicsemi.android.toolbox.profile.viewmodel.BatteryViewModel
 import no.nordicsemi.android.toolbox.profile.R
