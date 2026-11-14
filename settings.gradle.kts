@@ -56,7 +56,7 @@ dependencyResolutionManagement {
         }
         // Fixed versions for Nordic libraries.
         create("nordic") {
-            from("no.nordicsemi.gradle:nordic-version-catalog:2026.11.00")
+            from("no.nordicsemi.gradle:nordic-version-catalog:2026.11.01")
         }
     }
 }
